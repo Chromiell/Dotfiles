@@ -1,0 +1,8 @@
+# Local environment files may contain passwords, tokens, and other secrets.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+

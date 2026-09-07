@@ -1,0 +1,3 @@
+#!/bin/bash
+#ydotool mousemove --absolute -x 730 -y 10; ydotool click 0xc0 > /dev/null 2>&1; sleep 2; ydotool click 0xc0 > /dev/null 2>&1
+ydotool key 1:1; sleep 0.1; ydotool key 1:0; sleep 0.1; ydotool key 106:1; sleep 0.05; ydotool key 106:0; sleep 0.05; ydotool key 18:1; sleep 0.05; ydotool key 18:0; sleep 0.05; ydotool key 18:1; sleep 0.05; ydotool key 18:0; sleep 0.05; ydotool key 108:1; sleep 0.05; ydotool key 108:0; sleep 0.05; ydotool key 18:1; sleep 0.05; ydotool key 18:0; sleep 0.05; ydotool key 1:1; sleep 0.05; ydotool key 1:0

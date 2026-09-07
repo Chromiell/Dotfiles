@@ -1,0 +1,5 @@
+customCommands:
+    - key: "<c-x>"
+      description: "Open conflicts in host Diffview"
+      context: "files"
+      command: "nvim --server $NVIM --remote-send '<C-\\><C-n>:close<CR>:DiffviewOpen<CR>'"
