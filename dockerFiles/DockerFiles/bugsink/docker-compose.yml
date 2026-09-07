@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    # ports: # Uncomment to expose the database to the host machine
+    #   - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -h db
+      retries: 5
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+
+  web:
+    image: bugsink/bugsink:2
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      CREATE_SUPERUSER: ${SUPERUSER_USERNAME}:${SUPERUSER_PASSWORD}
+      PORT: 8000
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      BEHIND_HTTPS_PROXY: "false" # Change this for setups behind a proxy w/ ssl enabled
+      BASE_URL: ${BASE_URL}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS}
+      TIME_ZONE: Europe/Rome
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c ''import requests; requests.get("http://localhost:8000/").raise_for_status()''',
+        ]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+
+volumes:
+  db-data:

@@ -1,0 +1,90 @@
+[core]
+    # Sets the default text editor for Git commands that require one (like commit messages) to Micro.
+    editor = micro
+
+    # Keeps colors intact and ensures long lines of text word-wrap naturally
+    # instead of chopping off the screen in logs and diffs.
+    pager = less -R
+
+    # Automatically ignores OS-specific files (like .DS_Store) globally
+    excludesfile = ~/.config/git/.git_ignore_global
+
+[include]
+    path = ~/.config/git/.git_user
+
+[credential]
+    helper = store --file ~/.config/git/.git_credentials
+
+[alias]
+    # --- The Essentials ---
+    st = status -sb           # Short, readable status with branch info
+    co = checkout
+    br = branch
+    ci = commit
+    sw = switch               # Modern alternative to checkout
+    rs = restore              # Modern alternative to reset for files
+
+    # --- Log Magic ---
+    # Creates a beautiful, color-coded, graph-based log history
+    lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+    # Shows just the last commit
+    last = log -1 HEAD
+
+    # --- Committing and Amending ---
+    # Adds all changes and commits in one command
+    ac = !git add -A && git commit -m
+    # Adds all changes, commits, and pushes in one command
+    up = !git add . && git commit && git push
+    # Adds your staged changes to the previous commit without changing the message
+    amend = commit --amend --no-edit
+    # Adds your staged changes to the previous commit and opens the editor to modify the message
+    amend-message = commit --amend
+    # Undoes the last commit but keeps your files exactly as they are
+    uncommit = reset --soft HEAD~1
+
+    # Unstage a specific file: 'git unstage <file>'
+    unstage = restore --staged
+    # Unstage EVERYTHING: 'git unstage-all'
+    unstage-all = restore --staged .
+
+    # --- Cleanup ---
+    # Removes branches that have already been merged
+    cleanup = "!git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d"
+
+[push]
+    # Git 2.37+ magic: Automatically sets the upstream branch when you push a new branch.
+    # No more typing `git push --set-upstream origin my-branch`!
+    autoSetupRemote = true
+
+    # Only pushes the current branch to a branch of the same name
+    default = simple
+
+[pull]
+    # Uses standard merges when pulling remote changes instead of rebasing.
+    rebase = false
+
+[rebase]
+    # Automatically stashes any local changes before rebasing and unstashes them afterward.
+    autoStash = true
+
+[fetch]
+    # Automatically deletes local references to remote branches that have been deleted
+    prune = true
+
+[merge]
+    # Shows the base commit during a conflict, giving you much better context
+    # on what both sides actually changed.
+    conflictstyle = zdiff3
+
+[help]
+    # Automatically runs the command you *meant* to type after 1.5 seconds if you make a typo
+    # (e.g., typing 'git stat' will automatically run 'git status').
+    autocorrect = 15
+
+[color]
+    # Enables helpful coloring in terminal outputs
+    ui = auto
+
+[init]
+    # Sets the default branch name to 'main' for all newly initialized repos
+    defaultBranch = main

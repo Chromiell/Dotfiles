@@ -1,0 +1,134 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "kitty-direct",
+    "source": "~/.config/fastfetch/eldritch.png",
+    "padding": {
+      "right": 10,
+      "top": 2,
+    },
+  },
+  "display": {
+    "separator": "➜   ",
+  },
+  "modules": [
+    "break",
+    {
+      "type": "title",
+      "format": "                                {6}{7}{8}",
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "┌──────────────────────────────────────────────────────────────────────────────┐", // `\u001b` is `\033`, or `\e`
+    },
+    "break",
+    {
+      "key": "     OS           ",
+      "keyColor": "blue",
+      "type": "os",
+    },
+    {
+      "key": "     Kernel       ",
+      "keyColor": "blue",
+      "type": "kernel",
+    },
+    {
+      "key": "     Packages     ",
+      "keyColor": "blue",
+      "type": "packages",
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "├──────────────────────────────────────────────────────────────────────────────┤", // `\u001b` is `\033`, or `\e`
+    },
+    "break",
+    {
+      "key": "    󰻠 CPU          ",
+      "keyColor": "green",
+      "type": "cpu",
+    },
+    {
+      "key": "    󰍛 GPU          ",
+      "keyColor": "green",
+      "type": "gpu",
+    },
+    {
+      "key": "    󰑭 Memory       ",
+      "keyColor": "green",
+      "type": "memory",
+    },
+    {
+      "key": "    󰓡 Swap         ",
+      "keyColor": "green",
+      "type": "swap",
+    },
+    {
+      "key": "     Disk         ",
+      "keyColor": "green",
+      "type": "disk",
+    },
+    {
+      "key": "    󰍹 Display      ",
+      "keyColor": "green",
+      "type": "display",
+    },
+    {
+      "key": "     WM           ",
+      "keyColor": "green",
+      "type": "wm",
+    },
+    {
+      "key": "     Battery      ",
+      "keyColor": "green",
+      "type": "battery",
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "├──────────────────────────────────────────────────────────────────────────────┤", // `\u001b` is `\033`, or `\e`
+    },
+    "break",
+    {
+      "key": "    󰅐 Uptime       ",
+      "keyColor": "cyan",
+      "type": "uptime",
+    },
+    {
+      "key": "     Terminal     ",
+      "keyColor": "cyan",
+      "type": "terminal",
+    },
+    {
+      "key": "     Shell        ",
+      "keyColor": "cyan",
+      "type": "shell",
+    },
+    {
+      "key": "    󰝚 Media        ",
+      "keyColor": "cyan",
+      "type": "media",
+    },
+    {
+      "key": "    󰩟 Local IP     ",
+      "keyColor": "cyan",
+      "type": "localip",
+      "compact": true,
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "└──────────────────────────────────────────────────────────────────────────────┘", // `\u001b` is `\033`, or `\e`
+    },
+    "break",
+    {
+      "type": "colors",
+      "paddingLeft": 34,
+      "symbol": "circle",
+      "block": {
+        "width": 10,
+      },
+    },
+  ],
+}

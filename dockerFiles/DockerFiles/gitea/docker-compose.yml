@@ -1,0 +1,41 @@
+networks:
+  gitea:
+    name: gitea_network # Forces a reliable network name
+    external: false
+
+services:
+  server:
+    image: docker.gitea.com/gitea:latest
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__actions__ENABLED=true
+    restart: always
+    networks:
+      - gitea
+    volumes:
+      - /home/admin00/gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3000:3000"
+      - "222:22"
+
+  runner:
+    image: gitea/act_runner:latest
+    container_name: gitea_runner
+    restart: always
+    depends_on:
+      - server
+    networks:
+      - gitea
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/admin00/gitea-runner:/data
+      - ./config.yaml:/config.yaml # Mounts the configuration file we edited
+    environment:
+      - CONFIG_FILE=/config.yaml # Tells the runner to read our custom network setting
+      - GITEA_INSTANCE_URL=http://gitea:3000
+      - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_REGISTRATION_TOKEN}
+      - GITEA_RUNNER_NAME=${GITEA_RUNNER_NAME}

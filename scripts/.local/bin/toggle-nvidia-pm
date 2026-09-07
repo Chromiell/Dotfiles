@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -e
+
+CONFIG_FILE="/etc/modprobe.d/nvidia.conf"
+PARAM="options nvidia NVreg_DynamicPowerManagement=0x02"
+
+# 1. Auto-elevate using sudo if not already run as root
+if [ "$EUID" -ne 0 ]; then
+  echo "--> Root privileges required. Re-running with sudo..."
+  exec sudo "$0" "$@"
+fi
+
+# 2. Check if configuration file exists
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo "Error: $CONFIG_FILE does not exist."
+  exit 1
+fi
+
+# 3. Toggle the comment status
+if grep -qE "^\s*#\s*${PARAM}" "$CONFIG_FILE"; then
+  echo "--> Uncommenting Dynamic Power Management..."
+  sed -i -E "s|^\s*#\s*(${PARAM})|\1|" "$CONFIG_FILE"
+  STATUS="ENABLED"
+elif grep -qE "^\s*${PARAM}" "$CONFIG_FILE"; then
+  echo "--> Commenting out Dynamic Power Management..."
+  sed -i -E "s|^\s*(${PARAM})|#\1|" "$CONFIG_FILE"
+  STATUS="DISABLED"
+else
+  echo "--> Line not found in config. Appending line (uncommented)..."
+  echo "$PARAM" >> "$CONFIG_FILE"
+  STATUS="ENABLED"
+fi
+
+echo "Nvidia Dynamic Power Management is now ${STATUS}."
+
+# 4. Update initramfs
+echo "--> Updating initramfs..."
+update-initramfs -u
+
+# 5. Reboot prompt
+read -p "Initramfs updated. Reboot system now? [Y/n] " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
+  echo "Rebooting..."
+  reboot
+else
+  echo "Reboot canceled. Remember to reboot manually for changes to take effect."
+fi

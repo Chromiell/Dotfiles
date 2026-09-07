@@ -1,0 +1,11 @@
+# Rename the first default window to 'shell'
+rename-window 'shell'
+
+# Create the second window and name it 'nvim'
+new-window -n 'nvim'
+
+# Create the third window and name it 'remote'
+new-window -n 'remote'
+
+# Ensure you land on the 'shell' window upon connection
+select-window -t 1
