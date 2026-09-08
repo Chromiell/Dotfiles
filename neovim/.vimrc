@@ -72,7 +72,7 @@ set splitbelow
 set splitright
 set mouse=a
 set updatetime=250
-set timeoutlen=300
+set timeoutlen=1000  " Gives 1000ms to complete multi-key leader shortcuts
 set ttimeoutlen=50
 set backspace=indent,eol,start
 
@@ -263,10 +263,113 @@ set statusline+=%#StatEnc#\ %{&fileencoding?&fileencoding:&encoding}\ [%{&filefo
 set statusline+=%#StatPos#\ %l:%c\ %P\
 
 " ============================================================================
-" 7. CUSTOM UTILITIES & FUNCTIONS
+" 7. TOP BUFFERLINE (Display active buffers across the top)
+" ============================================================================
+set showtabline=2 " Always show top bar
+
+function! s:GetBufferOrder() abort
+    let l:listed = filter(range(1, bufnr('$')), 'buflisted(v:val)')
+    if !exists('g:buffer_order')
+        let g:buffer_order = []
+    endif
+    " Remove closed buffers from custom order list
+    call filter(g:buffer_order, 'index(l:listed, v:val) != -1')
+    " Append newly opened buffers
+    for l:b in l:listed
+        if index(g:buffer_order, l:b) == -1
+            call add(g:buffer_order, l:b)
+        endif
+    endfor
+    return g:buffer_order
+endfunction
+
+" Move buffer left (-1) or right (+1)
+function! s:MoveBuffer(dir) abort
+    let l:current = bufnr('%')
+    let l:order = s:GetBufferOrder()
+    let l:idx = index(l:order, l:current)
+    if l:idx == -1 | return | endif
+
+    let l:new_idx = l:idx + a:dir
+    if l:new_idx >= 0 && l:new_idx < len(l:order)
+        let l:temp = l:order[l:idx]
+        let l:order[l:idx] = l:order[l:new_idx]
+        let l:order[l:new_idx] = l:temp
+        let g:buffer_order = l:order
+        redrawtabline
+    endif
+endfunction
+
+" Repeating loop to continuously shift buffer with [ or ]
+function! s:MoveBufferRepeatable(dir) abort
+    call s:MoveBuffer(a:dir)
+    while 1
+        redraw
+        let l:c = nr2char(getchar())
+        if l:c ==# '['
+            call s:MoveBuffer(-1)
+        elseif l:c ==# ']'
+            call s:MoveBuffer(1)
+        else
+            call feedkeys(l:c, 'm')
+            break
+        endif
+    endwhile
+endfunction
+
+function! PureBufferLine() abort
+    let l:s = ''
+    let l:current = bufnr('%')
+    let l:buffers = s:GetBufferOrder()
+
+    for l:b in l:buffers
+        let l:name = bufname(l:b)
+        let l:name = empty(l:name) ? '[No Name]' : fnamemodify(l:name, ':t')
+        let l:mod = getbufvar(l:b, '&modified') ? ' [+]' : ''
+        let l:pin = getbufvar(l:b, 'pinned', 0) ? '📌 ' : ''
+
+        " Highlight current active buffer vs inactive buffers
+        if l:b == l:current
+            let l:s .= '%#TabLineSel# ' . l:pin . l:b . ': ' . l:name . l:mod . ' '
+        else
+            let l:s .= '%#TabLine# ' . l:pin . l:b . ': ' . l:name . l:mod . ' '
+        endif
+    endfor
+
+    " Fill remaining space
+    let l:s .= '%#TabLineFill#%='
+    return l:s
+endfunction
+
+" Navigate buffers according to top bufferline visual order
+function! s:NavBuffer(dir) abort
+    let l:current = bufnr('%')
+    let l:order = s:GetBufferOrder()
+    let l:idx = index(l:order, l:current)
+
+    if l:idx == -1
+        if a:dir > 0 | bnext | else | bprevious | endif
+        return
+    endif
+
+    let l:count = len(l:order)
+    if l:count <= 1 | return | endif
+
+    let l:new_idx = (l:idx + a:dir) % l:count
+    if l:new_idx < 0
+        let l:new_idx += l:count
+    endif
+
+    execute 'buffer ' . l:order[l:new_idx]
+endfunction
+
+set tabline=%!PureBufferLine()
+
+" ============================================================================
+" 8. CUSTOM UTILITIES & FUNCTIONS
 " ============================================================================
 
-" 7.1 Copy Project Path (<leader>fP)
+" 8.1 Copy Project Path (<leader>fP)
 function! s:CopyProjectPath() abort
     let l:buf_name = expand('%:p')
     if empty(l:buf_name)
@@ -302,7 +405,7 @@ function! s:CopyProjectPath() abort
     echomsg "Copied: " . l:path
 endfunction
 
-" 7.2 Trim Trailing Whitespace (<leader>ct)
+" 8.2 Trim Trailing Whitespace (<leader>ct)
 function! s:TrimTrailingWhitespace() abort
     let l:save_view = winsaveview()
     silent! undojoin
@@ -319,7 +422,7 @@ function! s:TrimTrailingWhitespaceSelection() range abort
     echomsg "Trailing whitespace trimmed in selection!"
 endfunction
 
-" 7.3 Delete Marks on Current Line (<leader>md)
+" 8.3 Delete Marks on Current Line (<leader>md)
 function! s:DeleteLineMarks() abort
     let l:cur_line = line('.')
     let l:marks = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -339,7 +442,7 @@ function! s:DeleteLineMarks() abort
     endif
 endfunction
 
-" 7.4 Color Converter: Hex <-> HSL (<leader>co and :ToggleHexHsl)
+" 8.4 Color Converter: Hex <-> HSL (<leader>co and :ToggleHexHsl)
 function! s:Max3(a, b, c) abort
     let l:m = a:a > a:b ? a:a : a:b
     return l:m > a:c ? l:m : a:c
@@ -462,7 +565,7 @@ endfunction
 
 command! -nargs=0 ToggleHexHsl call s:ToggleHexHsl()
 
-" 7.5 Timestamp <-> Date Converter (<leader>cx in Visual mode)
+" 8.5 Timestamp <-> Date Converter (<leader>cx in Visual mode)
 function! s:ToggleDateTimestamp() abort
     let l:orig_reg = getreg('x')
     let l:orig_type = getregtype('x')
@@ -499,7 +602,7 @@ function! s:ToggleDateTimestamp() abort
     call setreg('x', l:orig_reg, l:orig_type)
 endfunction
 
-" 7.6 Quickfix Window Editing (dd and visual d, matching quicker.nvim)
+" 8.6 Quickfix Window Editing (dd and visual d, matching quicker.nvim)
 function! s:QfDeleteLine() abort
     let l:cur_line = line('.')
     let l:is_loc = getwininfo(win_getid())[0].loclist == 1
@@ -544,7 +647,7 @@ function! s:QfDeleteSelection() range abort
     endif
 endfunction
 
-" 7.7 Diff Two Buffers (<leader>bc)
+" 8.7 Diff Two Buffers (<leader>bc)
 function! s:DiffTwoBuffers() abort
     let l:buf1 = input('Enter first buffer number: ')
     if empty(l:buf1) | return | endif
@@ -559,7 +662,7 @@ function! s:DiffTwoBuffers() abort
     wincmd h
 endfunction
 
-" 7.8 Git Blame Sidebar (<leader>gb)
+" 8.8 Git Blame Sidebar (<leader>gb)
 function! s:GitBlame() abort
     let l:file = expand('%:p')
     if empty(l:file) | return | endif
@@ -572,7 +675,7 @@ function! s:GitBlame() abort
     wincmd l
 endfunction
 
-" 7.9 Format / Indent File (<leader>cf)
+" 8.9 Format / Indent File (<leader>cf)
 function! s:FormatIndent() abort
     let l:save_view = winsaveview()
     keepjumps normal! gg=G
@@ -580,7 +683,7 @@ function! s:FormatIndent() abort
     echomsg "File auto-indented!"
 endfunction
 
-" Streamlined Project Grep using Quickfix
+" 8.10 Project Grep using Quickfix (<leader>fg and <leader>\)
 function! s:ProjectGrep() abort
     call inputsave()
     let l:query = input('Search term: ')
@@ -598,9 +701,9 @@ function! s:ProjectGrep() abort
 
         " Populate the quickfix list
         call setqflist([], 'r', {
-            \ 'title': 'Grep: ' . l:query,
-            \ 'lines': split(l:qf_results, "\n")
-            \ })
+                    \ 'title': 'Grep: ' . l:query,
+                    \ 'lines': split(l:qf_results, "\n")
+                    \ })
     else
         " Native Vim fallback when ripgrep is missing
         try
@@ -618,7 +721,7 @@ function! s:ProjectGrep() abort
     endif
 endfunction
 
-" Dynamic Visual Surround (supports quotes, brackets, and angle brackets)
+" 8.11 Dynamic Visual Surround (gsa)
 function! s:VisualSurround() abort
     " Force screen redraw so Vim immediately waits for character input
     redraw
@@ -650,38 +753,313 @@ function! s:VisualSurround() abort
     call setreg('"', l:save_reg, l:save_type)
 endfunction
 
-" ============================================================================
-" TOP BUFFERLINE (Display active buffers across the top)
-" ============================================================================
-set showtabline=2 " Always show top bar
+" 8.12 Dynamic Comment Toggler (gcc / gc)
+function! s:ToggleComment() range abort
+    let l:cms = empty(&commentstring) ? '# %s' : &commentstring
+    let l:parts = split(l:cms, '%s', 1)
+    let l:left = trim(l:parts[0])
+    let l:right = len(l:parts) > 1 ? trim(l:parts[1]) : ''
 
-function! PureBufferLine() abort
-    let l:s = ''
-    let l:current = bufnr('%')
-    let l:buffers = filter(range(1, bufnr('$')), 'buflisted(v:val)')
+    let l:left_esc = escape(l:left, '/*~[]$^.')
+    let l:right_esc = escape(l:right, '/*~[]$^.')
 
-    for l:b in l:buffers
-        let l:name = bufname(l:b)
-        let l:name = empty(l:name) ? '[No Name]' : fnamemodify(l:name, ':t')
-        let l:mod = getbufvar(l:b, '&modified') ? ' [+]' : ''
-
-        " Highlight current active buffer vs inactive buffers
-        if l:b == l:current
-            let l:s .= '%#TabLineSel# ' . l:b . ': ' . l:name . l:mod . ' '
-        else
-            let l:s .= '%#TabLine# ' . l:b . ': ' . l:name . l:mod . ' '
+    " Check if all non-empty lines in target range are commented
+    let l:all_commented = 1
+    let l:has_content = 0
+    for l:lnum in range(a:firstline, a:lastline)
+        let l:line = trim(getline(l:lnum))
+        if empty(l:line) | continue | endif
+        let l:has_content = 1
+        let l:pat = !empty(l:right) ? '^\s*' . l:left_esc . '.*' . l:right_esc . '$' : '^\s*' . l:left_esc
+        if l:line !~# l:pat
+            let l:all_commented = 0
+            break
         endif
     endfor
 
-    " Fill remaining space
-    let l:s .= '%#TabLineFill#%='
-    return l:s
+    if !l:has_content | return | endif
+
+    " Apply comment or uncomment
+    for l:lnum in range(a:firstline, a:lastline)
+        let l:line = getline(l:lnum)
+        if empty(trim(l:line)) | continue | endif
+
+        if l:all_commented
+            if !empty(l:right)
+                let l:line = substitute(l:line, '\s*' . l:left_esc . '\s\?', '', '')
+                let l:line = substitute(l:line, '\s\?' . l:right_esc . '$', '', '')
+            else
+                let l:line = substitute(l:line, l:left_esc . '\s\?', '', '')
+            endif
+        else
+            let l:indent = matchstr(l:line, '^\s*')
+            let l:content = strpart(l:line, len(l:indent))
+            if !empty(l:right)
+                let l:line = l:indent . l:left . ' ' . l:content . ' ' . l:right
+            else
+                let l:line = l:indent . l:left . ' ' . l:content
+            endif
+        endif
+        call setline(l:lnum, l:line)
+    endfor
 endfunction
 
-set tabline=%!PureBufferLine()
+" 8.13 Pure Vimscript Multi-Cursor Submode (<leader>mi)
+function! s:MultiCursorMode() range abort
+    let l:lines = range(a:firstline, a:lastline)
+    if len(l:lines) <= 1
+        echohl WarningMsg | echo "Multi-cursor requires selecting multiple lines" | echohl None
+        return
+    endif
+
+    let l:start_col = col('.')
+    let l:cols = {}
+    for l:lnum in l:lines
+        let l:cols[l:lnum] = min([l:start_col, max([1, len(getline(l:lnum))])])
+    endfor
+
+    let l:match_ids = []
+
+    " Submode loop
+    while 1
+        " Clear & redraw cursor highlights across all selected lines
+        for l:id in l:match_ids | silent! call matchdelete(l:id) | endfor
+        let l:match_ids = []
+        let l:pos_list = []
+        for l:lnum in l:lines
+            call add(l:pos_list, [l:lnum, l:cols[l:lnum]])
+        endfor
+        for l:i in range(0, len(l:pos_list) - 1, 8)
+            call add(l:match_ids, matchaddpos('IncSearch', l:pos_list[l:i : l:i + 7], 100))
+        endfor
+
+        redraw
+        echo "-- MULTI-CURSOR -- [w/b/e/h/l/$/0/x/dw/r/i/a/c] (<Esc> or <Enter> to exit)"
+
+        let l:nr = getchar()
+        let l:char = type(l:nr) == type(0) ? nr2char(l:nr) : l:nr
+
+        " Exit submode on Esc, Enter, q, or Ctrl-C
+        if l:char ==# "\<Esc>" || l:char ==# "\<CR>" || l:char ==# 'q' || l:nr == 3 || l:nr == 13
+            break
+        endif
+
+        " Handle Insert / Change modes (i, a, I, A, c, s)
+        if l:char =~# '^[iaIACSs]$' || l:char ==# 'cc' || l:char ==# 'cw' || l:char ==# 'ciw'
+            let l:input_str = ""
+            while 1
+                redraw
+                echo "-- MULTI-CURSOR INSERT -- " . l:char . l:input_str
+                let l:in_nr = getchar()
+                let l:in_char = type(l:in_nr) == type(0) ? nr2char(l:in_nr) : l:in_nr
+
+                " Confirm insertion on Esc, Enter, or Ctrl-C
+                if l:in_char ==# "\<Esc>" || l:in_char ==# "\<CR>" || l:in_nr == 3 || l:in_nr == 13
+                    break
+                elseif l:in_char ==# "\<BS>" || l:in_nr == 8
+                    if len(l:input_str) > 0
+                        let l:input_str = strpart(l:input_str, 0, len(l:input_str) - 1)
+                    endif
+                else
+                    let l:input_str .= l:in_char
+                endif
+            endwhile
+
+            " Replay insertion on all lines
+            let l:cmd = l:char . l:input_str . "\<Esc>"
+            for l:lnum in l:lines
+                call cursor(l:lnum, l:cols[l:lnum])
+                execute "normal! " . l:cmd
+                let l:cols[l:lnum] = col('.')
+            endfor
+
+        " Handle Replace char (r{char})
+        elseif l:char ==# 'r'
+            let l:r_nr = getchar()
+            let l:r_char = type(l:r_nr) == type(0) ? nr2char(l:r_nr) : l:r_nr
+            for l:lnum in l:lines
+                call cursor(l:lnum, l:cols[l:lnum])
+                execute "normal! r" . l:r_char
+                let l:cols[l:lnum] = col('.')
+            endfor
+
+        " Handle Normal motions & edits (w, b, e, h, l, $, 0, x, ~, dw, db, de, etc.)
+        else
+            let l:full_cmd = l:char
+            if l:char =~# '^[dftyg]$'
+                let l:next_nr = getchar()
+                let l:next_char = type(l:next_nr) == type(0) ? nr2char(l:next_nr) : l:next_nr
+                let l:full_cmd .= l:next_char
+                if l:next_char =~# '^[ftFT]$'
+                    let l:t_nr = getchar()
+                    let l:full_cmd .= type(l:t_nr) == type(0) ? nr2char(l:t_nr) : l:t_nr
+                endif
+            endif
+
+            for l:lnum in l:lines
+                call cursor(l:lnum, l:cols[l:lnum])
+                execute "normal! " . l:full_cmd
+                let l:cols[l:lnum] = col('.')
+            endfor
+        endif
+    endwhile
+
+    " Clean up visual highlights
+    for l:id in l:match_ids | silent! call matchdelete(l:id) | endfor
+    redraw | echo ""
+endfunction
+
+" 8.14 Smart Save with Sudo Fallback & New File Prompt (<C-s>)
+function! s:SmartSave() abort
+    let l:file = expand('%')
+
+    " Prompt for a filename if current buffer is unnamed
+    if empty(l:file)
+        call inputsave()
+        let l:filename = input('Save as: ', '', 'file')
+        call inputrestore()
+        redraw!
+
+        if empty(l:filename)
+            echohl WarningMsg | echo "Save cancelled: No filename provided" | echohl None
+            return
+        endif
+
+        execute 'file ' . fnameescape(l:filename)
+        let l:file = expand('%')
+    endif
+
+    " Save via sudo tee if file is read-only or not writable
+    if &readonly || (filewritable(l:file) != 1 && filereadable(l:file))
+        execute 'silent write !sudo tee ' . shellescape(l:file) . ' >/dev/null'
+        edit!
+        echomsg "File saved with sudo privileges: " . l:file
+    else
+        " Attempt standard write; fallback to sudo if permission is denied
+        try
+            write
+        catch /^Vim\%((\a\+)\)\=:E\(45\|212\|505\)/
+            execute 'silent write !sudo tee ' . shellescape(l:file) . ' >/dev/null'
+            edit!
+            echomsg "File saved with sudo privileges: " . l:file
+        endtry
+    endif
+endfunction
+
+" 8.15 File Explorer (Netrw tree mode - Toggle at current buffer location)
+let g:netrw_banner = 0
+let g:netrw_liststyle = 0
+let g:netrw_altv = 1
+let g:netrw_winsize = 25
+
+function! s:ToggleExplorer() abort
+    " Check if any window in the current tab is a Netrw explorer
+    for l:w in range(1, winnr('$'))
+        if getwinvar(l:w, '&ft') ==# 'netrw'
+            execute l:w . 'close'
+            return
+        endif
+    endfor
+
+    " If netrw is not open, open it at current buffer directory
+    let l:dir = expand('%:p:h')
+    if empty(l:dir) || &ft ==# 'netrw'
+        let l:dir = getcwd()
+    endif
+    execute 'Lexplore ' . fnameescape(l:dir)
+endfunction
+
+" 8.16 Display Marks in Sign Column
+highlight MarkSign guifg=#ff9e64 guibg=NONE gui=bold ctermfg=215 cterm=bold
+
+if has('signs')
+    " Define signs for marks a-z and A-Z
+    for s:c in range(char2nr('a'), char2nr('z'))
+        let s:char = nr2char(s:c)
+        execute 'sign define Mark_' . s:char . ' text=' . s:char . ' texthl=MarkSign'
+    endfor
+    for s:c in range(char2nr('A'), char2nr('Z'))
+        let s:char = nr2char(s:c)
+        execute 'sign define Mark_' . s:char . ' text=' . s:char . ' texthl=MarkSign'
+    endfor
+endif
+
+function! s:UpdateMarkSigns() abort
+    if !has('signs') | return | endif
+    let l:buf = bufnr('%')
+
+    " Clear previous mark signs in current buffer
+    call sign_unplacelist([{'buffer': l:buf, 'group': 'MarkSigns'}])
+
+    " Place signs for active marks
+    let l:marks = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    for l:i in range(len(l:marks))
+        let l:m = l:marks[l:i]
+        let l:pos = getpos("'" . l:m)
+        if l:pos[1] > 0 && (l:pos[0] == 0 || l:pos[0] == l:buf)
+            call sign_place(0, 'MarkSigns', 'Mark_' . l:m, l:buf, {'lnum': l:pos[1], 'priority': 10})
+        endif
+    endfor
+endfunction
+
+function! s:SetMarkInteractive() abort
+    redraw
+    let l:nr = getchar()
+    let l:c = type(l:nr) == type(0) ? nr2char(l:nr) : l:nr
+    if l:c =~# '^[a-zA-Z]$'
+        execute 'normal! m' . l:c
+        call s:UpdateMarkSigns()
+    endif
+endfunction
+
+function! s:DeleteAllMarks()
+    " Save current buffer number so we can return to it
+    let l:current_buf = bufnr('%')
+
+    " Suppress autocommands for speed and clear local marks across all buffers
+    noautocmd bufdo delmarks!
+
+    " Return to the original buffer without triggering autocommands
+    execute 'noautocmd buffer ' . l:current_buf
+
+    " Delete all global marks (A-Z) and numbered jump marks (0-9)
+    delmarks A-Z 0-9
+endfunction
+
+" 8.17 Buffer Pinning & Mass Close Utilities
+function! s:TogglePinBuffer() abort
+    let b:pinned = get(b:, 'pinned', 0) ? 0 : 1
+    let l:name = empty(expand('%:t')) ? '[No Name]' : expand('%:t')
+    if b:pinned
+        echomsg "Pinned buffer: " . l:name
+    else
+        echomsg "Unpinned buffer: " . l:name
+    endif
+    redrawtabline
+endfunction
+
+function! s:CloseUnpinnedBuffers() abort
+    let l:buffers = filter(range(1, bufnr('$')), 'buflisted(v:val)')
+    let l:closed = 0
+
+    for l:buf in l:buffers
+        " Skip if buffer is explicitly pinned
+        if getbufvar(l:buf, 'pinned', 0) == 1
+            continue
+        endif
+
+        " Safely delete unpinned buffer with confirmation prompt for unsaved changes
+        execute 'confirm bdelete ' . l:buf
+        let l:closed += 1
+    endfor
+
+    echomsg l:closed . " unpinned buffer(s) closed."
+
+    redrawtabline
+endfunction
 
 " ============================================================================
-" 8. KEYMAPS & SHORTCUTS (Faithful to LazyVim & project keymaps)
+" 9. KEYMAPS & SHORTCUTS (Faithful to LazyVim & project keymaps)
 " ============================================================================
 
 " --- General & Editing ---
@@ -692,23 +1070,29 @@ nnoremap <silent> <leader>cT :call <SID>ToggleTrailspace()<CR>
 nnoremap <silent> <leader>co :call <SID>ToggleHexHsl()<CR>
 vnoremap <silent> <leader>cx :<C-u>call <SID>ToggleDateTimestamp()<CR>
 
+" Save buffer with Ctrl+S (Automatic Sudo Fallback)
+nnoremap <silent> <C-s> :call <SID>SmartSave()<CR>
+inoremap <silent> <C-s> <Esc>:call <SID>SmartSave()<CR>gi
+vnoremap <silent> <C-s> <Esc>:call <SID>SmartSave()<CR>gv
+
 " Indentation (stays in visual mode after indenting)
 nnoremap <Tab> >>
 nnoremap <S-Tab> <<
 vnoremap <Tab> >gv
 vnoremap <S-Tab> <gv
 
-" Marks
-nnoremap <silent> <leader>md :call <SID>DeleteLineMarks()<CR>
-nnoremap <silent> <leader>mD :delmarks! \| delmarks A-Z0-9<CR>
+" Marks (With Instant Sign Column Display)
+nnoremap <silent> m :call <SID>SetMarkInteractive()<CR>
+nnoremap <silent> <leader>md :call <SID>DeleteLineMarks()<CR>:call <SID>UpdateMarkSigns()<CR>
+nnoremap <silent> <leader>mD :call <SID>DeleteAllMarks()<CR>:call <SID>UpdateMarkSigns()<CR>
 
-" Buffer Navigation
-nnoremap <silent> H :bprevious<CR>
-nnoremap <silent> L :bnext<CR>
-nnoremap <silent> [b :bprevious<CR>
-nnoremap <silent> ]b :bnext<CR>
-nnoremap <silent> <leader>b[ :bprevious<CR>
-nnoremap <silent> <leader>b] :bnext<CR>
+" Buffer Navigation & Reordering
+nnoremap <silent> H :call <SID>NavBuffer(-1)<CR>
+nnoremap <silent> L :call <SID>NavBuffer(1)<CR>
+nnoremap <silent> [b :call <SID>NavBuffer(-1)<CR>
+nnoremap <silent> ]b :call <SID>NavBuffer(1)<CR>
+nnoremap <silent> <leader>b[ :call <SID>MoveBufferRepeatable(-1)<CR>
+nnoremap <silent> <leader>b] :call <SID>MoveBufferRepeatable(1)<CR>
 nnoremap <silent> <leader>bb :buffers<CR>:buffer<Space>
 nnoremap <silent> <leader>bd :confirm bdelete<CR>
 
@@ -717,6 +1101,7 @@ nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
+nnoremap <silent> <leader>wd :close<CR>
 
 " Move lines up/down
 nnoremap <A-j> :m .+1<CR>==
@@ -725,6 +1110,13 @@ vnoremap <A-j> :m '>+1<CR>gv=gv
 vnoremap <A-k> :m '<-2<CR>gv=gv
 inoremap <A-j> <Esc>:m .+1<CR>==gi
 inoremap <A-k> <Esc>:m .-2<CR>==gi
+
+" Toggle Comments
+nnoremap <silent> gcc :call <SID>ToggleComment()<CR>
+xnoremap <silent> gc :<C-u>'<,'>call <SID>ToggleComment()<CR>
+
+" Interactive Multi-Cursor Submode
+xnoremap <silent> <leader>mi :<C-u>'<,'>call <SID>MultiCursorMode()<CR>
 
 " Search & Clear
 nnoremap <silent> <Esc> :nohlsearch<CR><Esc>
@@ -754,11 +1146,7 @@ nnoremap <silent> <leader>gb :call <SID>GitBlame()<CR>
 nnoremap <silent> <leader>gH :execute '!git log -p %'<CR>
 
 " File Explorer (Netrw tree mode)
-let g:netrw_banner = 0
-let g:netrw_liststyle = 0
-let g:netrw_altv = 1
-let g:netrw_winsize = 25
-nnoremap <silent> <leader>e :Lexplore<CR>
+nnoremap <silent> <leader>e :call <SID>ToggleExplorer()<CR>
 nnoremap <silent> <leader>fe :Lexplore<CR>
 
 " Format file or visual selection
@@ -777,8 +1165,12 @@ endif
 " Visual Surround (LazyVim / gsa style)
 xnoremap <silent> gsa :<C-u>call <SID>VisualSurround()<CR>
 
+" Buffer Pinning & Mass Operations
+nnoremap <silent> <leader>bp :call <SID>TogglePinBuffer()<CR>
+nnoremap <silent> <leader>bP :call <SID>CloseUnpinnedBuffers()<CR>
+
 " ============================================================================
-" 9. AUTOCOMMANDS
+" 10. AUTOCOMMANDS
 " ============================================================================
 augroup DotfilesVimrc
     autocmd!
@@ -821,3 +1213,12 @@ if executable('wl-copy')
         autocmd TextYankPost * if v:event.operator ==# 'y' | call system('wl-copy', join(v:event.regcontents, "\n")) | endif
     augroup END
 endif
+
+" Refresh mark signs in sign column
+autocmd BufEnter,BufWritePost,CursorHold * call s:UpdateMarkSigns()
+
+" Automatically wipe netrw buffers when closed so they don't linger
+augroup NetrwBufferCleanup
+    autocmd!
+    autocmd FileType netrw setlocal bufhidden=wipe
+augroup END

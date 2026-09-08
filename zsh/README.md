@@ -18,7 +18,7 @@ sudo apt install zsh git
 For the complete terminal experience with all aliases, fast fetching, directory jumping, and enhanced previews:
 
 ```bash
-sudo apt install eza fzf bat fastfetch rsync micro rar gzip tar unzip 7zip bzip2 fd-find ripgrep zoxide pv
+sudo apt install eza fzf bat fastfetch rsync micro rar gzip tar unzip 7zip bzip2 fd-find ripgrep pv vim zoxide
 ```
 
 ---
