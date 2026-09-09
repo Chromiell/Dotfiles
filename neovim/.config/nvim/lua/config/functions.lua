@@ -82,6 +82,74 @@ function M.grep_latin1()
     })
 end
 
+function M.jump_to_laravel_accessor()
+    -- Extract word under cursor and remove leading $
+    local word = vim.fn.expand("<cword>"):gsub("^%$", "")
+    if word == "" then
+        return
+    end
+
+    local current_buf = vim.api.nvim_buf_get_name(0)
+
+    -- If currently inside an ide-helper generated file
+    if current_buf:match("_ide_helper") then
+        -- 1. Search for the class name around the current cursor location
+        local class_line_num = vim.fn.search([[class\s\+\(ide_helper_\)\?\([A-Za-z0-9_]\+\)]], "nW")
+        local class_name = nil
+
+        if class_line_num > 0 then
+            local line_text = vim.fn.getline(class_line_num)
+            class_name = line_text:match("class%s+ide_helper_([%w_]+)") or line_text:match("class%s+([%w_]+)")
+        end
+
+        -- If not found downwards, search upwards
+        if not class_name then
+            class_line_num = vim.fn.search([[class\s\+\(ide_helper_\)\?\([A-Za-z0-9_]\+\)]], "bnW")
+            if class_line_num > 0 then
+                local line_text = vim.fn.getline(class_line_num)
+                class_name = line_text:match("class%s+ide_helper_([%w_]+)") or line_text:match("class%s+([%w_]+)")
+            end
+        end
+
+        if not class_name then
+            vim.notify("Could not determine Model class from ide-helper", vim.log.levels.WARN)
+            return
+        end
+
+        -- 2. Locate the actual Model file in the app directory
+        local matches = vim.fn.glob("app/**/" .. class_name .. ".php", false, true)
+        if #matches == 0 then
+            matches = vim.fn.glob("**/" .. class_name .. ".php", false, true)
+        end
+
+        if #matches == 0 then
+            vim.notify("Model file " .. class_name .. ".php not found", vim.log.levels.WARN)
+            return
+        end
+
+        -- 3. Open the actual Model file buffer
+        vim.cmd("edit " .. vim.fn.fnameescape(matches[1]))
+    end
+
+    -- Search for the accessor inside the active model buffer
+    local pascal = word:gsub("_(%l)", function(c)
+        return c:upper()
+    end):gsub("^%l", function(c)
+        return c:upper()
+    end)
+
+    local camel = pascal:sub(1, 1):lower() .. pascal:sub(2)
+    local pattern = "\\(get" .. pascal .. "Attribute\\|function\\s\\+" .. camel .. "\\)"
+    local line = vim.fn.search(pattern, "wn")
+
+    if line > 0 then
+        vim.api.nvim_win_set_cursor(0, { line, 0 })
+        vim.cmd("normal! zz")
+    else
+        vim.notify("No accessor method found for: " .. word .. " in " .. vim.fn.expand("%:t"), vim.log.levels.WARN)
+    end
+end
+
 --------------------------------------------------------------------------------
 -- 3. GIT & DIFFING
 --------------------------------------------------------------------------------

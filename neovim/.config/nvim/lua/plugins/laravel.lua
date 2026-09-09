@@ -17,7 +17,7 @@ return {
 
     -- 2. Automatically install blade-formatter via Mason
     {
-        "mason.org/mason.nvim",
+        "mason-org/mason.nvim",
         opts = function(_, opts)
             opts.ensure_installed = opts.ensure_installed or {}
             vim.list_extend(opts.ensure_installed, { "blade-formatter" })
@@ -32,5 +32,15 @@ return {
                 blade = { "blade-formatter" },
             },
         },
+    },
+
+    -- 4. Blade view & component navigation
+    {
+        "RicardoRamirezR/blade-nav.nvim",
+        dependencies = {
+            { "hrsh7th/nvim-cmp", opts = {} },
+        },
+        ft = { "blade", "php" },
+        config = true,
     },
 }
