@@ -49,6 +49,17 @@ if ok then
     })
 end
 
+-- Laravel jump to accessor
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = "php",
+    callback = function(event)
+        vim.keymap.set("n", "<leader>cj", fn.jump_to_laravel_accessor, {
+            buffer = event.buf,
+            desc = "Jump to Laravel Accessor",
+        })
+    end,
+})
+
 -- ============================================================================
 -- 3. LSP, DIAGNOSTICS & SPELLCHECK
 -- ============================================================================
