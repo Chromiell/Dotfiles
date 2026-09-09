@@ -1,4 +1,4 @@
-![Preview screenshot](./Preview.png)
+![Preview screenshot](https://raw.githubusercontent.com/Chromiell/Dotfiles/refs/heads/main/Preview.png)
 
 # Dotfiles & System Configurations (Debian-based)
 
