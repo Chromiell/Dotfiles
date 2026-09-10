@@ -21,12 +21,7 @@ vim.keymap.set("v", "<Tab>", ">gv", { desc = "Indent line" })
 vim.keymap.set("v", "<S-Tab>", "<gv", { desc = "Dedent line" })
 
 -- Marks
-vim.keymap.set(
-    "n",
-    "<leader>mD",
-    "<cmd>delmarks! | delmarks A-Z0-9<cr>",
-    { desc = "Delete all marks (local & global)" }
-)
+vim.keymap.set("n", "<leader>mD", fn.delete_all_marks, { desc = "Delete all marks (all buffers)" })
 vim.keymap.set("n", "<leader>md", fn.delete_line_marks, { desc = "Delete all marks on current line" })
 
 -- Buffer Navigation

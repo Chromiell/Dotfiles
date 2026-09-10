@@ -46,6 +46,22 @@ function M.trim_whitespace_selection()
     print("Trailing whitespace trimmed in selection!")
 end
 
+function M.delete_all_marks()
+    -- Delete local marks (a-z) across all loaded buffers
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(buf) then
+            vim.api.nvim_buf_call(buf, function()
+                vim.cmd("delmarks!")
+            end)
+        end
+    end
+
+    -- Delete global marks (A-Z, 0-9)
+    vim.cmd("delmarks A-Z0-9")
+
+    vim.notify("Cleared all marks across all buffers", vim.log.levels.INFO)
+end
+
 function M.delete_line_marks()
     local cur_line = vim.fn.line(".")
     local marks = vim.fn.getmarklist()
@@ -54,16 +70,21 @@ function M.delete_line_marks()
     local deleted_count = 0
     for _, mark in ipairs(marks) do
         if mark.pos[2] == cur_line then
-            local mark_name = mark.mark:gsub("'", "")
-            vim.cmd("delmarks " .. mark_name)
-            deleted_count = deleted_count + 1
+            -- Remove only the leading single quote
+            local mark_name = mark.mark:sub(2)
+
+            -- Only delete user-created marks (a-z, A-Z, 0-9)
+            if mark_name:match("^[a-zA-Z0-9]$") then
+                vim.cmd("delmarks " .. mark_name)
+                deleted_count = deleted_count + 1
+            end
         end
     end
 
     if deleted_count > 0 then
-        print("Deleted " .. deleted_count .. " marks from this line.")
+        vim.notify("Deleted " .. deleted_count .. " mark(s) from line " .. cur_line .. ".", vim.log.levels.INFO)
     else
-        print("No marks found on this line.")
+        vim.notify("No user marks found on line " .. cur_line .. ".", vim.log.levels.WARN)
     end
 end
 
