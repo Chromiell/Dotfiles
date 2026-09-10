@@ -1,2 +1,3 @@
 .config/zsh-config/**
 !.config/zsh-config/.p10k.zsh
+!.config/zsh-config/*.zsh
