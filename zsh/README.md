@@ -53,9 +53,32 @@ This creates symbolic links in your home directory:
 - `~/.zprofile` $\rightarrow$ `~/.dotfiles/zsh/.zprofile`
 - `~/.config/zsh-config/.p10k.zsh` $\rightarrow$ `~/.dotfiles/zsh/.config/zsh-config/.p10k.zsh`
 
+## 🧱 3. Configuration Structure
+
+`.zshrc` is intentionally kept as a small loader. It sources the numbered files in
+`~/.config/zsh-config/` in order, so dependencies are initialized before the
+configuration that uses them:
+
+```text
+~/.zshrc
+└── ~/.config/zsh-config/
+    ├── 00-startup.zsh         # Fastfetch, instant prompt, fallback widgets
+    ├── 10-plugins.zsh         # Znap and Zsh plugins
+    ├── 20-settings.zsh        # Options, history, prompt, keybindings, colors
+    ├── 30-functions.zsh       # Custom functions and pager detection
+    ├── 40-aliases.zsh         # Command, eza, tmux, and utility aliases
+    ├── 50-integrations.zsh    # fzf, zoxide, bat, VS Code, NVM, and Cargo
+    └── .p10k.zsh              # Powerlevel10k prompt configuration
+```
+
+The numeric prefixes define the load order. Add general shell behavior to
+`20-settings.zsh`, reusable shell functions to `30-functions.zsh`, aliases to
+`40-aliases.zsh`, and external tool initialization to `50-integrations.zsh`.
+Keep `.p10k.zsh` focused on Powerlevel10k prompt customization.
+
 ---
 
-## 🐚 3. Change Default Shell to Zsh
+## 🐚 4. Change Default Shell to Zsh
 
 ### Check Available Shells
 Verify that Zsh is installed and listed in `/etc/shells`:
@@ -78,7 +101,7 @@ chsh -s $(which zsh)
 
 ---
 
-## ✨ 4. Features & Included Plugins
+## ✨ 5. Features & Included Plugins
 
 - **Znap Plugin Manager:** Automatically clones and manages lightweight Zsh plugins upon first launch without manual setup.
 - **Powerlevel10k Prompt:** Ultra-fast, highly informative prompt with instant prompt loading and custom theme settings (`.p10k.zsh`).
@@ -89,7 +112,7 @@ chsh -s $(which zsh)
 
 ---
 
-## 🪟 Windows Terminal Configuration (Nerd Fonts)
+## 🪟 6. Windows Terminal Configuration (Nerd Fonts)
 
 To render icons and Powerlevel10k glyphs correctly in Windows Terminal:
 
