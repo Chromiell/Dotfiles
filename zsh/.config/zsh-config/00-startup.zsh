@@ -9,8 +9,6 @@ if [[ -z "$TMUX" && -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%
     source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-alias fastfetch="fastfetch -c ~/.config/fastfetch/fastfetch.jsonc"
-
 # Provide harmless fallback widgets until the completion plugins define them.
 if [[ -z ${widgets[menu - search]} ]]; then
     menu-search() { zle .menu-search 2>/dev/null || return 0; }

@@ -26,6 +26,9 @@ fi
 # Use ripgrep to highlight colors
 alias hl='rg --passthru --color=always'
 
+# Use fastfetch with a custom config file.
+alias fastfetch="fastfetch -c ~/.config/fastfetch/fastfetch.jsonc"
+
 # Basic file and resource aliases.
 alias cp="cp -i"     # Ask before overwriting a file.
 alias df='df -h'     # Show disk sizes in a readable format.
