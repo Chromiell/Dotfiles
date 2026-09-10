@@ -33,14 +33,4 @@ return {
             },
         },
     },
-
-    -- 4. Blade view & component navigation
-    {
-        "RicardoRamirezR/blade-nav.nvim",
-        dependencies = {
-            { "hrsh7th/nvim-cmp", opts = {} },
-        },
-        ft = { "blade", "php" },
-        config = true,
-    },
 }
