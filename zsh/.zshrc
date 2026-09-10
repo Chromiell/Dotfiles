@@ -768,6 +768,161 @@ function y() {
     rm -f -- "$tmp"
 }
 
+vardump() {
+    emulate -L zsh
+
+    # read arguments
+    local _vd_verbose=false
+    local _vd_whencolor='auto'
+    local _vd_show_help=false
+    local OPTIND OPTARG opt
+
+    while getopts 'C:vh-:' opt; do
+        case "$opt" in
+            C) _vd_whencolor=$OPTARG ;;
+            v) _vd_verbose=true ;;
+            h) _vd_show_help=true ;;
+            -)
+                case "$OPTARG" in
+                    help) _vd_show_help=true ;;
+                    *)
+                        echo "vardump: unrecognized option '--$OPTARG'" >&2
+                        return 1
+                        ;;
+                esac
+                ;;
+            *) return 1 ;;
+        esac
+    done
+    shift "$((OPTIND - 1))"
+
+    # display help message
+    if [[ $_vd_show_help == true ]]; then
+        echo "Usage: vardump [-v] [-C when] <variable_name>"
+        echo "       vardump -h | --help"
+        echo
+        echo "Inspect and format the contents and attributes of a Zsh variable."
+        echo
+        echo "Options:"
+        echo "  -v           Verbose output (displays attributes, header/footer, and length)."
+        echo "  -C WHEN      Colorize output: 'always', 'never', or 'auto' (default: auto)."
+        echo "  -h, --help   Display this help message."
+        return 0
+    fi
+
+    # read target variable name
+    local _vd_target=$1
+
+    if [[ -z $_vd_target ]]; then
+        echo 'vardump: name required as first argument' >&2
+        echo 'Try "vardump --help" for more information.' >&2
+        return 1
+    fi
+
+    # ensure the variable is defined
+    if ! typeset -p "$_vd_target" &>/dev/null; then
+        echo "variable ${(q+)_vd_target} not defined" >&2
+        return 1
+    fi
+
+    # optionally load colors
+    local color_green='' color_magenta='' color_rst='' color_dim=''
+    if [[ $_vd_whencolor == always ]] || [[ $_vd_whencolor == auto && -t 1 ]]; then
+        color_green=$'\e[32m'
+        color_magenta=$'\e[35m'
+        color_rst=$'\e[0m'
+        color_dim=$'\e[2m'
+    fi
+    local color_value=$color_green
+    local color_key=$color_magenta
+    local color_length=$color_magenta
+
+    # optionally print header
+    if $_vd_verbose; then
+        echo "${color_dim}--------------------------${color_rst}"
+        echo "${color_dim}vardump: ${color_rst}$_vd_target"
+    fi
+
+    # get type attributes directly via Zsh parameter flags
+    local _vd_raw_type="${(Pt)_vd_target}"
+    local -a _vd_attrs=(${(s:-:)_vd_raw_type})
+    local -a _vd_attributes=()
+    local _vd_typ=''
+
+    local _vd_attr
+    for _vd_attr in "${_vd_attrs[@]}"; do
+        case "$_vd_attr" in
+            array)
+                _vd_attributes+=("(a)indexed array")
+                _vd_typ='a'
+                ;;
+            association)
+                _vd_attributes+=("(A)associative array")
+                _vd_typ='A'
+                ;;
+            scalar) _vd_attributes+=("(s)scalar") ;;
+            integer) _vd_attributes+=("(i)integer") ;;
+            float) _vd_attributes+=("(f)float") ;;
+            readonly) _vd_attributes+=("(r)read-only") ;;
+            export*) _vd_attributes+=("(x)exported") ;;
+            local) _vd_attributes+=("(g)local") ;;
+            *) _vd_attributes+=("($_vd_attr)") ;;
+        esac
+    done
+
+    # optionally print attributes
+    if $_vd_verbose; then
+        echo -n "${color_dim}attributes: ${color_rst}"
+        if ((${#_vd_attributes} > 0)); then
+            echo "${(j:/:)_vd_attributes}"
+        else
+            echo '(none)'
+        fi
+    fi
+
+    # print the variable value
+    if [[ $_vd_typ == 'a' ]]; then
+        local -a _vd_ref_a=("${(@P)_vd_target}")
+        if $_vd_verbose; then
+            printf '%s %s\n' \
+                "${color_dim}length:${color_rst}" \
+                "${color_length}${#_vd_ref_a}${color_rst}"
+        fi
+        echo '('
+        local _vd_i
+        for ((_vd_i = 1; _vd_i <= ${#_vd_ref_a}; _vd_i++)); do
+            printf '\t[%s]=%s\n' \
+                "${color_key}${_vd_i}${color_rst}" \
+                "${color_value}${(q+)_vd_ref_a[_vd_i]}${color_rst}"
+        done
+        echo ')'
+    elif [[ $_vd_typ == 'A' ]]; then
+        local -A _vd_ref_A=("${(@Pkv)_vd_target}")
+        if $_vd_verbose; then
+            printf '%s %s\n' \
+                "${color_dim}length:${color_rst}" \
+                "${color_length}${#_vd_ref_A}${color_rst}"
+        fi
+        echo '('
+        local _vd_k
+        for _vd_k in "${(k)_vd_ref_A[@]}"; do
+            printf '\t[%s]=%s\n' \
+                "${color_key}${(q+)_vd_k}${color_rst}" \
+                "${color_value}${(q+)_vd_ref_A[$_vd_k]}${color_rst}"
+        done
+        echo ')'
+    else
+        local _vd_val="${(P)_vd_target}"
+        echo "${color_value}${(q+)_vd_val}${color_rst}"
+    fi
+
+    if $_vd_verbose; then
+        echo "${color_dim}--------------------------${color_rst}"
+    fi
+
+    return 0
+}
+
 # Tell zsh how to complete arguments for tp
 compdef '_arguments "1: : " "2:tmux session:_tp_sessions"' tp
 
