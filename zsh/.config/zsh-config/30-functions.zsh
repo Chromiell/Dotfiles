@@ -13,6 +13,15 @@ fi
 # File, search, display, and terminal helpers.
 # Extract one or more common archive formats.
 extract() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: extract <archive> [archive ...]"
+        echo "       extract -h | --help"
+        echo ""
+        echo "Extract one or more supported archive files."
+        echo "Supports: tar.bz2, tar.gz, tar.xz, bz2, rar, gz, tar, tbz2, tgz, zip, Z, and 7z."
+        return 0
+    fi
+
     for archive in "$@"; do
         if [ -f "$archive" ]; then
             case $archive in
@@ -38,6 +47,17 @@ extract() {
 
 # Search files in the current directory for a text pattern.
 ftext() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: ftext [options] <pattern> [file]"
+        echo "       ftext -h | --help"
+        echo ""
+        echo "Search files in the current directory for a text pattern."
+        echo "Options:"
+        echo "  --no-ignore  Include files normally ignored by ripgrep/fd."
+        echo "  --no-color   Disable colored search output."
+        return 0
+    fi
+
     local NO_IGNORE_OPT=""
     local COLOR_OPT="--color=always"
     local -a _tmp_args=()
@@ -105,6 +125,17 @@ ftext() {
 
 # Search recursively from the current directory for a text pattern.
 frtext() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: frtext [options] <pattern>"
+        echo "       frtext -h | --help"
+        echo ""
+        echo "Search recursively from the current directory for a text pattern."
+        echo "Options:"
+        echo "  --no-ignore  Include files normally ignored by ripgrep."
+        echo "  --no-color   Disable colored search output."
+        return 0
+    fi
+
     local NO_IGNORE_OPT=""
     local COLOR_OPT="--color=always"
     local -a _tmp_args=()
@@ -135,6 +166,17 @@ frtext() {
 
 # Find a filename in the current directory.
 ffile() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: ffile [options] <name-pattern>"
+        echo "       ffile -h | --help"
+        echo ""
+        echo "Find a filename in the current directory."
+        echo "Options:"
+        echo "  --no-ignore  Include files normally ignored by ripgrep/fd."
+        echo "  --no-color   Disable colored search output."
+        return 0
+    fi
+
     local NO_IGNORE_OPT=""
     local COLOR_OPT="--color=always"
     local -a _tmp_args=()
@@ -183,6 +225,17 @@ ffile() {
 
 # Find a filename recursively below the current directory.
 frfile() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: frfile [options] <name-pattern>"
+        echo "       frfile -h | --help"
+        echo ""
+        echo "Find a filename recursively below the current directory."
+        echo "Options:"
+        echo "  --no-ignore  Include files normally ignored by ripgrep/fd."
+        echo "  --no-color   Disable colored search output."
+        return 0
+    fi
+
     local NO_IGNORE_OPT=""
     local COLOR_OPT="--color=always"
     local -a _tmp_args=()
@@ -231,41 +284,105 @@ frfile() {
 
 # Copy a file while showing rsync progress.
 cpp() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: cpp <source> <destination>"
+        echo "       cpp -h | --help"
+        echo ""
+        echo "Copy a file or directory while showing rsync progress."
+        return 0
+    fi
+
     rsync -avh --progress "$1" "$2"
 }
 
 # List directories with icons.
 ld() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: ld [directory ...]"
+        echo "       ld -h | --help"
+        echo ""
+        echo "List directories with icons. With no arguments, list directories in the current directory."
+        return 0
+    fi
+
     if (($#)); then eza -d --group-directories-first --icons=auto "$@"; else eza -D --group-directories-first --icons=auto; fi
 }
 
 # List all directories, including hidden ones, with icons.
 lad() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: lad [directory ...]"
+        echo "       lad -h | --help"
+        echo ""
+        echo "List all directories, including hidden ones, with icons."
+        return 0
+    fi
+
     if (($#)); then eza -ad --group-directories-first --icons=auto "$@"; else eza -aD --group-directories-first --icons=auto; fi
 }
 
 # Show a detailed listing of directories with icons.
 lld() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: lld [directory ...]"
+        echo "       lld -h | --help"
+        echo ""
+        echo "Show detailed directory listings with icons."
+        return 0
+    fi
+
     if (($#)); then eza -alhgd --group-directories-first --icons=auto "$@"; else eza -alhgD --group-directories-first --icons=auto; fi
 }
 
 # Show detailed directory listings recursively with icons.
 lltd() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: lltd [directory ...]"
+        echo "       lltd -h | --help"
+        echo ""
+        echo "Show detailed recursive directory listings with icons."
+        return 0
+    fi
+
     if (($#)); then eza -alhgTd --group-directories-first --icons=auto "$@"; else eza -alhgTD --group-directories-first --icons=auto; fi
 }
 
 # Show detailed directory listings with total sizes.
 llld() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: llld [directory ...]"
+        echo "       llld -h | --help"
+        echo ""
+        echo "Show detailed directory listings with total sizes and icons."
+        return 0
+    fi
+
     if (($#)); then eza -alhgd --group-directories-first --total-size --icons=auto "$@"; else eza -alhgD --group-directories-first --total-size --icons=auto; fi
 }
 
 # Show recursive directory listings with total sizes.
 llltd() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: llltd [directory ...]"
+        echo "       llltd -h | --help"
+        echo ""
+        echo "Show recursive directory listings with total sizes and icons."
+        return 0
+    fi
+
     if (($#)); then eza -alhgTd --group-directories-first --total-size --icons=auto "$@"; else eza -alhgTD --group-directories-first --total-size --icons=auto; fi
 }
 
 # Display manual pages through the selected pager.
 man() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: man <page> [section]"
+        echo "       man -h | --help"
+        echo ""
+        echo "Display a manual page through the configured pager."
+        return 0
+    fi
+
     case "${_PAGER_PROG}" in
         batcat) command man "$@" | col -bx | batcat --language=man --paging=always --style=plain ;;
         bat) command man "$@" | col -bx | bat --language=man --paging=always --style=plain ;;
@@ -275,6 +392,20 @@ man() {
 
 # Create a file or stream of random data with the requested size.
 mktext() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: mktext [-f] [-r] [-s] [-p] <size> [filename]"
+        echo "       mktext -h | --help"
+        echo ""
+        echo "Create a file or stream of random data with the requested size."
+        echo "Options:"
+        echo "  -f  Overwrite an existing output file."
+        echo "  -r  Use raw random bytes instead of printable characters."
+        echo "  -s  Include symbols in generated printable data."
+        echo "  -p  Create missing parent directories for the output file."
+        echo "Sizes may use bytes, K/M/G/T, or KiB/MiB/GiB/TiB units."
+        return 0
+    fi
+
     local force=0 raw=0 printable=1 symbols=0 mkdirp=0 size_str="" outfile=""
 
     while [[ "$1" == -* ]]; do
@@ -364,6 +495,14 @@ mktext() {
 
 # Create a tmux session with a randomly generated name.
 t() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: t"
+        echo "       t -h | --help"
+        echo ""
+        echo "Create a tmux session with a randomly generated unused name and attach to it."
+        return 0
+    fi
+
     local adjs animals a n session
 
     adjs=(
@@ -398,6 +537,15 @@ t() {
 
 # Attach to a named tmux session, creating it when necessary.
 taa() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: taa [session-name]"
+        echo "       taa -h | --help"
+        echo ""
+        echo "Attach to a named tmux session, creating it when necessary."
+        echo "Defaults to the session name 'main'."
+        return 0
+    fi
+
     local name="$1"
     [ -z "$name" ] && name="main"
     tmux has-session -t "$name" 2>/dev/null && tmux attach -t "$name" || tmux new -n shell -s "$name"
@@ -405,6 +553,14 @@ taa() {
 
 # Run a command in a detached tmux session and append its output to a log.
 tbg() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: tbg <session-name> <command> [argument ...]"
+        echo "       tbg -h | --help"
+        echo ""
+        echo "Run a command in a detached tmux session and append its output to ~/tmux-logs/<session-name>.log."
+        return 0
+    fi
+
     local name="$1"
     shift
     local logfile="$HOME/tmux-logs/${name}.log"
@@ -415,6 +571,14 @@ tbg() {
 
 # Choose a tmux session with fzf and attach to it.
 tsp() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: tsp"
+        echo "       tsp -h | --help"
+        echo ""
+        echo "Choose a tmux session with fzf and attach to it."
+        return 0
+    fi
+
     local session
     session=$(tmux ls -F '#S' | fzf) || return
     tmux attach -t "$session"
@@ -422,6 +586,14 @@ tsp() {
 
 # Switch to the most recently used tmux session.
 tlast() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: tlast"
+        echo "       tlast -h | --help"
+        echo ""
+        echo "Switch to the most recently used tmux session, or attach to the newest session."
+        return 0
+    fi
+
     if [ -n "$TMUX" ]; then tmux switch-client -l 2>/dev/null && return; fi
     local session=$(tmux ls -F "#{session_created} #{session_name}" 2>/dev/null | sort -nr | awk 'NR==1 {print $2}')
     if [ -n "$session" ]; then tmux attach -t "$session"; else echo "No tmux sessions found"; fi
@@ -429,6 +601,14 @@ tlast() {
 
 # Create a tmux session and log output from all panes.
 tnl() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: tnl <session-name>"
+        echo "       tnl -h | --help"
+        echo ""
+        echo "Create a tmux session and log output from all panes to ~/tmux-logs/<session-name>.log."
+        return 0
+    fi
+
     local name="$1" logfile="$HOME/tmux-logs/${name}.log"
     if [ -z "$name" ]; then
         echo "Usage: tnl <session-name>"
@@ -443,6 +623,14 @@ tnl() {
 
 # Provide completion candidates for tmux session names.
 _tp_sessions() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: _tp_sessions"
+        echo "       _tp_sessions -h | --help"
+        echo ""
+        echo "Provide tmux session names for shell completion."
+        return 0
+    fi
+
     local -a sessions
     sessions=("${(@f)$(tmux ls -F '#S' 2>/dev/null)}")
     _describe 'tmux sessions' sessions
@@ -450,6 +638,14 @@ _tp_sessions() {
 
 # Print the last requested number of lines from a tmux pane.
 tp() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: tp <num-lines> <session-name>"
+        echo "       tp -h | --help"
+        echo ""
+        echo "Print the requested number of lines from a tmux pane."
+        return 0
+    fi
+
     local lines="$1" session="$2"
     if [ -z "$lines" ] || [ -z "$session" ]; then
         echo "Usage: tp <num-lines> <session-name>"
@@ -460,6 +656,14 @@ tp() {
 
 # Let Yazi change the current shell directory after navigation.
 function y() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: y [yazi-options ...]"
+        echo "       y -h | --help"
+        echo ""
+        echo "Launch Yazi and change the current shell directory after navigation."
+        return 0
+    fi
+
     local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
     command yazi "$@" --cwd-file="$tmp"
     IFS= read -r -d '' cwd <"$tmp"
@@ -467,6 +671,7 @@ function y() {
     rm -f -- "$tmp"
 }
 
+# Inspect and format the contents and attributes of a Zsh variable, credits @ysap.
 vardump() {
     emulate -L zsh
 
@@ -620,6 +825,312 @@ vardump() {
     fi
 
     return 0
+}
+
+# Show information about a port and the process using it.
+portinfo() {
+    # Help flag check
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: portinfo [port]"
+        echo "       portinfo -h | --help"
+        echo ""
+        echo "Displays process, working directory, parent hierarchy, and container details for a port."
+        echo "If run without arguments, interactively prompts for the port number."
+        echo "Supports redirection (e.g., portinfo 8080 > report.txt)."
+        return 0
+    fi
+
+    local port="$1"
+
+    # Prompt interactively if no port is provided
+    if [[ -z "$port" ]]; then
+        read "port?Enter port number: "
+        if [[ -z "$port" ]]; then
+            echo "No port entered. Aborting." >&2
+            return 1
+        fi
+    fi
+
+    # Validate numeric port range
+    if [[ ! "$port" =~ ^[0-9]+$ ]] || ((port < 1 || port > 65535)); then
+        echo "Error: '$port' is not a valid port number (1-65535)." >&2
+        return 1
+    fi
+
+    local pids
+    pids=($(sudo lsof -ti :"$port" 2>/dev/null))
+
+    if [[ ${#pids[@]} -eq 0 ]]; then
+        echo "No active process found on port $port"
+        return 0
+    fi
+
+    echo "Port $port details:"
+    for pid in "${pids[@]}"; do
+        local cmd=$(ps -p "$pid" -o command= 2>/dev/null | xargs)
+
+        # Resolve the exact IP:Port binding for this PID (e.g., 127.0.0.1:8080 or *:8080)
+        local addr=$(sudo lsof -a -p "$pid" -i :"$port" -P -n -Fn 2>/dev/null | sed -n 's/^n\([^ ]*\).*/\1/p' | head -n 1)
+        [[ -z "$addr" ]] && addr="*:$port"
+
+        echo "----------------------------------------"
+        echo "PID:     $pid"
+        echo "Address: $addr"
+        echo "Command: $cmd"
+
+        # Check working directory
+        if command -v pwdx >/dev/null 2>&1; then
+            echo "CWD:     $(sudo pwdx "$pid" 2>/dev/null | cut -d' ' -f2-)"
+        else
+            echo "CWD:     $(sudo lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')"
+        fi
+
+        # Trace parent processes up to PID 1
+        local parent_chain=()
+        local curr_pid="$pid"
+        while true; do
+            local ppid=$(ps -p "$curr_pid" -o ppid= 2>/dev/null | xargs)
+            if [[ -z "$ppid" || "$ppid" -eq 0 || "$ppid" -eq "$curr_pid" ]]; then
+                break
+            fi
+            parent_chain+=("$ppid")
+            curr_pid="$ppid"
+        done
+
+        if [[ ${#parent_chain[@]} -gt 0 ]]; then
+            echo "Parent Process Chain:"
+            for ppid in "${parent_chain[@]}"; do
+                local pcmd=$(ps -p "$ppid" -o command= 2>/dev/null | xargs)
+                echo "  ↳ PID $ppid: $pcmd"
+            done
+        fi
+
+        # Extract cgroups for Docker and Podman container IDs (Linux)
+        local docker_cid="" podman_cid=""
+        if [[ -f "/proc/$pid/cgroup" ]]; then
+            docker_cid=$(grep -oE '(docker-|/docker/)[0-9a-f]{12,64}' "/proc/$pid/cgroup" 2>/dev/null | head -n 1 | sed -E 's/(docker-|\/docker\/)//;s/\.scope//')
+            podman_cid=$(grep -oE '(libpod-|/libpod/)[0-9a-f]{12,64}' "/proc/$pid/cgroup" 2>/dev/null | head -n 1 | sed -E 's/(libpod-|\/libpod\/)//;s/\.scope//')
+        fi
+
+        local fmt_str="ID:      {{.ID}}\nName:    {{.Names}}\nImage:   {{.Image}}\nStatus:  {{.Status}}"
+
+        # Inspect Docker
+        if command -v docker >/dev/null 2>&1; then
+            if [[ -n "$docker_cid" ]]; then
+                echo "Docker Container Details:"
+                sudo docker ps --filter "id=$docker_cid" --format "$fmt_str" 2>/dev/null | sed 's/^/  /'
+            elif [[ "$cmd" == *"docker-proxy"* ]]; then
+                echo "Docker Container Details:"
+                sudo docker ps --filter "publish=$port" --format "$fmt_str" 2>/dev/null | sed 's/^/  /'
+            fi
+        fi
+
+        # Inspect Podman
+        if command -v podman >/dev/null 2>&1; then
+            if [[ -n "$podman_cid" ]]; then
+                echo "Podman Container Details:"
+                podman ps --filter "id=$podman_cid" --format "$fmt_str" 2>/dev/null | sed 's/^/  /'
+            elif [[ "$cmd" == *"conmon"* ]]; then
+                local cid=$(echo "$cmd" | grep -oE '\-c [0-9a-f]{12,64}' | awk '{print $2}')
+                if [[ -n "$cid" ]]; then
+                    echo "Podman Container Details:"
+                    podman ps --filter "id=$cid" --format "$fmt_str" 2>/dev/null | sed 's/^/  /'
+                fi
+            elif [[ "$cmd" == *"rootlessport"* || "$cmd" == *"podman"* ]]; then
+                echo "Podman Container Details:"
+                podman ps --filter "publish=$port" --format "$fmt_str" 2>/dev/null | sed 's/^/  /'
+            fi
+        fi
+    done
+    echo "----------------------------------------"
+}
+
+# Show ports used by a process and its children.
+processinfo() {
+    # Help flag check
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage: processinfo [PID] [> output.txt]"
+        echo "       processinfo -h | --help"
+        echo ""
+        echo "Displays process details, working directory, parent hierarchy, active network ports (for main process and children), and container info (Docker/Podman)."
+        echo "If run without arguments, launches an interactive process search."
+        echo "Supports redirection (e.g., processinfo > report.txt)."
+        return 0
+    fi
+
+    local main_pid="$1"
+
+    # Interactive search mode if no PID is provided
+    if [[ -z "$main_pid" ]]; then
+        local search_term
+        read "search_term?Enter process name or term to search: "
+
+        if [[ -z "$search_term" ]]; then
+            echo "No search term entered. Aborting." >&2
+            return 1
+        fi
+
+        # Find matching PIDs (case-insensitive full command match)
+        local -a matches=($(pgrep -i -f "$search_term" 2>/dev/null))
+
+        if [[ ${#matches[@]} -eq 0 ]]; then
+            echo "No processes found matching '$search_term'." >&2
+            return 1
+        fi
+
+        echo "\nMatching processes for '$search_term':" >&2
+        local i=1
+        for m in "${matches[@]}"; do
+            local cmd=$(ps -p "$m" -o command= 2>/dev/null | xargs)
+            echo "  [$i] PID $m: $cmd" >&2
+            ((i++))
+        done
+
+        local choice
+        read "choice?Select process number (1-${#matches[@]}): "
+
+        if [[ ! "$choice" =~ ^[0-9]+$ ]] || ((choice < 1 || choice > ${#matches[@]})); then
+            echo "Invalid selection. Aborting." >&2
+            return 1
+        fi
+
+        main_pid="${matches[$choice]}"
+    fi
+
+    # Validate selected/provided PID
+    if ! ps -p "$main_pid" >/dev/null 2>&1; then
+        echo "Error: Process ID '$main_pid' not found." >&2
+        return 1
+    fi
+
+    local main_cmd=$(ps -p "$main_pid" -o command= 2>/dev/null | xargs)
+
+    # Check working directory (CWD / PWD)
+    local main_cwd=""
+    if command -v pwdx >/dev/null 2>&1; then
+        main_cwd=$(sudo pwdx "$main_pid" 2>/dev/null | cut -d' ' -f2-)
+    else
+        main_cwd=$(sudo lsof -a -p "$main_pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')
+    fi
+
+    # Trace parent process chain up to PID 1
+    local parent_chain=()
+    local curr_pid="$main_pid"
+    while true; do
+        local ppid=$(ps -p "$curr_pid" -o ppid= 2>/dev/null | xargs)
+        if [[ -z "$ppid" || "$ppid" -eq 0 || "$ppid" -eq "$curr_pid" ]]; then
+            break
+        fi
+        parent_chain+=("$ppid")
+        curr_pid="$ppid"
+    done
+
+    # Print inspected process overview
+    echo "\nProcess Details for PID $main_pid:"
+    echo "----------------------------------------"
+    echo "PID:     $main_pid"
+    echo "Command: $main_cmd"
+    echo "CWD:     $main_cwd"
+
+    if [[ ${#parent_chain[@]} -gt 0 ]]; then
+        echo "Parent Process Chain:"
+        for ppid in "${parent_chain[@]}"; do
+            local pcmd=$(ps -p "$ppid" -o command= 2>/dev/null | xargs)
+            echo "  ↳ PID $ppid: $pcmd"
+        done
+    fi
+
+    # Collect target PID and all descendant child PIDs recursively
+    local -a pids=("$main_pid")
+    local -a queue=("$main_pid")
+
+    while ((${#queue} > 0)); do
+        local curr="${queue[1]}"
+        shift queue
+        local children=($(pgrep -P "$curr" 2>/dev/null))
+        for child in "${children[@]}"; do
+            pids+=("$child")
+            queue+=("$child")
+        done
+    done
+
+    echo "\nNetwork ports for PID $main_pid and child processes:"
+    echo "----------------------------------------"
+
+    local found=0
+    for pid in "${pids[@]}"; do
+        local sockets=$(sudo lsof -a -p "$pid" -i -P -n 2>/dev/null)
+
+        if [[ -n "$sockets" ]]; then
+            found=1
+            local cmd=$(ps -p "$pid" -o command= 2>/dev/null | xargs)
+
+            # Dynamic indentation based on hierarchy
+            local s_indent="  "
+            local c_indent="    "
+
+            if [[ "$pid" -eq "$main_pid" ]]; then
+                echo "Main PID $pid: $cmd"
+            else
+                echo "  Child PID $pid: $cmd"
+                s_indent="    "
+                c_indent="      "
+            fi
+
+            echo "$sockets" | awk -v pad="$s_indent" 'NR>1 {printf "%s%-6s %-6s %s\n", pad, $5, $8, $9}'
+
+            # --- Container Inspection (Docker & Podman) ---
+            local docker_cid="" podman_cid=""
+
+            if [[ -f "/proc/$pid/cgroup" ]]; then
+                docker_cid=$(grep -oE '(docker-|/docker/)[0-9a-f]{12,64}' "/proc/$pid/cgroup" 2>/dev/null | head -n 1 | sed -E 's/(docker-|\/docker\/)//;s/\.scope//')
+                podman_cid=$(grep -oE '(libpod-|/libpod/)[0-9a-f]{12,64}' "/proc/$pid/cgroup" 2>/dev/null | head -n 1 | sed -E 's/(libpod-|\/libpod\/)//;s/\.scope//')
+            fi
+
+            local fmt_str="ID:      {{.ID}}\nName:    {{.Names}}\nImage:   {{.Image}}\nStatus:  {{.Status}}"
+
+            # Check Docker
+            if command -v docker >/dev/null 2>&1; then
+                if [[ -n "$docker_cid" ]]; then
+                    echo "${s_indent}Docker Container Details:"
+                    sudo docker ps --filter "id=$docker_cid" --format "$fmt_str" 2>/dev/null | sed "s/^/$c_indent/"
+                elif [[ "$cmd" == *"docker-proxy"* ]]; then
+                    local host_port=$(echo "$cmd" | grep -oE '\-host-port [0-9]+' | awk '{print $2}')
+                    if [[ -n "$host_port" ]]; then
+                        echo "${s_indent}Docker Container Details:"
+                        sudo docker ps --filter "publish=$host_port" --format "$fmt_str" 2>/dev/null | sed "s/^/$c_indent/"
+                    fi
+                fi
+            fi
+
+            # Check Podman
+            if command -v podman >/dev/null 2>&1; then
+                if [[ -n "$podman_cid" ]]; then
+                    echo "${s_indent}Podman Container Details:"
+                    podman ps --filter "id=$podman_cid" --format "$fmt_str" 2>/dev/null | sed "s/^/$c_indent/"
+                elif [[ "$cmd" == *"conmon"* ]]; then
+                    local cid=$(echo "$cmd" | grep -oE '\-c [0-9a-f]{12,64}' | awk '{print $2}')
+                    if [[ -n "$cid" ]]; then
+                        echo "${s_indent}Podman Container Details:"
+                        podman ps --filter "id=$cid" --format "$fmt_str" 2>/dev/null | sed "s/^/$c_indent/"
+                    fi
+                elif [[ "$cmd" == *"rootlessport"* || "$cmd" == *"podman"* ]]; then
+                    local bound_port=$(echo "$sockets" | awk 'NR>1 {print $9}' | grep -oE '[0-9]+$' | head -n 1)
+                    if [[ -n "$bound_port" ]]; then
+                        echo "${s_indent}Podman Container Details:"
+                        podman ps --filter "publish=$bound_port" --format "$fmt_str" 2>/dev/null | sed "s/^/$c_indent/"
+                    fi
+                fi
+            fi
+
+            echo ""
+        fi
+    done
+
+    if ((! found)); then
+        echo "No open network ports found for PID $main_pid or its children."
+    fi
+    echo "----------------------------------------"
 }
 
 # Complete the line count and tmux session arguments for tp.
