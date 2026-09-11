@@ -10,6 +10,7 @@ setopt notify              # report the status of background jobs immediately
 setopt numericglobsort     # sort filenames numerically when it makes sense
 setopt promptsubst         # enable command substitution in prompt
 setopt globdots            # lets files beginning with a . be matched without explicitly specifying the dot
+setopt ignore_eof          # don't exit on end-of-file (Ctrl+D)
 
 # Hide the end-of-line marker that Zsh shows when a command wraps.
 PROMPT_EOL_MARK=""
