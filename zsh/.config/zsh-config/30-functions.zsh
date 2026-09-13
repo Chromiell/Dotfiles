@@ -45,6 +45,57 @@ extract() {
     done
 }
 
+# Compress one or more files/directories into a specified archive format.
+compress() {
+    if [[ "$1" == "-h" || "$1" == "--help" || $# -lt 2 ]]; then
+        echo "Usage: compress <archive_name> <file_or_dir> [file_or_dir ...]"
+        echo "       compress -h | --help"
+        echo ""
+        echo "Compress target file(s) or directory(ies) into an archive."
+        echo "Supports: .tar.gz, .tgz, .tar.bz2, .tbz2, .tar.xz, .tar, .zip, .7z, .rar, .gz, .bz2"
+        return 0
+    fi
+
+    local archive="$1"
+    shift  # Remove the archive name from the argument list
+
+    # Check that all remaining source files/directories exist
+    for source in "$@"; do
+        if [[ ! -e "$source" ]]; then
+            echo "'$source' does not exist!"
+            return 1
+        fi
+    done
+
+    case "$archive" in
+        *.tar.gz|*.tgz)   tar czvf "$archive" "$@" ;;
+        *.tar.bz2|*.tbz2) tar cjvf "$archive" "$@" ;;
+        *.tar.xz)         tar cJvf "$archive" "$@" ;;
+        *.tar)            tar cvf  "$archive" "$@" ;;
+        *.zip)            zip -r   "$archive" "$@" ;;
+        *.7z)             7z a     "$archive" "$@" ;;
+        *.rar)            rar a    "$archive" "$@" ;;
+        *.gz)
+            if [[ $# -gt 1 || -d "$1" ]]; then
+                echo "Error: .gz can only compress a single file directly. Use .tar.gz for multiple files or directories."
+                return 1
+            fi
+            gzip -k "$1"  # -k keeps original file
+            ;;
+        *.bz2)
+            if [[ $# -gt 1 || -d "$1" ]]; then
+                echo "Error: .bz2 can only compress a single file directly. Use .tar.bz2 for multiple files or directories."
+                return 1
+            fi
+            bzip2 -k "$1" # -k keeps original file
+            ;;
+        *)
+            echo "Unsupported archive format for '$archive'!"
+            return 1
+            ;;
+    esac
+}
+
 # Search files in the current directory for a text pattern.
 ftext() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
