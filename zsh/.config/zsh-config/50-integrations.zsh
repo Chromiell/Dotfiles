@@ -14,18 +14,6 @@ if (( $+commands[zoxide] )); then
     fi
 fi
 
-if whence -p batcat >/dev/null 2>&1; then
-    alias bat="batcat --paging=never"
-    alias batcatt="batcat --style=plain --paging=always"
-    alias batcat="batcat --paging=always"
-    alias batt="batcat -pp"
-elif whence -p bat >/dev/null 2>&1; then
-    alias bat="bat --paging=never"
-    alias batcatt="bat --style=plain --paging=always"
-    alias batcat="bat --paging=always"
-    alias batt="bat -pp"
-fi
-
 # Load the local Powerlevel10k prompt configuration, if present.
 [[ ! -f ~/.config/zsh-config/.p10k.zsh ]] || source ~/.config/zsh-config/.p10k.zsh
 

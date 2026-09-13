@@ -38,6 +38,12 @@ vnoremap <Space> <Nop>
 let g:autoformat = 0
 let g:omni_sql_no_default_maps = 1
 
+" Prevent terminal escape sequence leakage (Kitty / xterm)
+set t_RV=
+set t_u7=
+set t_RF=
+set t_RB=
+
 " ============================================================================
 " 2. INDENTATION & FORMATTING (Default: 4 Spaces)
 " ============================================================================
@@ -178,6 +184,39 @@ function! s:ApplyTokyoNightHighlights() abort
     highlight TabLine     guibg=#12131d guifg=#828bb8 gui=NONE ctermbg=234 ctermfg=242 cterm=NONE
     highlight TabLineSel  guibg=#2f334d guifg=#82aaff gui=bold ctermbg=236 ctermfg=215 cterm=bold
     highlight TabLineFill guibg=#12131d guifg=#12131d gui=NONE ctermbg=234 ctermfg=234 cterm=NONE
+
+    " Git SignColumn Highlights
+    highlight GitSignAdd    guifg=#c3e88d guibg=NONE gui=bold ctermfg=150
+    highlight GitSignChange guifg=#82aaff guibg=NONE gui=bold ctermfg=111
+    highlight GitSignDelete guifg=#ff757f guibg=NONE gui=bold ctermfg=204
+
+    if has('signs')
+        sign define GitSignAdd    text=▎ texthl=GitSignAdd
+        sign define GitSignChange text=▎ texthl=GitSignChange
+        sign define GitSignDelete text= texthl=GitSignDelete
+    endif
+
+    " Git Hunk Preview Highlight
+    highlight GitPreviewDelete guifg=#ff757f guibg=#2d202a gui=bold ctermfg=204 ctermbg=235
+
+    " Git Diffs
+    highlight DiffAdd           guibg=#283b4d guifg=NONE ctermbg=24
+    highlight DiffChange        guibg=#272d43 guifg=NONE ctermbg=236
+    highlight DiffText          guibg=#394b70 guifg=NONE gui=bold ctermbg=60
+    highlight DiffDelete        guibg=#3f2d3d guifg=#ff757f ctermbg=52 ctermfg=204
+
+    " Git Diff Syntax Highlights for Popup & Files
+    highlight! diffRemoved guifg=#ff757f guibg=#2d202a gui=bold ctermfg=204 ctermbg=235
+    highlight! diffAdded   guifg=#73daca guibg=#192b27 gui=bold ctermfg=120 ctermbg=236
+    highlight! diffLine    guifg=#7aa2f7 guibg=NONE    gui=bold ctermfg=39
+    highlight! diffSubname guifg=#7aa2f7 guibg=NONE    ctermfg=39
+
+    " Git Preview Popup Highlights
+    highlight GitPreviewPopup   guibg=#1f2335 guifg=#c0caf5 ctermbg=235 ctermfg=252
+    highlight GitPreviewBorder  guibg=#1f2335 guifg=#3b4261 ctermbg=235 ctermfg=60
+    highlight GitPreviewAdded   guifg=#73daca guibg=#192b27 gui=bold ctermfg=120 ctermbg=236
+    highlight GitPreviewRemoved guifg=#ff757f guibg=#2d202a gui=bold ctermfg=204 ctermbg=235
+    highlight GitPreviewHeader  guifg=#7aa2f7 guibg=NONE    gui=bold ctermfg=39
 endfunction
 
 call s:ApplyTokyoNightHighlights()
@@ -230,17 +269,17 @@ function! GitBranchStatus() abort
     if exists('b:git_status_cache')
         return b:git_status_cache
     endif
-    let l:dir = expand('%:p:h')
+    let l:dir = expand(fnamemodify(resolve(expand('%:p')), ':h'))
     if empty(l:dir) || !isdirectory(l:dir)
         let b:git_status_cache = ''
         return ''
     endif
-    let l:branch = trim(system('git -C ' . shellescape(l:dir) . ' rev-parse --abbrev-ref HEAD 2>/dev/null'))
+    let l:branch = s:SafeSystem('git -C ' . shellescape(l:dir) . ' rev-parse --abbrev-ref HEAD')
     if v:shell_error != 0 || empty(l:branch)
         let b:git_status_cache = ''
         return ''
     endif
-    let l:count = trim(system('git -C ' . shellescape(l:dir) . ' status --porcelain 2>/dev/null | grep -v "\.swp$" | wc -l'))
+    let l:count = s:SafeSystem('git -C ' . shellescape(l:dir) . ' status --porcelain | grep -v "\.swp$" | wc -l')
     let l:cnt = str2nr(l:count)
     if l:cnt > 0
         let b:git_status_cache = ' 󰊢 ' . l:branch . ' (' . l:cnt . ') '
@@ -255,12 +294,12 @@ function! RefreshGitCache() abort
 endfunction
 
 set laststatus=2
-set statusline=%{%ModeStatus()%}
-set statusline+=%{GitBranchStatus()}
-set statusline+=%#StatFile#\ %f\ %m%r%h%w
-set statusline+=%=
-set statusline+=%#StatEnc#\ %{&fileencoding?&fileencoding:&encoding}\ [%{&fileformat}]\ %Y\
-set statusline+=%#StatPos#\ %l:%c\ %P\
+let &statusline = '%{%ModeStatus()%}'
+let &statusline .= '%{GitBranchStatus()}'
+let &statusline .= '%#StatFile# %f %m%r%h%w'
+let &statusline .= '%='
+let &statusline .= '%#StatEnc# %{GetFileMime()} [%{&fileformat}] %Y '
+let &statusline .= '%#StatPos# %l:%c %P '
 
 " ============================================================================
 " 7. TOP BUFFERLINE (Display active buffers across the top)
@@ -1058,6 +1097,330 @@ function! s:CloseUnpinnedBuffers() abort
     redrawtabline
 endfunction
 
+" 8.18 File MIME Type Detection
+function! GetFileMime() abort
+    if exists('b:file_mime_type')
+        return b:file_mime_type
+    endif
+    let l:file = resolve(expand('%:p'))
+    if empty(l:file) || !filereadable(l:file)
+        let b:file_mime_type = ''
+        return ''
+    endif
+    let b:file_mime_type = s:SafeSystem('file -biL ' . shellescape(l:file))
+    return b:file_mime_type
+endfunction
+
+function! RefreshFileMimeCache() abort
+    unlet! b:file_mime_type
+endfunction
+
+" 8.19 Safe System Command Wrapper (Suppresses stderr)
+function! s:SafeSystem(cmd) abort
+    let l:save_shell = &shell
+    let &shell = '/bin/sh'
+    let l:out = system(a:cmd . ' 2>/dev/null')
+    let &shell = l:save_shell
+    return trim(l:out)
+endfunction
+
+" 8.20 Git Diff Signs (Add/Change/Delete)
+function! s:UpdateGitSigns() abort
+    if !has('signs') | return | endif
+    let l:buf = bufnr('%')
+    let l:file = resolve(expand('%:p'))
+    if empty(l:file) || !filereadable(l:file)
+        call sign_unplacelist([{'buffer': l:buf, 'group': 'GitSigns'}])
+        return
+    endif
+
+    let l:dir = expand(fnamemodify(l:file, ':h'))
+    let l:diff = s:SafeSystem('git -C ' . shellescape(l:dir) . ' diff -U0 --no-color -- ' . shellescape(l:file))
+
+    call sign_unplacelist([{'buffer': l:buf, 'group': 'GitSigns'}])
+    if empty(l:diff) | return | endif
+
+    for l:line in split(l:diff, "\n")
+        if l:line =~# '^@@'
+            let l:m = matchlist(l:line, '^@@ -\(\d\+\)\,\?\(\d*\) +\(\d\+\)\,\?\(\d*\) @@')
+            if !empty(l:m)
+                let l:old_cnt   = l:m[2] ==# '' ? 1 : str2nr(l:m[2])
+                let l:new_start = str2nr(l:m[3])
+                let l:new_cnt   = l:m[4] ==# '' ? 1 : str2nr(l:m[4])
+
+                if l:old_cnt == 0
+                    for l:i in range(0, l:new_cnt - 1)
+                        call sign_place(0, 'GitSigns', 'GitSignAdd', l:buf, {'lnum': l:new_start + l:i, 'priority': 8})
+                    endfor
+                elseif l:new_cnt == 0
+                    let l:lnum = l:new_start == 0 ? 1 : l:new_start
+                    call sign_place(0, 'GitSigns', 'GitSignDelete', l:buf, {'lnum': l:lnum, 'priority': 8})
+                else
+                    let l:mod_cnt = min([l:old_cnt, l:new_cnt])
+                    for l:i in range(0, l:mod_cnt - 1)
+                        call sign_place(0, 'GitSigns', 'GitSignChange', l:buf, {'lnum': l:new_start + l:i, 'priority': 8})
+                    endfor
+                    if l:new_cnt > l:old_cnt
+                        for l:i in range(l:mod_cnt, l:new_cnt - 1)
+                            call sign_place(0, 'GitSigns', 'GitSignAdd', l:buf, {'lnum': l:new_start + l:i, 'priority': 8})
+                        endfor
+                    endif
+                endif
+            endif
+        endif
+    endfor
+endfunction
+
+" 8.21 Git Hunk Navigation (Next/Previous)
+function! s:JumpGitHunk(dir) abort
+    let l:buf = bufnr('%')
+    let l:placed = sign_getplaced(l:buf, {'group': 'GitSigns'})
+    if empty(l:placed) || empty(l:placed[0].signs)
+        echomsg "No Git hunks found"
+        return
+    endif
+
+    " Extract and sort line numbers
+    let l:lines = []
+    for l:s in l:placed[0].signs
+        call add(l:lines, l:s.lnum)
+    endfor
+    call sort(l:lines, 'n')
+
+    " Group contiguous lines into hunk starts
+    let l:hunk_starts = []
+    let l:prev = -999
+    for l:l in l:lines
+        if l:l != l:prev + 1
+            call add(l:hunk_starts, l:l)
+        endif
+        let l:prev = l:l
+    endfor
+
+    let l:cur = line('.')
+
+    if a:dir > 0
+        " Jump forward to next hunk (wraps to first)
+        for l:hs in l:hunk_starts
+            if l:hs > l:cur
+                call cursor(l:hs, 1)
+                return
+            endif
+        endfor
+        call cursor(l:hunk_starts[0], 1)
+    else
+        " Jump backward to previous hunk (wraps to last)
+        for l:hs in reverse(copy(l:hunk_starts))
+            if l:hs < l:cur
+                call cursor(l:hs, 1)
+                return
+            endif
+        endfor
+        call cursor(l:hunk_starts[-1], 1)
+    endif
+endfunction
+
+" 8.22 Follow Symlinks (Resolve and open target file)
+function! s:FollowSymlink() abort
+    let l:file = expand('%:p')
+    if getftype(l:file) ==# 'link'
+        let l:target = resolve(l:file)
+        if l:target !=# l:file && filereadable(l:target)
+            silent! execute 'file ' . fnameescape(l:target)
+            silent! edit!
+        endif
+    endif
+endfunction
+
+" 8.23 Git Hunk Preview & Reset
+function! s:GetCurrentHunkDiff() abort
+    let l:file = resolve(expand('%:p'))
+    if empty(l:file) || !filereadable(l:file) | return [] | endif
+    let l:dir = expand(fnamemodify(l:file, ':h'))
+    let l:cur = line('.')
+
+    let l:diff_out = s:SafeSystem('git -C ' . shellescape(l:dir) . ' diff -U0 -- ' . shellescape(l:file))
+    if empty(l:diff_out) | return [] | endif
+
+    let l:raw_lines = split(l:diff_out, "\n")
+    let l:current_hunk = []
+    let l:in_hunk = 0
+    let l:hunk_start = 0
+    let l:hunk_end = 0
+
+    for l:line in l:raw_lines
+        if l:line =~# '^@@'
+            if !empty(l:current_hunk) && l:cur >= l:hunk_start && l:cur <= l:hunk_end
+                return l:current_hunk
+            endif
+            let l:m = matchlist(l:line, '^@@ -\(\d\+\)\,\?\(\d*\) +\(\d\+\)\,\?\(\d*\) @@')
+            if !empty(l:m)
+                let l:new_start = str2nr(l:m[3])
+                let l:new_cnt   = l:m[4] ==# '' ? 1 : str2nr(l:m[4])
+                let l:hunk_start = l:new_start == 0 ? 1 : l:new_start
+                let l:hunk_end   = l:hunk_start + (l:new_cnt > 0 ? l:new_cnt - 1 : 0)
+                let l:current_hunk = [l:line]
+                let l:in_hunk = 1
+            endif
+        elseif l:in_hunk
+            call add(l:current_hunk, l:line)
+        endif
+    endfor
+
+    if !empty(l:current_hunk) && l:cur >= l:hunk_start && l:cur <= l:hunk_end
+        return l:current_hunk
+    endif
+
+    return []
+endfunction
+
+let s:git_preview_winid = 0
+
+" Reset window ID state when popup closes
+function! s:GitPreviewClosed(winid, result) abort
+  let s:git_preview_winid = 0
+endfunction
+
+" Key filter for scrolling and closing the popup
+function! s:GitPreviewFilter(winid, key) abort
+  if a:key ==# 'q' || a:key ==# "\<Esc>"
+    call popup_close(a:winid)
+    let s:git_preview_winid = 0
+    return 1
+  elseif a:key ==# 'j' || a:key ==# "\<C-d>"
+    let l:firstline = get(popup_getoptions(a:winid), 'firstline', 1)
+    call popup_setoptions(a:winid, {'firstline': l:firstline + 1})
+    return 1
+  elseif a:key ==# 'k' || a:key ==# "\<C-u>"
+    let l:firstline = get(popup_getoptions(a:winid), 'firstline', 1)
+    call popup_setoptions(a:winid, {'firstline': max([1, l:firstline - 1])})
+    return 1
+  endif
+  return 0
+endfunction
+
+function! s:PreviewGitHunk() abort
+  " Toggle close if pressing shortcut while popup is open
+  if s:git_preview_winid > 0 && !empty(popup_getpos(s:git_preview_winid))
+    call popup_close(s:git_preview_winid)
+    let s:git_preview_winid = 0
+    return
+  endif
+
+  let l:file = expand('%:p')
+  if empty(l:file) || !filereadable(l:file) | return | endif
+
+  let l:dir = expand('%:p:h')
+  let l:cur_line = line('.')
+
+  let l:raw_diff = s:SafeSystem('git -C ' . shellescape(l:dir) . ' diff -U0 -- ' . shellescape(l:file))
+  if empty(l:raw_diff)
+    echo "No diff found"
+    return
+  endif
+
+  let l:diff_lines = split(l:raw_diff, "\n")
+  let l:hunk_content = []
+  let l:in_target_hunk = 0
+
+  for l:line in l:diff_lines
+    if l:line =~ '^@@'
+      let l:tokens = matchlist(l:line, '^@@ -\(\d\+\)\,\?\(\d*\) +\(\d\+\)\,\?\(\d*\) @@')
+      if !empty(l:tokens)
+        let l:new_start = str2nr(l:tokens[3])
+        let l:new_count = empty(l:tokens[4]) ? 1 : str2nr(l:tokens[4])
+        let l:new_end = l:new_count == 0 ? l:new_start : l:new_start + l:new_count - 1
+
+        if l:cur_line >= l:new_start && l:cur_line <= max([l:new_start, l:new_end])
+          let l:in_target_hunk = 1
+          call add(l:hunk_content, l:line)
+        else
+          let l:in_target_hunk = 0
+        endif
+      endif
+    elseif l:in_target_hunk
+      call add(l:hunk_content, l:line)
+    endif
+  endfor
+
+  if empty(l:hunk_content)
+    echo "No hunk at current line"
+    return
+  endif
+
+  if exists('*popup_atcursor')
+    let s:git_preview_winid = popup_atcursor(l:hunk_content, {
+          \   'padding': [0, 1, 0, 1],
+          \   'border': [1, 1, 1, 1],
+          \   'borderchars': ['─', '│', '─', '│', '┌', '┐', '┘', '└'],
+          \   'highlight': 'GitPreviewPopup',
+          \   'borderhighlight': ['GitPreviewBorder'],
+          \   'filter': function('s:GitPreviewFilter'),
+          \   'callback': function('s:GitPreviewClosed'),
+          \   'close': 'click'
+          \ })
+
+    " Apply syntax highlighting rules directly inside the popup window context
+    call win_execute(s:git_preview_winid, 'call matchadd("GitPreviewAdded", "^\+.*")')
+    call win_execute(s:git_preview_winid, 'call matchadd("GitPreviewRemoved", "^-.*")')
+    call win_execute(s:git_preview_winid, 'call matchadd("GitPreviewHeader", "^@@.*")')
+  else
+    echo join(l:hunk_content, "\n")
+  endif
+endfunction
+
+function! s:ResetHunk() abort
+    let l:file = expand('%:p')
+    if empty(l:file) | return | endif
+
+    update " Flush unsaved buffer edits to disk before computing diff
+
+    let l:line = line('.')
+    let l:repo = trim(system('git -C ' . shellescape(expand('%:p:h')) . ' rev-parse --show-toplevel'))
+    if empty(l:repo) | return | endif
+    let l:rel_file = substitute(l:file, '^' . escape(l:repo, '/\.') . '/', '', '')
+    let l:diff = systemlist('git -C ' . shellescape(l:repo) . ' diff ' . shellescape(l:rel_file))
+
+    let l:in_hunk = 0
+    let l:hunk = []
+
+    for l:line_str in l:diff
+        if l:line_str =~ '^@@'
+            if l:in_hunk
+                break
+            endif
+            let l:match = matchlist(l:line_str, '^@@ -\(\d\+\)\?,\?\(\d\+\)\? +\(\d\+\)\?,\?\(\d\+\)\? @@')
+            if !empty(l:match)
+                let l:new_start = str2nr(l:match[3])
+                let l:new_count = empty(l:match[4]) ? 1 : str2nr(l:match[4])
+                let l:new_end = l:new_count == 0 ? l:new_start + 1 : l:new_start + l:new_count - 1
+                let l:check_start = max([1, l:new_start - 1])
+                if l:line >= l:check_start && l:line <= l:new_end + 1
+                    let l:in_hunk = 1
+                    call add(l:hunk, l:line_str)
+                endif
+            endif
+        elseif l:in_hunk
+            call add(l:hunk, l:line_str)
+        endif
+    endfor
+
+    if empty(l:hunk)
+        echo "No hunk found at current line"
+        return
+    endif
+
+    let l:patch = "diff --git a/" . l:rel_file . " b/" . l:rel_file . "\n"
+    let l:patch .= "--- a/" . l:rel_file . "\n"
+    let l:patch .= "+++ b/" . l:rel_file . "\n"
+    let l:patch .= join(l:hunk, "\n") . "\n"
+
+    call system('git -C ' . shellescape(l:repo) . ' apply --reverse -', l:patch)
+    edit!
+    call s:UpdateGitSigns()
+    echo "Hunk reset"
+endfunction
+
 " ============================================================================
 " 9. KEYMAPS & SHORTCUTS (Faithful to LazyVim & project keymaps)
 " ============================================================================
@@ -1070,10 +1433,10 @@ nnoremap <silent> <leader>cT :call <SID>ToggleTrailspace()<CR>
 nnoremap <silent> <leader>co :call <SID>ToggleHexHsl()<CR>
 vnoremap <silent> <leader>cx :<C-u>call <SID>ToggleDateTimestamp()<CR>
 
-" Save buffer with Ctrl+S (Automatic Sudo Fallback)
+" Save buffer with Ctrl+S (Automatic Sudo Fallback) and return to Normal mode
 nnoremap <silent> <C-s> :call <SID>SmartSave()<CR>
-inoremap <silent> <C-s> <Esc>:call <SID>SmartSave()<CR>gi
-vnoremap <silent> <C-s> <Esc>:call <SID>SmartSave()<CR>gv
+inoremap <silent> <C-s> <Esc>:call <SID>SmartSave()<CR>
+vnoremap <silent> <C-s> <Esc>:call <SID>SmartSave()<CR>
 
 " Indentation (stays in visual mode after indenting)
 nnoremap <Tab> >>
@@ -1169,6 +1532,14 @@ xnoremap <silent> gsa :<C-u>call <SID>VisualSurround()<CR>
 nnoremap <silent> <leader>bp :call <SID>TogglePinBuffer()<CR>
 nnoremap <silent> <leader>bP :call <SID>CloseUnpinnedBuffers()<CR>
 
+" Git Hunk Navigation
+nnoremap <silent> ]h :call <SID>JumpGitHunk(1)<CR>
+nnoremap <silent> [h :call <SID>JumpGitHunk(-1)<CR>
+
+" Git Hunk Actions
+nnoremap <silent> <Leader>ghp :call <SID>PreviewGitHunk()<CR>
+nnoremap <silent> <Leader>ghr :call <SID>ResetHunk()<CR>
+
 " ============================================================================
 " 10. AUTOCOMMANDS
 " ============================================================================
@@ -1222,3 +1593,9 @@ augroup NetrwBufferCleanup
     autocmd!
     autocmd FileType netrw setlocal bufhidden=wipe
 augroup END
+
+" Auto-update Git signs in sign column
+autocmd BufEnter,BufWritePost,CursorHold * call s:UpdateGitSigns()
+
+" Automatically follow symbolic links to target file
+autocmd BufReadPost * call s:FollowSymlink()
