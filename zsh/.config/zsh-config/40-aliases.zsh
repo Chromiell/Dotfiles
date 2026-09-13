@@ -83,3 +83,16 @@ alias tclean='tmux ls | grep -o "^[^:]*" | xargs -I{} tmux has-session -t {} 2>/
 
 # Start live-server with common development directories ignored.
 alias live='live-server --ignorePattern="^(node_modules|vendor|\.git|.*\.(jpg|jpeg|png|gif|svg|webp|bmp|ico|tiff|tif|avif))$" --port=5500 --no-browser'
+
+# Use batcat or bat if available
+if whence -p batcat >/dev/null 2>&1; then
+    alias bat="batcat --paging=never"
+    alias batcatt="batcat --style=plain --paging=always"
+    alias batcat="batcat --paging=always"
+    alias batt="batcat -pp"
+elif whence -p bat >/dev/null 2>&1; then
+    alias bat="bat --paging=never"
+    alias batcatt="bat --style=plain --paging=always"
+    alias batcat="bat --paging=always"
+    alias batt="bat -pp"
+fi
