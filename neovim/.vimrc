@@ -44,6 +44,10 @@ set t_u7=
 set t_RF=
 set t_RB=
 
+" Autocomplete settings
+set completeopt=menu,menuone,noselect
+set complete=.,w,b,u,t " Search current buffer, windows, loaded buffers, tags
+
 " ============================================================================
 " 2. INDENTATION & FORMATTING (Default: 4 Spaces)
 " ============================================================================
@@ -1421,6 +1425,21 @@ function! s:ResetHunk() abort
     echo "Hunk reset"
 endfunction
 
+" 8.24 Auto-Completion Trigger
+function! s:AutoComplete() abort
+  if pumvisible() || &buftype ==# 'prompt'
+    return
+  endif
+
+  let l:col = col('.') - 1
+  let l:line = getline('.')
+  let l:char_before = (l:col > 0) ? l:line[l:col - 1] : ''
+
+  if l:char_before =~# '\w'
+    call feedkeys("\<C-n>", 'n')
+  endif
+endfunction
+
 " ============================================================================
 " 9. KEYMAPS & SHORTCUTS (Faithful to LazyVim & project keymaps)
 " ============================================================================
@@ -1540,6 +1559,20 @@ nnoremap <silent> [h :call <SID>JumpGitHunk(-1)<CR>
 nnoremap <silent> <Leader>ghp :call <SID>PreviewGitHunk()<CR>
 nnoremap <silent> <Leader>ghr :call <SID>ResetHunk()<CR>
 
+" Navigate UP and DOWN through the menu using Arrow Keys
+inoremap <expr> <Down> pumvisible() ? "\<C-n>" : "\<Down>"
+inoremap <expr> <Up>   pumvisible() ? "\<C-p>" : "\<Up>"
+
+" Tab to confirm/complete the selected suggestion
+inoremap <expr> <Tab>  pumvisible() ? (complete_info(['selected']).selected != -1 ? "\<C-y>" : "\<C-n>\<C-y>") : "\<Tab>"
+
+" Left & Right arrows dismiss the menu and move cursor normally
+inoremap <expr> <Left>  pumvisible() ? "\<C-e>\<Left>"  : "\<Left>"
+inoremap <expr> <Right> pumvisible() ? "\<C-e>\<Right>" : "\<Right>"
+
+" Enter key maintains standard behavior (inserts newline without closing popup abruptly)
+inoremap <expr> <CR>   pumvisible() ? "\<C-y>" : "\<CR>"
+
 " ============================================================================
 " 10. AUTOCOMMANDS
 " ============================================================================
@@ -1599,3 +1632,9 @@ autocmd BufEnter,BufWritePost,CursorHold * call s:UpdateGitSigns()
 
 " Automatically follow symbolic links to target file
 autocmd BufReadPost * call s:FollowSymlink()
+
+" Auto-completion trigger on text changes in Insert Mode
+augroup AutoSuggestMenu
+  autocmd!
+  autocmd TextChangedI * call s:AutoComplete()
+augroup END
