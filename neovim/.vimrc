@@ -10,6 +10,10 @@
 "   cd ~/.dotfiles && stow neovim
 " ============================================================================
 
+" Set to 1 if your terminal font supports Powerline/Nerd Fonts.
+" Set to 0 over SSH or on machines without custom fonts.
+let g:statusline_powerline = get(g:, 'statusline_powerline', 1)
+
 scriptencoding utf-8
 
 " ============================================================================
@@ -47,6 +51,12 @@ set t_RB=
 " Autocomplete settings
 set completeopt=menu,menuone,noselect
 set complete=.,w,b,u,t " Search current buffer, windows, loaded buffers, tags
+
+" Suppress insert-mode completion messages ('Pattern not found', 'Back to original')
+set shortmess+=c
+
+" Disable terminal bells and screen flashing on errors
+set belloff=all
 
 " ============================================================================
 " 2. INDENTATION & FORMATTING (Default: 4 Spaces)
@@ -167,13 +177,33 @@ function! s:ApplyTokyoNightHighlights() abort
     highlight DiffText          guibg=#394b70 guifg=NONE gui=bold ctermbg=60
     highlight DiffDelete        guibg=#3f2d3d guifg=#ff757f ctermbg=52 ctermfg=204
 
-    " Statusline Mode Colors
+    " Statusline Mode & Powerline Transition Colors
     highlight StatModeNorm      guibg=#82aaff guifg=#1e2030 gui=bold ctermbg=111 ctermfg=234 cterm=bold
     highlight StatModeIns       guibg=#c3e88d guifg=#1e2030 gui=bold ctermbg=150 ctermfg=234 cterm=bold
     highlight StatModeVis       guibg=#c099ff guifg=#1e2030 gui=bold ctermbg=141 ctermfg=234 cterm=bold
     highlight StatModeRep       guibg=#ff757f guifg=#1e2030 gui=bold ctermbg=204 ctermfg=234 cterm=bold
     highlight StatModeCmd       guibg=#ff9e64 guifg=#1e2030 gui=bold ctermbg=215 ctermfg=234 cterm=bold
-    highlight StatGit           guibg=#2f334d guifg=#ff9e64 gui=bold ctermbg=236 ctermfg=215 cterm=bold
+
+    " Powerline Transitions: Mode -> Git (#2f334d)
+    highlight StatModeNormGit   guifg=#82aaff guibg=#2f334d ctermfg=111 ctermbg=236
+    highlight StatModeInsGit    guifg=#c3e88d guibg=#2f334d ctermfg=150 ctermbg=236
+    highlight StatModeVisGit    guifg=#c099ff guibg=#2f334d ctermfg=141 ctermbg=236
+    highlight StatModeRepGit    guifg=#ff757f guibg=#2f334d ctermfg=204 ctermbg=236
+    highlight StatModeCmdGit    guifg=#ff9e64 guibg=#2f334d ctermfg=215 ctermbg=236
+
+    " Powerline Transitions: Mode -> File (#1e2030) [Fallback when not in a Git repo]
+    highlight StatModeNormFile  guifg=#82aaff guibg=#1e2030 ctermfg=111 ctermbg=234
+    highlight StatModeInsFile   guifg=#c3e88d guibg=#1e2030 ctermfg=150 ctermbg=234
+    highlight StatModeVisFile   guifg=#c099ff guibg=#1e2030 ctermfg=141 ctermbg=234
+    highlight StatModeRepFile   guifg=#ff757f guibg=#1e2030 ctermfg=204 ctermbg=234
+    highlight StatModeCmdFile   guifg=#ff9e64 guibg=#1e2030 ctermfg=215 ctermbg=234
+
+    " Git Statusline Segment
+    highlight StatGit           guibg=#2f334d guifg=#82aaff gui=bold ctermbg=236 ctermfg=111 cterm=bold
+    highlight StatGitDirty      guibg=#2f334d guifg=#ff9e64 gui=bold ctermbg=236 ctermfg=215 cterm=bold
+    highlight StatGitFile       guifg=#2f334d guibg=#1e2030 ctermfg=236 ctermbg=234
+
+    " File & Position Statusline Highlights
     highlight StatFile          guibg=#1e2030 guifg=#c8d3f5 ctermbg=234 ctermfg=253
     highlight StatEnc           guibg=#2f334d guifg=#82aaff ctermbg=236 ctermfg=111
     highlight StatPos           guibg=#82aaff guifg=#1e2030 gui=bold ctermbg=111 ctermfg=234 cterm=bold
@@ -253,57 +283,169 @@ endfunction
 " ============================================================================
 " 6. LUALINE-STYLE STATUSLINE (with Git status & dynamic mode indicators)
 " ============================================================================
-function! ModeStatus() abort
+function! s:GetModeHL() abort
     let l:m = mode()
-    if l:m ==# 'n'
-        return '%#StatModeNorm# NORMAL '
-    elseif l:m ==# 'i'
-        return '%#StatModeIns# INSERT '
-    elseif l:m ==# 'v' || l:m ==# 'V' || l:m ==# "\<C-v>"
-        return '%#StatModeVis# VISUAL '
-    elseif l:m ==# 'R' || l:m ==# 'Rv'
-        return '%#StatModeRep# REPLACE '
-    elseif l:m ==# 'c'
-        return '%#StatModeCmd# COMMAND '
+    if l:m ==# 'n'          | return 'Norm'
+    elseif l:m ==# 'i'      | return 'Ins'
+    elseif l:m ==# 'v' || l:m ==# 'V' || l:m ==# "\<C-v>" | return 'Vis'
+    elseif l:m ==# 'R' || l:m ==# 'Rv'                     | return 'Rep'
+    elseif l:m ==# 'c'      | return 'Cmd'
     endif
-    return '%#StatModeNorm# ' . l:m . ' '
+    return 'Norm'
 endfunction
 
-function! GitBranchStatus() abort
-    if exists('b:git_status_cache')
-        return b:git_status_cache
+function! s:GetModeLabel() abort
+    let l:m = mode()
+    if l:m ==# 'i'          | return ' INSERT '
+    elseif l:m ==# 'v' || l:m ==# 'V' || l:m ==# "\<C-v>" | return ' VISUAL '
+    elseif l:m ==# 'R' || l:m ==# 'Rv'                     | return ' REPLACE '
+    elseif l:m ==# 'c'      | return ' COMMAND '
     endif
-    let l:dir = expand(fnamemodify(resolve(expand('%:p')), ':h'))
+    return ' NORMAL '
+endfunction
+
+" Cache Git status and Mime type only on buffer events (never on keypresses)
+function! s:UpdateStatuslineCache() abort
+    " Cache Mime Type
+    if exists('*GetFileMime')
+        let b:file_mime_cache = GetFileMime()
+    endif
+
+    " Cache Git Info
+    let l:dir = expand('%:p:h')
     if empty(l:dir) || !isdirectory(l:dir)
-        let b:git_status_cache = ''
-        return ''
+        let b:git_branch_cache = ''
+        let b:git_cnt_cache = 0
+        return
     endif
+
     let l:branch = s:SafeSystem('git -C ' . shellescape(l:dir) . ' rev-parse --abbrev-ref HEAD')
     if v:shell_error != 0 || empty(l:branch)
-        let b:git_status_cache = ''
-        return ''
+        let b:git_branch_cache = ''
+        let b:git_cnt_cache = 0
+        return
     endif
+
     let l:count = s:SafeSystem('git -C ' . shellescape(l:dir) . ' status --porcelain | grep -v "\.swp$" | wc -l')
-    let l:cnt = str2nr(l:count)
-    if l:cnt > 0
-        let b:git_status_cache = ' 󰊢 ' . l:branch . ' (' . l:cnt . ') '
-    else
-        let b:git_status_cache = ' 󰊢 ' . l:branch . ' '
-    endif
-    return b:git_status_cache
+    let b:git_branch_cache = substitute(l:branch, '\n', '', 'g')
+    let b:git_cnt_cache = str2nr(l:count)
 endfunction
 
+" Restored function for existing autocommands calling RefreshGitCache
 function! RefreshGitCache() abort
     unlet! b:git_status_cache
+    unlet! b:git_status_cache_branch
+    unlet! b:git_status_cache_cnt
+    call s:UpdateStatuslineCache()
+endfunction
+
+augroup StatuslineCacheGroup
+    autocmd!
+    autocmd BufEnter,BufWritePost,FocusGained * call s:UpdateStatuslineCache()
+augroup END
+
+function! RenderStatusLine() abort
+    let l:hl     = s:GetModeHL()
+    let l:win_w  = winwidth(0)
+    let l:use_pl = get(g:, 'statusline_powerline', 1)
+
+    " Define powerline vs ASCII separators
+    let l:sep_l     = l:use_pl ? '' : ''
+    let l:sep_r     = l:use_pl ? '' : ''
+    let l:sub_l     = l:use_pl ? '' : ''
+    let l:branch_ic = l:use_pl ? ' ' : 'Git:'
+    let l:dirty_ic  = l:use_pl ? ' ' : '*'
+
+    " Fetch dynamic cache variables
+    let l:branch = get(b:, 'git_branch_cache', '')
+    let l:cnt    = get(b:, 'git_cnt_cache', 0)
+    let l:mime   = get(b:, 'file_mime_cache', '')
+
+    " Dynamic highlight group combining Mode FG color with Git BG (#2f334d)
+    let l:hl_git = 'StatMode' . l:hl . 'Git'
+
+    " Calculate estimated width of each component
+    let l:w_mode   = strdisplaywidth(s:GetModeLabel()) + 2
+    let l:w_pos    = 14
+    let l:w_branch = empty(l:branch) ? 0 : strdisplaywidth(l:branch) + (l:use_pl ? 5 : 7)
+    let l:w_cnt    = (l:cnt > 0) ? strdisplaywidth(string(l:cnt)) + 4 : 0
+
+    let l:fname    = expand('%:~:.')
+    let l:fname    = empty(l:fname) ? '[No Name]' : l:fname
+    let l:w_file   = strdisplaywidth(l:fname) + 4
+
+    let l:enc_str  = !empty(l:mime) ? l:mime . ' [' . &fileformat . '] ' . &filetype : '[' . &fileformat . '] ' . &filetype
+    let l:w_enc    = strdisplaywidth(l:enc_str) + 4
+
+    " Initialize component display flags
+    let l:show_branch = !empty(l:branch)
+    let l:show_cnt    = (l:cnt > 0)
+    let l:show_file   = 1
+    let l:show_enc    = 1
+
+    " Calculate total required width
+    let l:total_w = l:w_mode + l:w_pos
+    if l:show_branch | let l:total_w += l:w_branch | endif
+    if l:show_cnt    | let l:total_w += l:w_cnt    | endif
+    if l:show_file   | let l:total_w += l:w_file   | endif
+    if l:show_enc    | let l:total_w += l:w_enc    | endif
+
+    " Gracefully drop components in priority order:
+    " 1. Filename -> 2. Fileformat/Encoding -> 3. Git counter -> 4. Branch name
+    if l:total_w > l:win_w && l:show_file   | let l:show_file = 0   | let l:total_w -= l:w_file   | endif
+    if l:total_w > l:win_w && l:show_enc    | let l:show_enc = 0    | let l:total_w -= l:w_enc    | endif
+    if l:total_w > l:win_w && l:show_cnt    | let l:show_cnt = 0    | let l:total_w -= l:w_cnt    | endif
+    if l:total_w > l:win_w && l:show_branch | let l:show_branch = 0 | let l:total_w -= l:w_branch | endif
+
+    " --- Build Left Statusline ---
+    " Mode Block
+    let l:res = '%#StatMode' . l:hl . '#' . s:GetModeLabel()
+
+    if l:show_branch
+        " Transition: Mode -> Git
+        let l:res .= '%#' . l:hl_git . '#' . l:sep_l
+        " Git Branch Text matches current mode color
+        let l:res .= '%#' . l:hl_git . '# ' . l:branch_ic . l:branch . ' '
+        if l:show_cnt
+            let l:res .= '%#' . l:hl_git . '#' . l:sub_l . ' %#StatGitDirty#' . l:dirty_ic . l:cnt . ' '
+        endif
+        " Transition: Git -> File
+        let l:res .= '%#StatGitFile#' . l:sep_l
+    else
+        " Transition: Mode -> File (No Git)
+        let l:res .= '%#StatMode' . l:hl . 'File#' . l:sep_l
+    endif
+
+    if l:show_file
+        let l:res .= '%#StatFile# %f %m%r%h%w'
+    endif
+
+    let l:res .= '%='
+
+    " --- Build Right Statusline ---
+    if l:show_enc
+        " Transition: File -> Encoding
+        let l:res .= '%#StatGitFile#' . l:sep_r
+        " Encoding/Format Text matches current mode color
+        if !empty(l:mime)
+            let l:res .= '%#' . l:hl_git . '# ' . l:mime . ' [' . &fileformat . '] %Y '
+        else
+            let l:res .= '%#' . l:hl_git . '# [' . &fileformat . '] %Y '
+        endif
+        " Transition: Encoding -> Position
+        let l:res .= '%#' . l:hl_git . '#' . l:sep_r
+    else
+        " Transition: File -> Position (No Enc)
+        let l:res .= '%#StatMode' . l:hl . 'File#' . l:sep_r
+    endif
+
+    " Position Block
+    let l:res .= '%#StatMode' . l:hl . '# %l:%c %P '
+    return l:res
 endfunction
 
 set laststatus=2
-let &statusline = '%{%ModeStatus()%}'
-let &statusline .= '%{GitBranchStatus()}'
-let &statusline .= '%#StatFile# %f %m%r%h%w'
-let &statusline .= '%='
-let &statusline .= '%#StatEnc# %{GetFileMime()} [%{&fileformat}] %Y '
-let &statusline .= '%#StatPos# %l:%c %P '
+set statusline=%!RenderStatusLine()
 
 " ============================================================================
 " 7. TOP BUFFERLINE (Display active buffers across the top)
@@ -1282,95 +1424,95 @@ let s:git_preview_winid = 0
 
 " Reset window ID state when popup closes
 function! s:GitPreviewClosed(winid, result) abort
-  let s:git_preview_winid = 0
+    let s:git_preview_winid = 0
 endfunction
 
 " Key filter for scrolling and closing the popup
 function! s:GitPreviewFilter(winid, key) abort
-  if a:key ==# 'q' || a:key ==# "\<Esc>"
-    call popup_close(a:winid)
-    let s:git_preview_winid = 0
-    return 1
-  elseif a:key ==# 'j' || a:key ==# "\<C-d>"
-    let l:firstline = get(popup_getoptions(a:winid), 'firstline', 1)
-    call popup_setoptions(a:winid, {'firstline': l:firstline + 1})
-    return 1
-  elseif a:key ==# 'k' || a:key ==# "\<C-u>"
-    let l:firstline = get(popup_getoptions(a:winid), 'firstline', 1)
-    call popup_setoptions(a:winid, {'firstline': max([1, l:firstline - 1])})
-    return 1
-  endif
-  return 0
+    if a:key ==# 'q' || a:key ==# "\<Esc>"
+        call popup_close(a:winid)
+        let s:git_preview_winid = 0
+        return 1
+    elseif a:key ==# 'j' || a:key ==# "\<C-d>"
+        let l:firstline = get(popup_getoptions(a:winid), 'firstline', 1)
+        call popup_setoptions(a:winid, {'firstline': l:firstline + 1})
+        return 1
+    elseif a:key ==# 'k' || a:key ==# "\<C-u>"
+        let l:firstline = get(popup_getoptions(a:winid), 'firstline', 1)
+        call popup_setoptions(a:winid, {'firstline': max([1, l:firstline - 1])})
+        return 1
+    endif
+    return 0
 endfunction
 
 function! s:PreviewGitHunk() abort
-  " Toggle close if pressing shortcut while popup is open
-  if s:git_preview_winid > 0 && !empty(popup_getpos(s:git_preview_winid))
-    call popup_close(s:git_preview_winid)
-    let s:git_preview_winid = 0
-    return
-  endif
-
-  let l:file = expand('%:p')
-  if empty(l:file) || !filereadable(l:file) | return | endif
-
-  let l:dir = expand('%:p:h')
-  let l:cur_line = line('.')
-
-  let l:raw_diff = s:SafeSystem('git -C ' . shellescape(l:dir) . ' diff -U0 -- ' . shellescape(l:file))
-  if empty(l:raw_diff)
-    echo "No diff found"
-    return
-  endif
-
-  let l:diff_lines = split(l:raw_diff, "\n")
-  let l:hunk_content = []
-  let l:in_target_hunk = 0
-
-  for l:line in l:diff_lines
-    if l:line =~ '^@@'
-      let l:tokens = matchlist(l:line, '^@@ -\(\d\+\)\,\?\(\d*\) +\(\d\+\)\,\?\(\d*\) @@')
-      if !empty(l:tokens)
-        let l:new_start = str2nr(l:tokens[3])
-        let l:new_count = empty(l:tokens[4]) ? 1 : str2nr(l:tokens[4])
-        let l:new_end = l:new_count == 0 ? l:new_start : l:new_start + l:new_count - 1
-
-        if l:cur_line >= l:new_start && l:cur_line <= max([l:new_start, l:new_end])
-          let l:in_target_hunk = 1
-          call add(l:hunk_content, l:line)
-        else
-          let l:in_target_hunk = 0
-        endif
-      endif
-    elseif l:in_target_hunk
-      call add(l:hunk_content, l:line)
+    " Toggle close if pressing shortcut while popup is open
+    if s:git_preview_winid > 0 && !empty(popup_getpos(s:git_preview_winid))
+        call popup_close(s:git_preview_winid)
+        let s:git_preview_winid = 0
+        return
     endif
-  endfor
 
-  if empty(l:hunk_content)
-    echo "No hunk at current line"
-    return
-  endif
+    let l:file = expand('%:p')
+    if empty(l:file) || !filereadable(l:file) | return | endif
 
-  if exists('*popup_atcursor')
-    let s:git_preview_winid = popup_atcursor(l:hunk_content, {
-          \   'padding': [0, 1, 0, 1],
-          \   'border': [1, 1, 1, 1],
-          \   'borderchars': ['─', '│', '─', '│', '┌', '┐', '┘', '└'],
-          \   'highlight': 'GitPreviewPopup',
-          \   'borderhighlight': ['GitPreviewBorder'],
-          \   'filter': function('s:GitPreviewFilter'),
-          \   'callback': function('s:GitPreviewClosed'),
-          \   'close': 'click'
-          \ })
+    let l:dir = expand('%:p:h')
+    let l:cur_line = line('.')
 
-    " Apply syntax highlighting rules directly inside the popup window context
-    call win_execute(s:git_preview_winid, 'call matchadd("GitPreviewAdded", "^\+.*")')
-    call win_execute(s:git_preview_winid, 'call matchadd("GitPreviewRemoved", "^-.*")')
-    call win_execute(s:git_preview_winid, 'call matchadd("GitPreviewHeader", "^@@.*")')
-  else
-    echo join(l:hunk_content, "\n")
-  endif
+    let l:raw_diff = s:SafeSystem('git -C ' . shellescape(l:dir) . ' diff -U0 -- ' . shellescape(l:file))
+    if empty(l:raw_diff)
+        echo "No diff found"
+        return
+    endif
+
+    let l:diff_lines = split(l:raw_diff, "\n")
+    let l:hunk_content = []
+    let l:in_target_hunk = 0
+
+    for l:line in l:diff_lines
+        if l:line =~ '^@@'
+            let l:tokens = matchlist(l:line, '^@@ -\(\d\+\)\,\?\(\d*\) +\(\d\+\)\,\?\(\d*\) @@')
+            if !empty(l:tokens)
+                let l:new_start = str2nr(l:tokens[3])
+                let l:new_count = empty(l:tokens[4]) ? 1 : str2nr(l:tokens[4])
+                let l:new_end = l:new_count == 0 ? l:new_start : l:new_start + l:new_count - 1
+
+                if l:cur_line >= l:new_start && l:cur_line <= max([l:new_start, l:new_end])
+                    let l:in_target_hunk = 1
+                    call add(l:hunk_content, l:line)
+                else
+                    let l:in_target_hunk = 0
+                endif
+            endif
+        elseif l:in_target_hunk
+            call add(l:hunk_content, l:line)
+        endif
+    endfor
+
+    if empty(l:hunk_content)
+        echo "No hunk at current line"
+        return
+    endif
+
+    if exists('*popup_atcursor')
+        let s:git_preview_winid = popup_atcursor(l:hunk_content, {
+                    \   'padding': [0, 1, 0, 1],
+                    \   'border': [1, 1, 1, 1],
+                    \   'borderchars': ['─', '│', '─', '│', '┌', '┐', '┘', '└'],
+                    \   'highlight': 'GitPreviewPopup',
+                    \   'borderhighlight': ['GitPreviewBorder'],
+                    \   'filter': function('s:GitPreviewFilter'),
+                    \   'callback': function('s:GitPreviewClosed'),
+                    \   'close': 'click'
+                    \ })
+
+        " Apply syntax highlighting rules directly inside the popup window context
+        call win_execute(s:git_preview_winid, 'call matchadd("GitPreviewAdded", "^\+.*")')
+        call win_execute(s:git_preview_winid, 'call matchadd("GitPreviewRemoved", "^-.*")')
+        call win_execute(s:git_preview_winid, 'call matchadd("GitPreviewHeader", "^@@.*")')
+    else
+        echo join(l:hunk_content, "\n")
+    endif
 endfunction
 
 function! s:ResetHunk() abort
@@ -1427,17 +1569,24 @@ endfunction
 
 " 8.24 Auto-Completion Trigger
 function! s:AutoComplete() abort
-  if pumvisible() || &buftype ==# 'prompt'
-    return
-  endif
+    if pumvisible() || &buftype ==# 'prompt'
+        return
+    endif
 
-  let l:col = col('.') - 1
-  let l:line = getline('.')
-  let l:char_before = (l:col > 0) ? l:line[l:col - 1] : ''
+    let l:col = col('.')
+    let l:line = getline('.')
+    let l:prefix = matchstr(l:line[:l:col-1], '\k\+$')
 
-  if l:char_before =~# '\w'
-    call feedkeys("\<C-n>", 'n')
-  endif
+    " Require at least 2 characters before triggering completion
+    if len(l:prefix) < 2
+        return
+    endif
+
+    " Only trigger completion if a matching word exists elsewhere in the buffer
+    let l:pat = '\<' . escape(l:prefix, '\^$.*~[]') . '\k\+'
+    if search(l:pat, 'nW') > 0 || search(l:pat, 'nbW') > 0
+        call feedkeys("\<C-n>", 'n')
+    endif
 endfunction
 
 " ============================================================================
@@ -1635,6 +1784,6 @@ autocmd BufReadPost * call s:FollowSymlink()
 
 " Auto-completion trigger on text changes in Insert Mode
 augroup AutoSuggestMenu
-  autocmd!
-  autocmd TextChangedI * call s:AutoComplete()
+    autocmd!
+    autocmd TextChangedI * call s:AutoComplete()
 augroup END
