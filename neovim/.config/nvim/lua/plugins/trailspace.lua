@@ -6,7 +6,7 @@ return {
         opts = {},
         keys = {
             {
-                "<leader>cT",
+                "<leader>uR",
                 function()
                     vim.g.minitrailspace_disable = not vim.g.minitrailspace_disable
                     if vim.g.minitrailspace_disable then
