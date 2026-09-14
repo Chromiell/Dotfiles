@@ -58,6 +58,9 @@ set shortmess+=c
 " Disable terminal bells and screen flashing on errors
 set belloff=all
 
+" Disable netrw banner and history
+let g:netrw_dirhistmax = 0
+
 " ============================================================================
 " 2. INDENTATION & FORMATTING (Default: 4 Spaces)
 " ============================================================================
@@ -107,15 +110,37 @@ set wildmenu
 set wildmode=longest:full,full
 set wildignore+=*.o,*.obj,*.bin,*.dll,*.exe,*.so,*.pyc,*.png,*.jpg,*.jpeg,*.gif,*.zip,*.tar.gz,*/.git/*,*/node_modules/*,*/vendor/*
 
-" Persistent undo across sessions
+" Persistent undo in tmpfs (persists across Vim sessions, wiped on reboot)
 if has('persistent_undo')
-    let s:undo_dir = expand('~/.vim/undo')
+    if !empty($XDG_RUNTIME_DIR)
+        let s:undo_dir = expand($XDG_RUNTIME_DIR . '/vim/undo')
+    elseif isdirectory('/dev/shm')
+        let s:undo_dir = expand('/dev/shm/vim_undo_' . $USER)
+    else
+        let s:undo_dir = expand('/tmp/vim_undo_' . $USER)
+    endif
+
     if !isdirectory(s:undo_dir)
         call mkdir(s:undo_dir, 'p', 0700)
     endif
     let &undodir = s:undo_dir
     set undofile
 endif
+
+" Persistent viminfo in tmpfs (persists across Vim sessions, wiped on reboot)
+if !empty($XDG_RUNTIME_DIR)
+    let s:viminfo_dir = expand($XDG_RUNTIME_DIR . '/vim')
+elseif isdirectory('/dev/shm')
+    let s:viminfo_dir = expand('/dev/shm/vim_info_' . $USER)
+else
+    let s:viminfo_dir = expand('/tmp/vim_info_' . $USER)
+endif
+
+if !isdirectory(s:viminfo_dir)
+    call mkdir(s:viminfo_dir, 'p', 0700)
+endif
+
+let &viminfo = "'100,<50,s10,h,n" . s:viminfo_dir . '/viminfo'
 
 " Modern diff algorithm (histogram + indent-heuristic)
 if has('patch-8.1.0360')
@@ -1137,6 +1162,39 @@ let g:netrw_liststyle = 0
 let g:netrw_altv = 1
 let g:netrw_winsize = 25
 
+function! s:SetNetrwMappings() abort
+    " a -> Create new file in the currently displayed Netrw directory
+    nnoremap <buffer> <silent> a :call <SID>NetrwCreateFile()<CR>
+    " r -> Rename or move file/directory
+    nmap <buffer> r R
+    " d -> Delete file/directory
+    nmap <buffer> d D
+endfunction
+
+function! s:NetrwCreateFile() abort
+    " Get Netrw's active directory (resolves symlink target location)
+    let l:dir = get(b:, 'netrw_curdir', getcwd())
+    let l:dir = substitute(l:dir, '/$', '', '')
+
+    call inputsave()
+    let l:filename = input('New file in ' . l:dir . '/: ')
+    call inputrestore()
+
+    if empty(l:filename)
+        return
+    endif
+
+    " Construct absolute path to ensure Vim creates it in Netrw's folder
+    let l:filepath = (l:filename =~# '^/') ? l:filename : l:dir . '/' . l:filename
+
+    " Move focus to the main editing pane before opening the new file
+    if winnr('$') > 1
+        wincmd p
+    endif
+
+    execute 'edit ' . fnameescape(l:filepath)
+endfunction
+
 function! s:ToggleExplorer() abort
     " Check if any window in the current tab is a Netrw explorer
     for l:w in range(1, winnr('$'))
@@ -1589,6 +1647,17 @@ function! s:AutoComplete() abort
     endif
 endfunction
 
+" 8.25 Temporary Wildignore Reset for Hidden File Search
+function! s:FindHidden() abort
+    let s:saved_wildignore = &wildignore
+    set wildignore=
+    augroup AutoResetWildignore
+        autocmd!
+        autocmd CmdlineLeave : let &wildignore = s:saved_wildignore | autocmd! AutoResetWildignore
+    augroup END
+    call feedkeys(":find ", 'n')
+endfunction
+
 " ============================================================================
 " 9. KEYMAPS & SHORTCUTS (Faithful to LazyVim & project keymaps)
 " ============================================================================
@@ -1656,9 +1725,18 @@ nnoremap <silent> <Esc> :nohlsearch<CR><Esc>
 nnoremap <silent> <leader>fg :call <SID>ProjectGrep()<CR>
 nnoremap <silent> <leader>\  :call <SID>ProjectGrep()<CR>
 
-" Find files in project
+" 1. Reset path explicitly to current file dir (.), working dir (,,), and subdirectories
+set path=.,,**,**/.*/**
+
+" 2. Ignore third-party libraries, asset bundles, build outputs, and hidden caches
+set wildignore+=*/.git/*,*/.cache/*,*/node_modules/*,*/vendor/*,*/ckeditor/*,*/dist/*,*/build/*,*.o,*.obj,*.so
+
+" Standard search (Ignores hidden folders like .config via wildignore)
 nnoremap <leader>ff :find<Space>
-set path+=**
+
+" Toggle search for hidden files/folders (Temporarily clears wildignore)
+nnoremap <leader>fh :call <SID>FindHidden()<CR>
+
 
 " Quickfix list navigation
 nnoremap <silent> [q :cprevious<CR>
@@ -1721,6 +1799,18 @@ inoremap <expr> <Right> pumvisible() ? "\<C-e>\<Right>" : "\<Right>"
 
 " Enter key maintains standard behavior (inserts newline without closing popup abruptly)
 inoremap <expr> <CR>   pumvisible() ? "\<C-y>" : "\<CR>"
+
+" Visual Mode (Move selected block)
+xnoremap <M-j> :m '>+1<CR>gv=gv
+xnoremap <M-k> :m '<-2<CR>gv=gv
+xnoremap <Esc>j :m '>+1<CR>gv=gv
+xnoremap <Esc>k :m '<-2<CR>gv=gv
+
+" Normal Mode (Move single line)
+nnoremap <M-j> :m .+1<CR>==
+nnoremap <M-k> :m .-2<CR>==
+nnoremap <Esc>j :m .+1<CR>==
+nnoremap <Esc>k :m .-2<CR>==
 
 " ============================================================================
 " 10. AUTOCOMMANDS
@@ -1786,4 +1876,10 @@ autocmd BufReadPost * call s:FollowSymlink()
 augroup AutoSuggestMenu
     autocmd!
     autocmd TextChangedI * call s:AutoComplete()
+augroup END
+
+" Custom keybindings for Netrw buffer only
+augroup NetrwKeymaps
+    autocmd!
+    autocmd FileType netrw call s:SetNetrwMappings()
 augroup END
