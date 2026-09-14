@@ -948,11 +948,19 @@ function! s:VisualSurround() abort
     elseif l:c ==# '}' | let l:open = '{'  | let l:close = '}'
     elseif l:c ==# '<' | let l:open = '< ' | let l:close = ' >'
     elseif l:c ==# '>' | let l:open = '<'  | let l:close = '>'
+    elseif l:c ==# '?'
+        call inputsave()
+        let l:open = input('Prefix: ')
+        let l:close = input('Suffix: ')
+        call inputrestore()
+        if empty(l:open) && empty(l:close) | return | endif
     endif
 
     " Save registers to avoid overwriting clipboards
     let l:save_reg = getreg('"')
     let l:save_type = getregtype('"')
+    let l:save_z_reg = getreg('z')
+    let l:save_z_type = getregtype('z')
 
     " Yank visual selection into register z, wrap it, and paste it back over selection
     normal! gv"zy
@@ -961,6 +969,7 @@ function! s:VisualSurround() abort
 
     " Restore original register content
     call setreg('"', l:save_reg, l:save_type)
+    call setreg('z', l:save_z_reg, l:save_z_type)
 endfunction
 
 " 8.12 Dynamic Comment Toggler (gcc / gc)
