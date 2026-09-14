@@ -28,6 +28,9 @@ vim.keymap.set("n", "<leader>md", fn.delete_line_marks, { desc = "Delete all mar
 vim.keymap.set("n", "<leader>b[", "<cmd>BufferLineMovePrev<cr>", { desc = "Move buffer left" })
 vim.keymap.set("n", "<leader>b]", "<cmd>BufferLineMoveNext<cr>", { desc = "Move buffer right" })
 
+-- Disable Ctrl + Z suspend in Normal, Insert, Visual, and Command modes
+vim.keymap.set({ "n", "i", "v", "c" }, "<C-z>", "<Nop>", { desc = "Disable Ctrl+Z suspend" })
+
 -- ============================================================================
 -- 2. SEARCH & NAVIGATION
 -- ============================================================================
