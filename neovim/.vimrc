@@ -61,6 +61,55 @@ set belloff=all
 " Disable netrw banner and history
 let g:netrw_dirhistmax = 0
 
+" Swap files in tmpfs (prevents .swp/.swc clutter next to source files, wiped on reboot)
+if !empty($XDG_RUNTIME_DIR)
+    let s:swap_dir = expand($XDG_RUNTIME_DIR . '/vim/swap')
+elseif isdirectory('/dev/shm')
+    let s:swap_dir = expand('/dev/shm/vim_swap_' . $USER)
+else
+    let s:swap_dir = expand('/tmp/vim_swap_' . $USER)
+endif
+
+if !isdirectory(s:swap_dir)
+    call mkdir(s:swap_dir, 'p', 0700)
+endif
+
+" The trailing '//' tells Vim to encode the full file path into the swap filename
+" (e.g. %path%to%file.swp) to avoid name collisions across different folders.
+let &directory = s:swap_dir . '//'
+
+" Persistent undo in tmpfs (persists across Vim sessions, wiped on reboot)
+if has('persistent_undo')
+    if !empty($XDG_RUNTIME_DIR)
+        let s:undo_dir = expand($XDG_RUNTIME_DIR . '/vim/undo')
+    elseif isdirectory('/dev/shm')
+        let s:undo_dir = expand('/dev/shm/vim_undo_' . $USER)
+    else
+        let s:undo_dir = expand('/tmp/vim_undo_' . $USER)
+    endif
+
+    if !isdirectory(s:undo_dir)
+        call mkdir(s:undo_dir, 'p', 0700)
+    endif
+    let &undodir = s:undo_dir
+    set undofile
+endif
+
+" Persistent viminfo in tmpfs (persists across Vim sessions, wiped on reboot)
+if !empty($XDG_RUNTIME_DIR)
+    let s:viminfo_dir = expand($XDG_RUNTIME_DIR . '/vim')
+elseif isdirectory('/dev/shm')
+    let s:viminfo_dir = expand('/dev/shm/vim_info_' . $USER)
+else
+    let s:viminfo_dir = expand('/tmp/vim_info_' . $USER)
+endif
+
+if !isdirectory(s:viminfo_dir)
+    call mkdir(s:viminfo_dir, 'p', 0700)
+endif
+
+let &viminfo = "'100,<50,s10,h,n" . s:viminfo_dir . '/viminfo'
+
 " ============================================================================
 " 2. INDENTATION & FORMATTING (Default: 4 Spaces)
 " ============================================================================
@@ -109,38 +158,6 @@ set hlsearch
 set wildmenu
 set wildmode=longest:full,full
 set wildignore+=*.o,*.obj,*.bin,*.dll,*.exe,*.so,*.pyc,*.png,*.jpg,*.jpeg,*.gif,*.zip,*.tar.gz,*/.git/*,*/node_modules/*,*/vendor/*
-
-" Persistent undo in tmpfs (persists across Vim sessions, wiped on reboot)
-if has('persistent_undo')
-    if !empty($XDG_RUNTIME_DIR)
-        let s:undo_dir = expand($XDG_RUNTIME_DIR . '/vim/undo')
-    elseif isdirectory('/dev/shm')
-        let s:undo_dir = expand('/dev/shm/vim_undo_' . $USER)
-    else
-        let s:undo_dir = expand('/tmp/vim_undo_' . $USER)
-    endif
-
-    if !isdirectory(s:undo_dir)
-        call mkdir(s:undo_dir, 'p', 0700)
-    endif
-    let &undodir = s:undo_dir
-    set undofile
-endif
-
-" Persistent viminfo in tmpfs (persists across Vim sessions, wiped on reboot)
-if !empty($XDG_RUNTIME_DIR)
-    let s:viminfo_dir = expand($XDG_RUNTIME_DIR . '/vim')
-elseif isdirectory('/dev/shm')
-    let s:viminfo_dir = expand('/dev/shm/vim_info_' . $USER)
-else
-    let s:viminfo_dir = expand('/tmp/vim_info_' . $USER)
-endif
-
-if !isdirectory(s:viminfo_dir)
-    call mkdir(s:viminfo_dir, 'p', 0700)
-endif
-
-let &viminfo = "'100,<50,s10,h,n" . s:viminfo_dir . '/viminfo'
 
 " Modern diff algorithm (histogram + indent-heuristic)
 if has('patch-8.1.0360')
@@ -351,7 +368,7 @@ function! s:UpdateStatuslineCache() abort
         return
     endif
 
-    let l:count = s:SafeSystem('git -C ' . shellescape(l:dir) . ' status --porcelain | grep -v "\.swp$" | wc -l')
+    let l:count = s:SafeSystem('git -C ' . shellescape(l:dir) . ' status --porcelain | wc -l')
     let b:git_branch_cache = substitute(l:branch, '\n', '', 'g')
     let b:git_cnt_cache = str2nr(l:count)
 endfunction
