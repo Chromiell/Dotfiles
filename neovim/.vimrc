@@ -174,7 +174,7 @@ set path=.,,**,**/.*/**
 set wildignore+=*/.git/*,*/.cache/*,*/node_modules/*,*/vendor/*,*/ckeditor/*,*/dist/*,*/build/*,*.o,*.obj,*.so
 
 " Use English and Italian dictionaries for spell checking.
-set spelllang=en,it
+set spelllang=en
 
 " Modern diff algorithm (histogram + indent-heuristic)
 if has('patch-8.1.0360')
