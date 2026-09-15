@@ -69,7 +69,7 @@ let g:netrw_altv = 1
 let g:netrw_winsize = 25
 
 " Swap files in tmpfs (prevents .swp/.swc clutter next to source files, wiped on reboot)
-if !empty($XDG_RUNTIME_DIR)
+if !empty($XDG_RUNTIME_DIR) && isdirectory($XDG_RUNTIME_DIR)
     let s:swap_dir = expand($XDG_RUNTIME_DIR . '/vim/swap')
 elseif isdirectory('/dev/shm')
     let s:swap_dir = expand('/dev/shm/vim_swap_' . $USER)
@@ -87,7 +87,7 @@ let &directory = s:swap_dir . '//'
 
 " Persistent undo in tmpfs (persists across Vim sessions, wiped on reboot)
 if has('persistent_undo')
-    if !empty($XDG_RUNTIME_DIR)
+    if !empty($XDG_RUNTIME_DIR) && isdirectory($XDG_RUNTIME_DIR)
         let s:undo_dir = expand($XDG_RUNTIME_DIR . '/vim/undo')
     elseif isdirectory('/dev/shm')
         let s:undo_dir = expand('/dev/shm/vim_undo_' . $USER)
@@ -103,7 +103,7 @@ if has('persistent_undo')
 endif
 
 " Persistent viminfo in tmpfs (persists across Vim sessions, wiped on reboot)
-if !empty($XDG_RUNTIME_DIR)
+if !empty($XDG_RUNTIME_DIR) && isdirectory($XDG_RUNTIME_DIR)
     let s:viminfo_dir = expand($XDG_RUNTIME_DIR . '/vim')
 elseif isdirectory('/dev/shm')
     let s:viminfo_dir = expand('/dev/shm/vim_info_' . $USER)
