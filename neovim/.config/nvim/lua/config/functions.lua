@@ -103,6 +103,32 @@ function M.grep_latin1()
     })
 end
 
+-- Programmatically perform 'gd' via LSP
+local function jump_to_lsp_definition()
+    local clients = vim.lsp.get_clients({ bufnr = 0 })
+    local client = clients[1]
+    local offset_encoding = client and client.offset_encoding or "utf-16"
+
+    local params = vim.lsp.util.make_position_params(0, offset_encoding)
+    local results = vim.lsp.buf_request_sync(0, "textDocument/definition", params, 1000)
+    if not results or vim.tbl_isempty(results) then
+        return false
+    end
+
+    for client_id, response in pairs(results) do
+        local result = response.result
+        if result and not vim.tbl_isempty(result) then
+            local resp_client = vim.lsp.get_client_by_id(client_id)
+            if resp_client then
+                local item = (type(result) == "table" and result[1]) and result[1] or result
+                vim.lsp.util.jump_to_location(item, resp_client.offset_encoding or "utf-16")
+                return true
+            end
+        end
+    end
+    return false
+end
+
 function M.jump_to_laravel_accessor()
     -- Extract word under cursor and remove leading $
     local word = vim.fn.expand("<cword>"):gsub("^%$", "")
@@ -112,47 +138,57 @@ function M.jump_to_laravel_accessor()
 
     local current_buf = vim.api.nvim_buf_get_name(0)
 
-    -- If currently inside an ide-helper generated file
-    if current_buf:match("_ide_helper") then
-        -- 1. Search for the class name around the current cursor location
-        local class_line_num = vim.fn.search([[class\s\+\(ide_helper_\)\?\([A-Za-z0-9_]\+\)]], "nW")
-        local class_name = nil
+    -- 1. If not inside ide-helper, try LSP definition jump ('gd')
+    if not current_buf:match("_ide_helper") then
+        if not jump_to_lsp_definition() then
+            vim.notify("LSP definition not found for: " .. word, vim.log.levels.WARN)
+            return
+        end
+        current_buf = vim.api.nvim_buf_get_name(0)
+    end
 
+    -- 2. If the jump landed anywhere EXCEPT ide-helper, it was a normal function/method/class.
+    -- jump_to_lsp_definition() already moved the cursor to its definition, so stop here.
+    if not current_buf:match("_ide_helper") then
+        return
+    end
+
+    -- 3. Extract class name from the ide-helper file
+    local class_line_num = vim.fn.search([[class\s\+\(ide_helper_\)\?\([A-Za-z0-9_]\+\)]], "nW")
+    local class_name = nil
+
+    if class_line_num > 0 then
+        local line_text = vim.fn.getline(class_line_num)
+        class_name = line_text:match("class%s+ide_helper_([%w_]+)") or line_text:match("class%s+([%w_]+)")
+    end
+
+    if not class_name then
+        class_line_num = vim.fn.search([[class\s\+\(ide_helper_\)\?\([A-Za-z0-9_]\+\)]], "bnW")
         if class_line_num > 0 then
             local line_text = vim.fn.getline(class_line_num)
             class_name = line_text:match("class%s+ide_helper_([%w_]+)") or line_text:match("class%s+([%w_]+)")
         end
-
-        -- If not found downwards, search upwards
-        if not class_name then
-            class_line_num = vim.fn.search([[class\s\+\(ide_helper_\)\?\([A-Za-z0-9_]\+\)]], "bnW")
-            if class_line_num > 0 then
-                local line_text = vim.fn.getline(class_line_num)
-                class_name = line_text:match("class%s+ide_helper_([%w_]+)") or line_text:match("class%s+([%w_]+)")
-            end
-        end
-
-        if not class_name then
-            vim.notify("Could not determine Model class from ide-helper", vim.log.levels.WARN)
-            return
-        end
-
-        -- 2. Locate the actual Model file in the app directory
-        local matches = vim.fn.glob("app/**/" .. class_name .. ".php", false, true)
-        if #matches == 0 then
-            matches = vim.fn.glob("**/" .. class_name .. ".php", false, true)
-        end
-
-        if #matches == 0 then
-            vim.notify("Model file " .. class_name .. ".php not found", vim.log.levels.WARN)
-            return
-        end
-
-        -- 3. Open the actual Model file buffer
-        vim.cmd("edit " .. vim.fn.fnameescape(matches[1]))
     end
 
-    -- Search for the accessor inside the active model buffer
+    if not class_name then
+        vim.notify("Could not determine Model class from ide-helper", vim.log.levels.WARN)
+        return
+    end
+
+    -- 4. Locate and open the actual Model file
+    local matches = vim.fn.glob("app/**/" .. class_name .. ".php", false, true)
+    if #matches == 0 then
+        matches = vim.fn.glob("**/" .. class_name .. ".php", false, true)
+    end
+
+    if #matches == 0 then
+        vim.notify("Model file " .. class_name .. ".php not found", vim.log.levels.WARN)
+        return
+    end
+
+    vim.cmd("edit " .. vim.fn.fnameescape(matches[1]))
+
+    -- 5. Search for accessor method inside active model buffer
     local pascal = word:gsub("_(%l)", function(c)
         return c:upper()
     end):gsub("^%l", function(c)
