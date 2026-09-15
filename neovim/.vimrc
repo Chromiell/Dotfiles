@@ -19,6 +19,7 @@ scriptencoding utf-8
 " ============================================================================
 " 1. GENERAL & SYSTEM SETTINGS
 " ============================================================================
+" Use modern Vim behavior and enable filetype plugins, indentation, and syntax.
 set nocompatible
 filetype plugin indent on
 syntax on
@@ -60,6 +61,12 @@ set belloff=all
 
 " Disable netrw banner and history
 let g:netrw_dirhistmax = 0
+
+" Configure netrw as a compact tree explorer with a 25% alternate window.
+let g:netrw_banner = 0
+let g:netrw_liststyle = 0
+let g:netrw_altv = 1
+let g:netrw_winsize = 25
 
 " Swap files in tmpfs (prevents .swp/.swc clutter next to source files, wiped on reboot)
 if !empty($XDG_RUNTIME_DIR)
@@ -145,6 +152,7 @@ set splitright
 set mouse=a
 set updatetime=250
 set timeoutlen=1000  " Gives 1000ms to complete multi-key leader shortcuts
+set ttimeout
 set ttimeoutlen=50
 set backspace=indent,eol,start
 
@@ -158,6 +166,15 @@ set hlsearch
 set wildmenu
 set wildmode=longest:full,full
 set wildignore+=*.o,*.obj,*.bin,*.dll,*.exe,*.so,*.pyc,*.png,*.jpg,*.jpeg,*.gif,*.zip,*.tar.gz,*/.git/*,*/node_modules/*,*/vendor/*
+
+" Search the current directory, working directory, descendants, and hidden folders.
+set path=.,,**,**/.*/**
+
+" Ignore third-party libraries, generated assets, build output, and hidden caches.
+set wildignore+=*/.git/*,*/.cache/*,*/node_modules/*,*/vendor/*,*/ckeditor/*,*/dist/*,*/build/*,*.o,*.obj,*.so
+
+" Use English and Italian dictionaries for spell checking.
+set spelllang=en,it
 
 " Modern diff algorithm (histogram + indent-heuristic)
 if has('patch-8.1.0360')
@@ -295,32 +312,8 @@ function! s:ApplyTokyoNightHighlights() abort
     highlight GitPreviewHeader  guifg=#7aa2f7 guibg=NONE    gui=bold ctermfg=39
 endfunction
 
+" Apply the TokyoNight palette immediately after defining its highlight groups.
 call s:ApplyTokyoNightHighlights()
-
-" Trailing Whitespace highlighting engine (MiniTrailspace matching)
-let g:trailspace_enabled = 1
-function! s:UpdateTrailspace() abort
-    if g:trailspace_enabled
-        if !exists('w:trailspace_match')
-            let w:trailspace_match = matchadd('ExtraWhitespace', '\s\+$')
-        endif
-    else
-        if exists('w:trailspace_match')
-            silent! call matchdelete(w:trailspace_match)
-            unlet w:trailspace_match
-        endif
-    endif
-endfunction
-
-function! s:ToggleTrailspace() abort
-    let g:trailspace_enabled = !g:trailspace_enabled
-    windo call s:UpdateTrailspace()
-    if g:trailspace_enabled
-        echomsg "Trailspace highlight enabled"
-    else
-        echomsg "Trailspace highlight disabled"
-    endif
-endfunction
 
 " ============================================================================
 " 6. LUALINE-STYLE STATUSLINE (with Git status & dynamic mode indicators)
@@ -380,11 +373,6 @@ function! RefreshGitCache() abort
     unlet! b:git_status_cache_cnt
     call s:UpdateStatuslineCache()
 endfunction
-
-augroup StatuslineCacheGroup
-    autocmd!
-    autocmd BufEnter,BufWritePost,FocusGained * call s:UpdateStatuslineCache()
-augroup END
 
 function! RenderStatusLine() abort
     let l:hl     = s:GetModeHL()
@@ -486,13 +474,15 @@ function! RenderStatusLine() abort
     return l:res
 endfunction
 
+" Always show the custom statusline and render it through the dynamic formatter.
 set laststatus=2
 set statusline=%!RenderStatusLine()
 
 " ============================================================================
 " 7. TOP BUFFERLINE (Display active buffers across the top)
 " ============================================================================
-set showtabline=2 " Always show top bar
+" Always show the custom bufferline across the top of the editor.
+set showtabline=2
 
 function! s:GetBufferOrder() abort
     let l:listed = filter(range(1, bufnr('$')), 'buflisted(v:val)')
@@ -590,11 +580,37 @@ function! s:NavBuffer(dir) abort
     execute 'buffer ' . l:order[l:new_idx]
 endfunction
 
+" Render the top bufferline with the custom buffer ordering and highlights.
 set tabline=%!PureBufferLine()
 
 " ============================================================================
 " 8. CUSTOM UTILITIES & FUNCTIONS
 " ============================================================================
+
+" Highlight and toggle trailing whitespace in every open window.
+let g:trailspace_enabled = 1
+function! s:UpdateTrailspace() abort
+    if g:trailspace_enabled
+        if !exists('w:trailspace_match')
+            let w:trailspace_match = matchadd('ExtraWhitespace', '\s\+$')
+        endif
+    else
+        if exists('w:trailspace_match')
+            silent! call matchdelete(w:trailspace_match)
+            unlet w:trailspace_match
+        endif
+    endif
+endfunction
+
+function! s:ToggleTrailspace() abort
+    let g:trailspace_enabled = !g:trailspace_enabled
+    windo call s:UpdateTrailspace()
+    if g:trailspace_enabled
+        echomsg "Trailspace highlight enabled"
+    else
+        echomsg "Trailspace highlight disabled"
+    endif
+endfunction
 
 " 8.1 Copy Project Path (<leader>fP)
 function! s:CopyProjectPath() abort
@@ -789,8 +805,6 @@ function! s:ToggleHexHsl() abort
 
     echohl WarningMsg | echo "No Hex or HSL format found under cursor" | echohl None
 endfunction
-
-command! -nargs=0 ToggleHexHsl call s:ToggleHexHsl()
 
 " 8.5 Timestamp <-> Date Converter (<leader>cx in Visual mode)
 function! s:ToggleDateTimestamp() abort
@@ -1183,11 +1197,6 @@ function! s:SmartSave() abort
 endfunction
 
 " 8.15 File Explorer (Netrw tree mode - Toggle at current buffer location)
-let g:netrw_banner = 0
-let g:netrw_liststyle = 0
-let g:netrw_altv = 1
-let g:netrw_winsize = 25
-
 function! s:SetNetrwMappings() abort
     " a -> Create new file in the currently displayed Netrw directory
     nnoremap <buffer> <silent> a :call <SID>NetrwCreateFile()<CR>
@@ -1677,15 +1686,51 @@ endfunction
 function! s:FindHidden() abort
     let s:saved_wildignore = &wildignore
     set wildignore=
-    augroup AutoResetWildignore
-        autocmd!
-        autocmd CmdlineLeave : let &wildignore = s:saved_wildignore | autocmd! AutoResetWildignore
-    augroup END
     call feedkeys(":find ", 'n')
 endfunction
 
+" 8.26 Move Lines / Selection Up and Down
+function! s:MoveLineDown() abort
+    if line('.') < line('$')
+        execute 'move .+1'
+        normal! ==
+    endif
+endfunction
+
+function! s:MoveLineUp() abort
+    if line('.') > 1
+        execute 'move .-2'
+        normal! ==
+    endif
+endfunction
+
+function! s:MoveVisualDown() abort range
+    if a:lastline < line('$')
+        execute "'<,'>move '>+1"
+        normal! gv=gv
+    else
+        normal! gv
+    endif
+endfunction
+
+function! s:MoveVisualUp() abort range
+    if a:firstline > 1
+        execute "'<,'>move '<-2"
+        normal! gv=gv
+    else
+        normal! gv
+    endif
+endfunction
+
 " ============================================================================
-" 9. KEYMAPS & SHORTCUTS (Faithful to LazyVim & project keymaps)
+" 9. COMMANDS
+" ============================================================================
+
+" Convert the color under the cursor between Hex and HSL notation.
+command! -nargs=0 ToggleHexHsl call s:ToggleHexHsl()
+
+" ============================================================================
+" 10. KEYMAPS & SHORTCUTS (Faithful to LazyVim & project keymaps)
 " ============================================================================
 
 " --- General & Editing ---
@@ -1729,14 +1774,6 @@ nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
 nnoremap <silent> <leader>wd :close<CR>
 
-" Move lines up/down
-nnoremap <A-j> :m .+1<CR>==
-nnoremap <A-k> :m .-2<CR>==
-vnoremap <A-j> :m '>+1<CR>gv=gv
-vnoremap <A-k> :m '<-2<CR>gv=gv
-inoremap <A-j> <Esc>:m .+1<CR>==gi
-inoremap <A-k> <Esc>:m .-2<CR>==gi
-
 " Toggle Comments
 nnoremap <silent> gcc :call <SID>ToggleComment()<CR>
 xnoremap <silent> gc :<C-u>'<,'>call <SID>ToggleComment()<CR>
@@ -1750,12 +1787,6 @@ nnoremap <silent> <Esc> :nohlsearch<CR><Esc>
 " Project Grep via Quickfix
 nnoremap <silent> <leader>fg :call <SID>ProjectGrep()<CR>
 nnoremap <silent> <leader>\  :call <SID>ProjectGrep()<CR>
-
-" 1. Reset path explicitly to current file dir (.), working dir (,,), and subdirectories
-set path=.,,**,**/.*/**
-
-" 2. Ignore third-party libraries, asset bundles, build outputs, and hidden caches
-set wildignore+=*/.git/*,*/.cache/*,*/node_modules/*,*/vendor/*,*/ckeditor/*,*/dist/*,*/build/*,*.o,*.obj,*.so
 
 " Standard search (Ignores hidden folders like .config via wildignore)
 nnoremap <leader>ff :find<Space>
@@ -1772,7 +1803,6 @@ nnoremap <silent> ]Q :clast<CR>
 
 " Spelling navigation & toggle (<leader>uo, ]s, [s)
 nnoremap <silent> <leader>uo :setlocal spell!<CR>
-set spelllang=en,it
 
 " Git & Diffing
 nnoremap <silent> <leader>bc :call <SID>DiffTwoBuffers()<CR>
@@ -1826,21 +1856,64 @@ inoremap <expr> <Right> pumvisible() ? "\<C-e>\<Right>" : "\<Right>"
 " Enter key maintains standard behavior (inserts newline without closing popup abruptly)
 inoremap <expr> <CR>   pumvisible() ? "\<C-y>" : "\<CR>"
 
-" Visual Mode (Move selected block)
-xnoremap <M-j> :m '>+1<CR>gv=gv
-xnoremap <M-k> :m '<-2<CR>gv=gv
-xnoremap <Esc>j :m '>+1<CR>gv=gv
-xnoremap <Esc>k :m '<-2<CR>gv=gv
+" Configure terminal keycodes for Alt+j and Alt+k
+" Using 'set <code=' ensures Vim parses escape sequences at the termcap level with
+" 'ttimeoutlen' (50ms) instead of user mappings, preventing any 1-second Esc delay.
+if !has('gui_running')
+    " Standard terminal / tmux / Windows Terminal Alt+j / Alt+k (\e j and \e k)
+    execute "set <M-j>=\<Esc>j"
+    execute "set <M-k>=\<Esc>k"
 
-" Normal Mode (Move single line)
-nnoremap <M-j> :m .+1<CR>==
-nnoremap <M-k> :m .-2<CR>==
-nnoremap <Esc>j :m .+1<CR>==
-nnoremap <Esc>k :m .-2<CR>==
+    " Kitty / CSI-u Alt+j / Alt+k (\e[106;3u and \e[107;3u)
+    execute "set <F13>=\<Esc>[106;3u"
+    execute "set <F14>=\<Esc>[107;3u"
+    map <F13> <M-j>
+    map! <F13> <M-j>
+    map <F14> <M-k>
+    map! <F14> <M-k>
+
+    " xterm modifyOtherKeys Alt+j / Alt+k (\e[27;3;106~ and \e[27;3;107~)
+    execute "set <F15>=\<Esc>[27;3;106~"
+    execute "set <F16>=\<Esc>[27;3;107~"
+    map <F15> <M-j>
+    map! <F15> <M-j>
+    map <F16> <M-k>
+    map! <F16> <M-k>
+
+    " tmux extended-key forwarding (\e[1;3;106~ and \e[1;3;107~)
+    execute "set <F17>=\<Esc>[1;3;106~"
+    execute "set <F18>=\<Esc>[1;3;107~"
+    map <F17> <M-j>
+    map! <F17> <M-j>
+    map <F18> <M-k>
+    map! <F18> <M-k>
+endif
+
+" Move lines up/down in Normal, Visual, and Insert modes (with boundary checks)
+nnoremap <silent> <M-j> :call <SID>MoveLineDown()<CR>
+nnoremap <silent> <M-k> :call <SID>MoveLineUp()<CR>
+xnoremap <silent> <M-j> :<C-u>call <SID>MoveVisualDown()<CR>
+xnoremap <silent> <M-k> :<C-u>call <SID>MoveVisualUp()<CR>
+inoremap <silent> <M-j> <Esc>:call <SID>MoveLineDown()<CR>gi
+inoremap <silent> <M-k> <Esc>:call <SID>MoveLineUp()<CR>gi
+
+" Compatibility mappings for <A-j> and <A-k>
+nnoremap <silent> <A-j> :call <SID>MoveLineDown()<CR>
+nnoremap <silent> <A-k> :call <SID>MoveLineUp()<CR>
+xnoremap <silent> <A-j> :<C-u>call <SID>MoveVisualDown()<CR>
+xnoremap <silent> <A-k> :<C-u>call <SID>MoveVisualUp()<CR>
+inoremap <silent> <A-j> <Esc>:call <SID>MoveLineDown()<CR>gi
+inoremap <silent> <A-k> <Esc>:call <SID>MoveLineUp()<CR>gi
 
 " ============================================================================
-" 10. AUTOCOMMANDS
+" 11. AUTOCOMMANDS
 " ============================================================================
+" Refresh cached Git branch and change-count data on buffer and focus events.
+augroup StatuslineCacheGroup
+    autocmd!
+    autocmd BufEnter,BufWritePost,FocusGained * call s:UpdateStatuslineCache()
+augroup END
+
 augroup DotfilesVimrc
     autocmd!
     " Maintain TokyoNight palette on colorscheme change
@@ -1873,6 +1946,12 @@ augroup DotfilesVimrc
     " Quickfix window custom mappings (dd and d)
     autocmd FileType qf nnoremap <buffer><silent> dd :call <SID>QfDeleteLine()<CR>
     autocmd FileType qf xnoremap <buffer><silent> d :call <SID>QfDeleteSelection()<CR>
+augroup END
+
+" Restore the saved wildignore option after the temporary hidden-file search.
+augroup AutoResetWildignore
+    autocmd!
+    autocmd CmdlineLeave * if exists('s:saved_wildignore') | let &wildignore = s:saved_wildignore | unlet s:saved_wildignore | endif
 augroup END
 
 " Sync yank register with Wayland system clipboard via wl-copy
