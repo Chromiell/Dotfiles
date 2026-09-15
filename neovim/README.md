@@ -118,28 +118,24 @@ scp ~/.dotfiles/neovim/.vimrc user@remote-server:~/.vimrc
 
 ### ✨ Features & Included Utilities
 
-The `.vimrc` file is written in pure Vimscript with **zero external plugin dependencies**, functioning out-of-the-box on standard Vim (version 8.0+ or 9.0+) while replicating key features from this Neovim configuration:
+The `.vimrc` is written in pure Vimscript with **zero plugin dependencies**. Vim 8.2+ is recommended because some enhanced features use popup and sign APIs; the core editing settings remain portable. Optional integrations use tools such as Git, `rg`, `file`, `date`, `sudo`, and Wayland clipboard utilities when available.
 
-- **TokyoNight Moon Theme & Highlights**: Full 24-bit TrueColor palette with dark background (`#222436`), syntax highlights, styled relative line numbers (`#636da6`), subtle whitespace indicators (`#3b4261`), and custom quickfix error/file colors.
-- **Lualine-Style Dynamic Statusline**: Displays active mode indicator badges (`NORMAL`, `INSERT`, `VISUAL`, `REPLACE`, `COMMAND`), live Git branch name and uncommitted changes counter (`󰊢 <branch> (<count>)`), file path, modified/readonly flags, file encoding/format, and line/column metrics.
-- **Trailing Whitespace Handling**: Subtle trailing space highlights with custom dark red background (`#681d23` / `#686868`, matching `mini.trailspace`), toggleable via `<leader>cT`, and trimmed with `<leader>ct` (file or visual selection).
-- **Hex $\leftrightarrow$ HSL Color Converter (`<leader>co` / `:ToggleHexHsl`)**: Automatically converts color codes under the cursor between 6-digit Hex (`#RRGGBB`) and HSL (`hsl(H, S%, L%)`).
-- **Timestamp $\leftrightarrow$ Date Converter (`<leader>cx`)**: Toggles visual selection between Unix epoch timestamps and human-readable `YYYY-MM-DD HH:MM:SS` dates.
-- **Relative Project Path Utility (`<leader>fP`)**: Detects the project root (via `.git`, `package.json`, or `Makefile`) and copies the relative buffer path to system and unnamed registers.
-- **Auto-Formatting & Indentation (`<leader>cf`)**: Formats the entire buffer in Normal mode or indents the current selection in Visual mode.
-- **Project Search via Quickfix (`<leader>fg` / `<leader>\`)**: Interactively prompts for a search query and populates the Quickfix window using `ripgrep` (`rg --vimgrep`) if available, or native `vimgrep`.
-- **Interactive Quickfix Editing (`dd` / visual `d`)**: Delete single entries with `dd` or multiple lines with `d` directly inside the Quickfix window, matching `quicker.nvim`.
-- **Buffer & Window Navigation**:
-  - Buffer cycling: `H` / `L`, `[b` / `]b`, `<leader>b[` / `<leader>b]`, list buffers with `<leader>bb`, and close with `<leader>bd`.
-  - Window navigation: `<C-h>`, `<C-j>`, `<C-k>`, `<C-l>`.
-  - Visual indenting: `<Tab>` / `<S-Tab>` while preserving visual selection (`>gv` / `<gv`).
-  - Move lines: `<A-j>` and `<A-k>` in Normal, Visual, and Insert modes.
-- **Git & Diff Helpers**:
-  - `<leader>bc`: Interactively diff any two open buffers in a new tab.
-  - `<leader>gd`: Split diff against Git index.
-  - `<leader>gb`: Open a 35-column Git blame sidebar for the current file.
-  - `<leader>gH`: View Git commit history for the current file.
-- **File Explorer & Spellchecking**:
-  - `<leader>e` / `<leader>fe`: Toggle Netrw in a clean, banner-free tree view.
-  - `<leader>uo`: Toggle spell checking (`en,it`), with typo navigation via `]s` and `[s`.
-
+- **Editor foundation**: 4-space indentation, UTF-8 and clipboard defaults, hidden buffers, persistent swap/undo/viminfo data in runtime storage, relative line numbers, cursorline, mouse support, wrapping, whitespace visualization, smart search, history, and histogram-based diffs.
+- **TokyoNight Moon UI**: TrueColor theme with syntax, search, popup, quickfix, diff, Git-sign, statusline, and bufferline highlights. The configuration falls back to terminal colors when TrueColor is unavailable.
+- **Dynamic statusline**: Shows the current mode, file name, modified/read-only state, file type, encoding and format, cursor position, Git branch, and a cached count of changed files. The statusline adapts its content to the available window width.
+- **Top bufferline**: Displays listed buffers with active-buffer highlighting, modified indicators, optional pin markers, custom buffer ordering, and navigation/reordering commands.
+- **Whitespace tools**: Highlights trailing whitespace and toggles that highlighting with `<leader>cT`; trims trailing whitespace from the current file or a Visual selection with `<leader>ct`.
+- **Color conversion**: `<leader>co` and `:ToggleHexHsl` convert the color under the cursor between `#RRGGBB` and `hsl(H, S%, L%)`.
+- **Date conversion**: `<leader>cx` converts a Visual selection between Unix timestamps and `YYYY-MM-DD HH:MM:SS` dates, using the system `date` command or a Python 3 fallback.
+- **Project path utility**: `<leader>fP` detects a project root from `.git`, `package.json`, or `Makefile`, then copies the buffer’s relative path to the system and unnamed registers.
+- **Formatting and editing**: `<leader>cf` indents a file or Visual selection; `<Tab>` and `<S-Tab>` preserve Visual mode while indenting; `gcc` and `gc` toggle comments; `gsa` surrounds a Visual selection; and `<leader>mi` starts the pure-Vim multi-cursor submode.
+- **Save and file management**: `<C-s>` saves named and unnamed buffers, prompts for a filename when needed, and falls back to `sudo tee` for protected files. `<leader>fn` creates a new buffer, while `<leader>bp` pins the current buffer and `<leader>bP` closes unpinned buffers.
+- **Marks and signs**: `m` interactively sets letter marks and displays them in the sign column; `<leader>md` removes marks from the current line; `<leader>mD` removes all local, global, and numbered marks.
+- **Search and quickfix**: `<leader>fg` or `<leader>\` searches the project with `rg --vimgrep` or native `vimgrep`; `<leader>ff` searches normally and `<leader>fh` temporarily includes hidden files. Quickfix entries can be deleted with `dd` or Visual `d`, and `[q`/`]q` navigate the list.
+- **Buffer and window navigation**: `H`/`L`, `[b`/`]b`, `<leader>b[`/`<leader>b]`, `<leader>bb`, and `<leader>bd` manage buffers; `<C-h>`, `<C-j>`, `<C-k>`, and `<C-l>` move between windows; `<leader>wd` closes the current window.
+- **Line movement**: `<A-j>`/`<A-k>` and `<M-j>`/`<M-k>` move lines in Normal, Visual, and Insert modes with boundary checks. Terminal, Kitty, Windows Terminal, and tmux keycode compatibility mappings are included.
+- **Git and diff helpers**: `<leader>bc` compares two open buffers; `<leader>gd` opens a Git index diff; `<leader>gb` opens a 35-column blame sidebar; `<leader>gH` shows file history; `[h`/`]h` navigate Git hunks; `<leader>ghp` previews a hunk; and `<leader>ghr` resets the current hunk.
+- **Git signs and file helpers**: Modified lines receive add/change/delete signs, symlinks are followed on read, file MIME type is cached for the statusline, and system commands run through a stderr-suppressing wrapper.
+- **Netrw explorer**: `<leader>e` toggles a banner-free tree at the current file’s directory and `<leader>fe` opens Netrw directly. Inside Netrw, `a`, `r`, and `d` create, rename, and delete entries.
+- **Completion and spelling**: Insert-mode arrow keys navigate the completion menu, `<Tab>` confirms suggestions, and completion can trigger after matching words. `<leader>uo` toggles spelling with English and Italian dictionaries; `[s` and `]s` navigate spelling errors.
+- **Automatic integrations**: Autocommands refresh Git status and signs, restore the last cursor position, apply filetype-specific indentation/comment settings, configure Quickfix and Netrw buffers, sync yanks through `wl-copy`, and keep the completion and whitespace helpers updated.
