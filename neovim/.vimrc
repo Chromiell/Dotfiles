@@ -241,21 +241,21 @@ function! s:ApplyTokyoNightHighlights() abort
     highlight StatModeIns       guibg=#c3e88d guifg=#1e2030 gui=bold ctermbg=150 ctermfg=234 cterm=bold
     highlight StatModeVis       guibg=#c099ff guifg=#1e2030 gui=bold ctermbg=141 ctermfg=234 cterm=bold
     highlight StatModeRep       guibg=#ff757f guifg=#1e2030 gui=bold ctermbg=204 ctermfg=234 cterm=bold
-    highlight StatModeCmd       guibg=#ff9e64 guifg=#1e2030 gui=bold ctermbg=215 ctermfg=234 cterm=bold
+    highlight StatModeCmd       guibg=#ffc777 guifg=#1e2030 gui=bold ctermbg=215 ctermfg=234 cterm=bold
 
     " Powerline Transitions: Mode -> Git (#2f334d)
     highlight StatModeNormGit   guifg=#82aaff guibg=#2f334d ctermfg=111 ctermbg=236
     highlight StatModeInsGit    guifg=#c3e88d guibg=#2f334d ctermfg=150 ctermbg=236
     highlight StatModeVisGit    guifg=#c099ff guibg=#2f334d ctermfg=141 ctermbg=236
     highlight StatModeRepGit    guifg=#ff757f guibg=#2f334d ctermfg=204 ctermbg=236
-    highlight StatModeCmdGit    guifg=#ff9e64 guibg=#2f334d ctermfg=215 ctermbg=236
+    highlight StatModeCmdGit    guifg=#ffc777 guibg=#2f334d ctermfg=215 ctermbg=236
 
     " Powerline Transitions: Mode -> File (#1e2030) [Fallback when not in a Git repo]
     highlight StatModeNormFile  guifg=#82aaff guibg=#1e2030 ctermfg=111 ctermbg=234
     highlight StatModeInsFile   guifg=#c3e88d guibg=#1e2030 ctermfg=150 ctermbg=234
     highlight StatModeVisFile   guifg=#c099ff guibg=#1e2030 ctermfg=141 ctermbg=234
     highlight StatModeRepFile   guifg=#ff757f guibg=#1e2030 ctermfg=204 ctermbg=234
-    highlight StatModeCmdFile   guifg=#ff9e64 guibg=#1e2030 ctermfg=215 ctermbg=234
+    highlight StatModeCmdFile   guifg=#ffc777 guibg=#1e2030 ctermfg=215 ctermbg=234
 
     " Git Statusline Segment
     highlight StatGit           guibg=#2f334d guifg=#82aaff gui=bold ctermbg=236 ctermfg=111 cterm=bold
