@@ -26,4 +26,15 @@ return {
             { "<leader>gm", "<cmd>BlameToggle<cr>", desc = "Git Blame Sidebar" },
         },
     },
+    {
+        "lewis6991/gitsigns.nvim",
+        opts = {
+            current_line_blame_opts = {
+                delay = 0,
+            },
+        },
+        keys = {
+            { "<leader>gt", "<cmd>Gitsigns toggle_current_line_blame<cr>", desc = "Toggle Current Line Blame" },
+        },
+    },
 }

@@ -58,3 +58,6 @@ vim.g.snacks_animate = false
 
 -- Disable default key mappings for omni_sql plugin to avoid conflicts with custom mappings
 vim.g.omni_sql_no_default_maps = 1
+
+-- Change the color of the Git blame text to match the theme
+vim.api.nvim_set_hl(0, "GitsignsCurrentLineBlame", { fg = "#818790" })
