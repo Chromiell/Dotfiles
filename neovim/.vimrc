@@ -68,54 +68,49 @@ let g:netrw_liststyle = 0
 let g:netrw_altv = 1
 let g:netrw_winsize = 25
 
-" Swap files in tmpfs (prevents .swp/.swc clutter next to source files, wiped on reboot)
-if !empty($XDG_RUNTIME_DIR) && isdirectory($XDG_RUNTIME_DIR)
-    let s:swap_dir = expand($XDG_RUNTIME_DIR . '/vim/swap')
-elseif isdirectory('/dev/shm')
-    let s:swap_dir = expand('/dev/shm/vim_swap_' . $USER)
-else
-    let s:swap_dir = expand('/tmp/vim_swap_' . $USER)
-endif
+" Find the first usable system temp directory ($TMPDIR handles Termux)
+let s:base_tmp = ''
+for s:candidate in [$XDG_RUNTIME_DIR, '/dev/shm', $TMPDIR, '/tmp']
+    if !empty(s:candidate) && isdirectory(s:candidate)
+        let s:base_tmp = s:candidate
+        break
+    endif
+endfor
 
-if !isdirectory(s:swap_dir)
-    call mkdir(s:swap_dir, 'p', 0700)
-endif
+" Apply custom tmpfs/tmp storage only if a usable temp location exists
+if !empty(s:base_tmp)
+    let s:user_suffix = !empty($USER) ? '_' . $USER : ''
 
-" The trailing '//' tells Vim to encode the full file path into the swap filename
-" (e.g. %path%to%file.swp) to avoid name collisions across different folders.
-let &directory = s:swap_dir . '//'
+    " 1. Swap files
+    let s:swap_dir = expand(s:base_tmp . '/vim_swap' . s:user_suffix)
+    try
+        if !isdirectory(s:swap_dir) | call mkdir(s:swap_dir, 'p', 0700) | endif
+        let &directory = s:swap_dir . '//'
+    catch
+        " Keeps Vim built-in default if directory creation fails
+    endtry
 
-" Persistent undo in tmpfs (persists across Vim sessions, wiped on reboot)
-if has('persistent_undo')
-    if !empty($XDG_RUNTIME_DIR) && isdirectory($XDG_RUNTIME_DIR)
-        let s:undo_dir = expand($XDG_RUNTIME_DIR . '/vim/undo')
-    elseif isdirectory('/dev/shm')
-        let s:undo_dir = expand('/dev/shm/vim_undo_' . $USER)
-    else
-        let s:undo_dir = expand('/tmp/vim_undo_' . $USER)
+    " 2. Persistent undo
+    if has('persistent_undo')
+        let s:undo_dir = expand(s:base_tmp . '/vim_undo' . s:user_suffix)
+        try
+            if !isdirectory(s:undo_dir) | call mkdir(s:undo_dir, 'p', 0700) | endif
+            let &undodir = s:undo_dir
+            set undofile
+        catch
+            " Keeps Vim built-in default if directory creation fails
+        endtry
     endif
 
-    if !isdirectory(s:undo_dir)
-        call mkdir(s:undo_dir, 'p', 0700)
-    endif
-    let &undodir = s:undo_dir
-    set undofile
+    " 3. Persistent viminfo
+    let s:viminfo_dir = expand(s:base_tmp . '/vim_info' . s:user_suffix)
+    try
+        if !isdirectory(s:viminfo_dir) | call mkdir(s:viminfo_dir, 'p', 0700) | endif
+        let &viminfo = "'100,<50,s10,h,n" . s:viminfo_dir . '/viminfo'
+    catch
+        " Keeps Vim built-in default if directory creation fails
+    endtry
 endif
-
-" Persistent viminfo in tmpfs (persists across Vim sessions, wiped on reboot)
-if !empty($XDG_RUNTIME_DIR) && isdirectory($XDG_RUNTIME_DIR)
-    let s:viminfo_dir = expand($XDG_RUNTIME_DIR . '/vim')
-elseif isdirectory('/dev/shm')
-    let s:viminfo_dir = expand('/dev/shm/vim_info_' . $USER)
-else
-    let s:viminfo_dir = expand('/tmp/vim_info_' . $USER)
-endif
-
-if !isdirectory(s:viminfo_dir)
-    call mkdir(s:viminfo_dir, 'p', 0700)
-endif
-
-let &viminfo = "'100,<50,s10,h,n" . s:viminfo_dir . '/viminfo'
 
 " ============================================================================
 " 2. INDENTATION & FORMATTING (Default: 4 Spaces)
@@ -1721,6 +1716,11 @@ function! s:MoveVisualUp() abort range
         normal! gv
     endif
 endfunction
+
+" 8.27 Create Swap Directory if Missing
+if !isdirectory(s:swap_dir)
+    call mkdir(s:swap_dir, 'p', 0700)
+endif
 
 " ============================================================================
 " 9. COMMANDS
