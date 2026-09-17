@@ -1723,8 +1723,12 @@ if !isdirectory(s:swap_dir)
 endif
 
 " 8.27 Quick Fuzzy Find (System 'find' + Vim's matchfuzzy)
-function! QuickFuzzyFind()
-    " Check for 'fd' or Ubuntu/Debian's 'fdfind' binary
+" ----------------------------------------------------------------------------
+" Custom Self-Contained Fuzzy Finder
+" Pass 1 to include gitignored files, 0 to respect .gitignore
+" ----------------------------------------------------------------------------
+function! QuickFuzzyFind(...)
+    let l:include_ignored = a:0 > 0 ? a:1 : 0
     let l:fd_bin = executable('fd') ? 'fd' : (executable('fdfind') ? 'fdfind' : '')
     let l:cmd = ''
 
@@ -1737,21 +1741,26 @@ function! QuickFuzzyFind()
                 call add(l:ignore_args, '-E "' . l:p . '"')
             endif
         endfor
-        " --hidden enables searching inside dotfiles/hidden folders
-        let l:cmd = l:fd_bin . ' --type f --hidden ' . join(l:ignore_args, ' ')
+
+        let l:no_ignore_flag = l:include_ignored ? '--no-ignore' : ''
+        let l:cmd = l:fd_bin . ' --type f --hidden ' . l:no_ignore_flag . ' ' . join(l:ignore_args, ' ')
     else
-        " --- FALLBACK TO FIND ---
-        let l:ignore_args = []
-        for l:pat in split(&wildignore, ',')
-            let l:p = trim(l:pat)
-            if empty(l:p) | continue | endif
-            if l:p =~# '/'
-                call add(l:ignore_args, '-not -path "' . l:p . '"')
-            else
-                call add(l:ignore_args, '-not -name "' . l:p . '"')
-            endif
-        endfor
-        let l:cmd = 'find . -type f ' . join(l:ignore_args, ' ')
+        " --- FALLBACK TO FIND / GIT ---
+        if !l:include_ignored && isdirectory('.git') && executable('git')
+            let l:cmd = 'git ls-files --cached --others --exclude-standard'
+        else
+            let l:ignore_args = []
+            for l:pat in split(&wildignore, ',')
+                let l:p = trim(l:pat)
+                if empty(l:p) | continue | endif
+                if l:p =~# '/'
+                    call add(l:ignore_args, '-not -path "' . l:p . '"')
+                else
+                    call add(l:ignore_args, '-not -name "' . l:p . '"')
+                endif
+            endfor
+            let l:cmd = 'find . -type f ' . join(l:ignore_args, ' ')
+        endif
     endif
 
     " Execute file search
@@ -1773,9 +1782,11 @@ function! QuickFuzzyFind()
         return
     endif
 
+    let l:title_str = l:include_ignored ? ' Select File [Ignored Included] ' : ' Select File [Ignored Excluded] '
+
     " Display results in a floating popup window
     call popup_menu(l:matches, {
-                \ 'title': ' Select File ',
+                \ 'title': l:title_str,
                 \ 'callback': {id, idx -> idx > 0 ? execute('edit ' . fnameescape(l:matches[idx - 1])) : ''},
                 \ 'border': [],
                 \ 'maxheight': 15,
@@ -1850,7 +1861,10 @@ nnoremap <silent> <leader>fg :call <SID>ProjectGrep()<CR>
 nnoremap <silent> <leader>\  :call <SID>ProjectGrep()<CR>
 
 " Standard search (Ignores hidden folders like .config via wildignore)
-nnoremap <leader>ff :call QuickFuzzyFind()<CR>
+nnoremap <leader>ff :call QuickFuzzyFind(0)<CR>
+
+" Include gitignored files in search
+nnoremap <leader>fh :call QuickFuzzyFind(1)<CR>
 
 " Quickfix list navigation
 nnoremap <silent> [q :cprevious<CR>
