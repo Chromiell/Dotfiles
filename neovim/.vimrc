@@ -1731,33 +1731,63 @@ endif
 
 " 8.28 Quick Fuzzy Find (System 'find' + Vim's matchfuzzy)
 function! QuickFuzzyFind()
-  " Uses system 'find' to scan all files including deeply nested hidden folders
-  let l:files = systemlist('find . -type f -not -path "*/.git/*" -not -path "*/.cache/*"')
+    " Check for 'fd' or Ubuntu/Debian's 'fdfind' binary
+    let l:fd_bin = executable('fd') ? 'fd' : (executable('fdfind') ? 'fdfind' : '')
+    let l:cmd = ''
 
-  call inputsave()
-  let l:query = input('Fuzzy Find > ')
-  call inputrestore()
-  redraw!
+    if !empty(l:fd_bin)
+        " --- USE FD ---
+        let l:ignore_args = []
+        for l:pat in split(&wildignore, ',')
+            let l:p = trim(l:pat)
+            if !empty(l:p)
+                call add(l:ignore_args, '-E "' . l:p . '"')
+            endif
+        endfor
+        " --hidden enables searching inside dotfiles/hidden folders
+        let l:cmd = l:fd_bin . ' --type f --hidden ' . join(l:ignore_args, ' ')
+    else
+        " --- FALLBACK TO FIND ---
+        let l:ignore_args = []
+        for l:pat in split(&wildignore, ',')
+            let l:p = trim(l:pat)
+            if empty(l:p) | continue | endif
+            if l:p =~# '/'
+                call add(l:ignore_args, '-not -path "' . l:p . '"')
+            else
+                call add(l:ignore_args, '-not -name "' . l:p . '"')
+            endif
+        endfor
+        let l:cmd = 'find . -type f ' . join(l:ignore_args, ' ')
+    endif
 
-  if empty(l:query) || empty(l:files)
-    return
-  endif
+    " Execute file search
+    let l:files = systemlist(l:cmd)
 
-  " Vim's built-in fuzzy matching
-  let l:matches = matchfuzzy(l:files, l:query)
-  if empty(l:matches)
-    echo "No matches found."
-    return
-  endif
+    call inputsave()
+    let l:query = input('Fuzzy Find > ')
+    call inputrestore()
+    redraw!
 
-  " Display in a floating popup menu
-  call popup_menu(l:matches, {
-        \ 'title': ' Select File ',
-        \ 'callback': {id, idx -> idx > 0 ? execute('edit ' . fnameescape(l:matches[idx - 1])) : ''},
-        \ 'border': [],
-        \ 'maxheight': 15,
-        \ 'minwidth': 60
-        \ })
+    if empty(l:query) || empty(l:files)
+        return
+    endif
+
+    " Vim's built-in fuzzy matching engine
+    let l:matches = matchfuzzy(l:files, l:query)
+    if empty(l:matches)
+        echo "No matches found."
+        return
+    endif
+
+    " Display results in a floating popup window
+    call popup_menu(l:matches, {
+                \ 'title': ' Select File ',
+                \ 'callback': {id, idx -> idx > 0 ? execute('edit ' . fnameescape(l:matches[idx - 1])) : ''},
+                \ 'border': [],
+                \ 'maxheight': 15,
+                \ 'minwidth': 60
+                \ })
 endfunction
 
 " ============================================================================
