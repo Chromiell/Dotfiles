@@ -1,5 +1,5 @@
 # Load the numbered Zsh configuration modules in dependency order.
-typeset zsh_config_root="${XDG_CONFIG_HOME:-$HOME/.config}/zsh-config"
+typeset zsh_config_root="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 
 for zsh_config_file in \
     00-startup.zsh \
