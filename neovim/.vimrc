@@ -158,18 +158,25 @@ set ignorecase
 set smartcase
 set incsearch
 set hlsearch
+
+" Wildmenu & Built-in Fuzzy Search
 set wildmenu
 set wildmode=longest:full,full
-set wildignore+=*.o,*.obj,*.bin,*.dll,*.exe,*.so,*.pyc,*.png,*.jpg,*.jpeg,*.gif,*.zip,*.tar.gz,*/.git/*,*/node_modules/*,*/vendor/*
+set wildoptions+=fuzzy
 
-" Search the current directory, working directory, descendants, and hidden folders.
-set path=.,,**,**/.*/**
+" Cleaned up ignore rules (third-party libs, build output, binaries)
+set wildignore+=*.o,*.obj,*.bin,*.dll,*.exe,*.so,*.pyc
+set wildignore+=*.png,*.webp,*.jpg,*.jpeg,*.gif,*.zip,*.tar.gz
+set wildignore+=*/.git/*,*/.cache/*,*/node_modules/*,*/vendor/*,*/ckeditor/*,*/dist/*,*/build/*
 
-" Ignore third-party libraries, generated assets, build output, and hidden caches.
-set wildignore+=*/.git/*,*/.cache/*,*/node_modules/*,*/vendor/*,*/ckeditor/*,*/dist/*,*/build/*,*.o,*.obj,*.so
+" Search current dir (.), working dir (,,), subdirs (**)
+set path=.,,**
 
-" Use English and Italian dictionaries for spell checking.
-set spelllang=en
+" Keep text wrapping enabled
+set wrap
+
+" Spell check languages
+set spelllang=en,it
 
 " Modern diff algorithm (histogram + indent-heuristic)
 if has('patch-8.1.0360')
@@ -1722,6 +1729,37 @@ if !isdirectory(s:swap_dir)
     call mkdir(s:swap_dir, 'p', 0700)
 endif
 
+" 8.28 Quick Fuzzy Find (System 'find' + Vim's matchfuzzy)
+function! QuickFuzzyFind()
+  " Uses system 'find' to scan all files including deeply nested hidden folders
+  let l:files = systemlist('find . -type f -not -path "*/.git/*" -not -path "*/.cache/*"')
+
+  call inputsave()
+  let l:query = input('Fuzzy Find > ')
+  call inputrestore()
+  redraw!
+
+  if empty(l:query) || empty(l:files)
+    return
+  endif
+
+  " Vim's built-in fuzzy matching
+  let l:matches = matchfuzzy(l:files, l:query)
+  if empty(l:matches)
+    echo "No matches found."
+    return
+  endif
+
+  " Display in a floating popup menu
+  call popup_menu(l:matches, {
+        \ 'title': ' Select File ',
+        \ 'callback': {id, idx -> idx > 0 ? execute('edit ' . fnameescape(l:matches[idx - 1])) : ''},
+        \ 'border': [],
+        \ 'maxheight': 15,
+        \ 'minwidth': 60
+        \ })
+endfunction
+
 " ============================================================================
 " 9. COMMANDS
 " ============================================================================
@@ -1789,7 +1827,7 @@ nnoremap <silent> <leader>fg :call <SID>ProjectGrep()<CR>
 nnoremap <silent> <leader>\  :call <SID>ProjectGrep()<CR>
 
 " Standard search (Ignores hidden folders like .config via wildignore)
-nnoremap <leader>ff :find<Space>
+nnoremap <leader>ff :call QuickFuzzyFind()<CR>
 
 " Toggle search for hidden files/folders (Temporarily clears wildignore)
 nnoremap <leader>fh :call <SID>FindHidden()<CR>
