@@ -1684,14 +1684,7 @@ function! s:AutoComplete() abort
     endif
 endfunction
 
-" 8.25 Temporary Wildignore Reset for Hidden File Search
-function! s:FindHidden() abort
-    let s:saved_wildignore = &wildignore
-    set wildignore=
-    call feedkeys(":find ", 'n')
-endfunction
-
-" 8.26 Move Lines / Selection Up and Down
+" 8.25 Move Lines / Selection Up and Down
 function! s:MoveLineDown() abort
     if line('.') < line('$')
         execute 'move .+1'
@@ -1724,12 +1717,12 @@ function! s:MoveVisualUp() abort range
     endif
 endfunction
 
-" 8.27 Create Swap Directory if Missing
+" 8.26 Create Swap Directory if Missing
 if !isdirectory(s:swap_dir)
     call mkdir(s:swap_dir, 'p', 0700)
 endif
 
-" 8.28 Quick Fuzzy Find (System 'find' + Vim's matchfuzzy)
+" 8.27 Quick Fuzzy Find (System 'find' + Vim's matchfuzzy)
 function! QuickFuzzyFind()
     " Check for 'fd' or Ubuntu/Debian's 'fdfind' binary
     let l:fd_bin = executable('fd') ? 'fd' : (executable('fdfind') ? 'fdfind' : '')
@@ -1858,10 +1851,6 @@ nnoremap <silent> <leader>\  :call <SID>ProjectGrep()<CR>
 
 " Standard search (Ignores hidden folders like .config via wildignore)
 nnoremap <leader>ff :call QuickFuzzyFind()<CR>
-
-" Toggle search for hidden files/folders (Temporarily clears wildignore)
-nnoremap <leader>fh :call <SID>FindHidden()<CR>
-
 
 " Quickfix list navigation
 nnoremap <silent> [q :cprevious<CR>
