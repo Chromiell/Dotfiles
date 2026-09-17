@@ -15,7 +15,7 @@ if (( $+commands[zoxide] )); then
 fi
 
 # Load the local Powerlevel10k prompt configuration, if present.
-[[ ! -f ~/.config/zsh-config/.p10k.zsh ]] || source ~/.config/zsh-config/.p10k.zsh
+[[ ! -f ~/.config/zsh/.p10k.zsh ]] || source ~/.config/zsh/.p10k.zsh
 
 # Load VS Code's shell integration only inside a VS Code terminal.
 if [[ "$TERM_PROGRAM" == "vscode" ]] && (( $+commands[code] )); then

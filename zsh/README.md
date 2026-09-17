@@ -51,17 +51,17 @@ This creates symbolic links in your home directory:
 - `~/.zshrc` $\rightarrow$ `~/.dotfiles/zsh/.zshrc`
 - `~/.zshenv` $\rightarrow$ `~/.dotfiles/zsh/.zshenv`
 - `~/.zprofile` $\rightarrow$ `~/.dotfiles/zsh/.zprofile`
-- `~/.config/zsh-config/.p10k.zsh` $\rightarrow$ `~/.dotfiles/zsh/.config/zsh-config/.p10k.zsh`
+- `~/.config/zsh/.p10k.zsh` $\rightarrow$ `~/.dotfiles/zsh/.config/zsh/.p10k.zsh`
 
 ## 🧱 3. Configuration Structure
 
 `.zshrc` is intentionally kept as a small loader. It sources the numbered files in
-`~/.config/zsh-config/` in order, so dependencies are initialized before the
+`~/.config/zsh/` in order, so dependencies are initialized before the
 configuration that uses them:
 
 ```text
 ~/.zshrc
-└── ~/.config/zsh-config/
+└── ~/.config/zsh/
     ├── 00-startup.zsh         # Fastfetch, instant prompt, fallback widgets
     ├── 10-plugins.zsh         # Znap and Zsh plugins
     ├── 20-settings.zsh        # Options, history, prompt, keybindings, colors

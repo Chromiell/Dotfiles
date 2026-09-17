@@ -1,7 +1,7 @@
 # Install and initialize Znap, then load the configured Zsh plugins.
 
 # Locate or install the Znap plugin manager.
-typeset znap_dir="$HOME/.config/zsh-config/znap"
+typeset znap_dir="$HOME/.config/zsh/znap"
 
 if [[ ! -r "$znap_dir/znap.zsh" ]]; then
     print "" # Separate the installation message from the shell prompt.
