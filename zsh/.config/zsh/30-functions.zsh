@@ -57,7 +57,7 @@ compress() {
     fi
 
     local archive="$1"
-    shift  # Remove the archive name from the argument list
+    shift # Remove the archive name from the argument list
 
     # Check that all remaining source files/directories exist
     for source in "$@"; do
@@ -68,19 +68,19 @@ compress() {
     done
 
     case "$archive" in
-        *.tar.gz|*.tgz)   tar czvf "$archive" "$@" ;;
-        *.tar.bz2|*.tbz2) tar cjvf "$archive" "$@" ;;
-        *.tar.xz)         tar cJvf "$archive" "$@" ;;
-        *.tar)            tar cvf  "$archive" "$@" ;;
-        *.zip)            zip -r   "$archive" "$@" ;;
-        *.7z)             7z a     "$archive" "$@" ;;
-        *.rar)            rar a    "$archive" "$@" ;;
+        *.tar.gz | *.tgz) tar czvf "$archive" "$@" ;;
+        *.tar.bz2 | *.tbz2) tar cjvf "$archive" "$@" ;;
+        *.tar.xz) tar cJvf "$archive" "$@" ;;
+        *.tar) tar cvf "$archive" "$@" ;;
+        *.zip) zip -r "$archive" "$@" ;;
+        *.7z) 7z a "$archive" "$@" ;;
+        *.rar) rar a "$archive" "$@" ;;
         *.gz)
             if [[ $# -gt 1 || -d "$1" ]]; then
                 echo "Error: .gz can only compress a single file directly. Use .tar.gz for multiple files or directories."
                 return 1
             fi
-            gzip -k "$1"  # -k keeps original file
+            gzip -k "$1" # -k keeps original file
             ;;
         *.bz2)
             if [[ $# -gt 1 || -d "$1" ]]; then
@@ -923,6 +923,30 @@ vardump() {
     return 0
 }
 
+# Resolve the Podman container ID publishing a given host port.
+# Podman has no Docker-style "publish" ps filter, so query port mappings instead.
+_podman_cid_for_port() {
+    local want_port="$1" cid="" container
+    [[ -z "$want_port" ]] && return 0
+
+    # `podman port --all` prints "<container-id>\t<container-port> -> <ip>:<host-port>".
+    cid=$(podman port --all 2>/dev/null | awk -v re=":${want_port}\$" '$NF ~ re {print $1; exit}')
+
+    # Fallback for Podman versions without `port --all`: inspect each container.
+    if [[ -z "$cid" ]]; then
+        for container in ${(f)"$(podman ps -q 2>/dev/null)"}; do
+            if podman inspect "$container" \
+                --format '{{range $p, $b := .NetworkSettings.Ports}}{{range $b}}{{.HostPort}}{{"\n"}}{{end}}{{end}}' \
+                2>/dev/null | grep -qx "$want_port"; then
+                cid="$container"
+                break
+            fi
+        done
+    fi
+
+    print -r -- "$cid"
+}
+
 # Show information about a port and the process using it.
 portinfo() {
     # Help flag check
@@ -1023,18 +1047,22 @@ portinfo() {
 
         # Inspect Podman
         if command -v podman >/dev/null 2>&1; then
+            # Fall back to the conmon command line when the cgroup gave no ID.
+            if [[ -z "$podman_cid" && "$cmd" == *"conmon"* ]]; then
+                podman_cid=$(echo "$cmd" | grep -oE '\-c [0-9a-f]{12,64}' | awk '{print $2}' | head -n 1)
+            fi
+
+            # Rootless port forwarding is handled by pasta/rootlessport, which
+            # live outside the container cgroup, so resolve the container by its
+            # published host port instead. Podman has no Docker-style "publish"
+            # ps filter, hence the helper.
+            if [[ -z "$podman_cid" && ("$cmd" == *"pasta"* || "$cmd" == *"rootlessport"* || "$cmd" == *"podman"* || "$cmd" == *"conmon"*) ]]; then
+                podman_cid=$(_podman_cid_for_port "$port")
+            fi
+
             if [[ -n "$podman_cid" ]]; then
                 echo "Podman Container Details:"
                 podman ps --filter "id=$podman_cid" --format "$fmt_str" 2>/dev/null | sed 's/^/  /'
-            elif [[ "$cmd" == *"conmon"* ]]; then
-                local cid=$(echo "$cmd" | grep -oE '\-c [0-9a-f]{12,64}' | awk '{print $2}')
-                if [[ -n "$cid" ]]; then
-                    echo "Podman Container Details:"
-                    podman ps --filter "id=$cid" --format "$fmt_str" 2>/dev/null | sed 's/^/  /'
-                fi
-            elif [[ "$cmd" == *"rootlessport"* || "$cmd" == *"podman"* ]]; then
-                echo "Podman Container Details:"
-                podman ps --filter "publish=$port" --format "$fmt_str" 2>/dev/null | sed 's/^/  /'
             fi
         fi
     done
@@ -1201,21 +1229,23 @@ processinfo() {
 
             # Check Podman
             if command -v podman >/dev/null 2>&1; then
+                # Fall back to the conmon command line when the cgroup gave no ID.
+                if [[ -z "$podman_cid" && "$cmd" == *"conmon"* ]]; then
+                    podman_cid=$(echo "$cmd" | grep -oE '\-c [0-9a-f]{12,64}' | awk '{print $2}' | head -n 1)
+                fi
+
+                # Rootless port forwarding is handled by pasta/rootlessport, which
+                # live outside the container cgroup, so resolve the container by its
+                # local listening port. Podman has no Docker-style "publish" ps
+                # filter, hence the helper.
+                if [[ -z "$podman_cid" && ("$cmd" == *"pasta"* || "$cmd" == *"rootlessport"* || "$cmd" == *"podman"* || "$cmd" == *"conmon"*) ]]; then
+                    local bound_port=$(echo "$sockets" | awk '/\(LISTEN\)/ {print $9}' | grep -oE '[0-9]+$' | head -n 1)
+                    [[ -n "$bound_port" ]] && podman_cid=$(_podman_cid_for_port "$bound_port")
+                fi
+
                 if [[ -n "$podman_cid" ]]; then
                     echo "${s_indent}Podman Container Details:"
                     podman ps --filter "id=$podman_cid" --format "$fmt_str" 2>/dev/null | sed "s/^/$c_indent/"
-                elif [[ "$cmd" == *"conmon"* ]]; then
-                    local cid=$(echo "$cmd" | grep -oE '\-c [0-9a-f]{12,64}' | awk '{print $2}')
-                    if [[ -n "$cid" ]]; then
-                        echo "${s_indent}Podman Container Details:"
-                        podman ps --filter "id=$cid" --format "$fmt_str" 2>/dev/null | sed "s/^/$c_indent/"
-                    fi
-                elif [[ "$cmd" == *"rootlessport"* || "$cmd" == *"podman"* ]]; then
-                    local bound_port=$(echo "$sockets" | awk 'NR>1 {print $9}' | grep -oE '[0-9]+$' | head -n 1)
-                    if [[ -n "$bound_port" ]]; then
-                        echo "${s_indent}Podman Container Details:"
-                        podman ps --filter "publish=$bound_port" --format "$fmt_str" 2>/dev/null | sed "s/^/$c_indent/"
-                    fi
                 fi
             fi
 
