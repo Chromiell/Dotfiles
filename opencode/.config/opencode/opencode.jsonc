@@ -1,0 +1,210 @@
+{
+  // ───────────────────────────────────────────────────────────────────────────
+  // Global OpenCode configuration (applies to every project for this user).
+  //
+  // Location: ~/.config/opencode/opencode.jsonc
+  // This file is JSONC, so it supports comments and trailing commas. OpenCode
+  // also loads ~/.config/opencode/opencode.json, but this file is the one it
+  // writes to when it updates settings, so keep everything here.
+  //
+  // Goal: minimize token / usage consumption on OpenCode Go or Zen (Console)
+  // subscriptions by (1) not indexing junk directories, (2) capping tool output
+  // and image sizes, (3) compacting context a bit earlier, and (4) generating
+  // session titles with a free model instead of a paid one.
+  // ───────────────────────────────────────────────────────────────────────────
+  "$schema": "https://opencode.ai/config.json",
+
+  // ── Session titles use a FREE model ────────────────────────────────────────
+  // OpenCode has hidden maintenance agents (title, summary, compaction) that
+  // generate session titles, conversation summaries, and compaction
+  // checkpoints. By default the title agent picks a low-cost paid model
+  // (Haiku / Nano / Flash), which still counts against your Go/Zen usage.
+  //
+  // "agents.title.model" overrides just the title agent. Any model available in
+  // /models works. Free Zen models (opencode/<id>-free) cost nothing. The free
+  // lineup changes over time, so run /models (or `opencode models`) to confirm
+  // what your account currently offers. Available right now:
+  //   opencode/mimo-v2.6-flash-free          (fast, good default for titles)
+  //   opencode/nemotron-3.5-lightning-free
+  //   opencode/nemotron-3-ultra-free
+  //   opencode/ling-3.0-flash-fin-free
+  //   opencode/muse-spark-1.3-contributor-free
+  "agents": {
+    "title": {
+      "model": "opencode/mimo-v2.6-flash-free"
+    }
+    // Optional: also route conversation summaries to a free model to save more:
+    // "summary": { "model": "opencode/mimo-v2.6-flash-free" }
+  },
+
+  // ── Do not watch / index junk directories ──────────────────────────────────
+  // "watcher.ignore" keeps build artifacts, dependency trees, VCS data, caches
+  // and lockfiles out of the filesystem watcher and search indexing. Fewer
+  // indexed files means smaller glob/grep results and less context spent on
+  // noise. Patterns containing glob characters use picomatch; bare names match
+  // the watched root. Nested copies need the "**/…/**" form, so both are listed
+  // for the common directories.
+  "watcher": {
+    "ignore": [
+      // Dependency / package trees
+      "node_modules",
+      "**/node_modules/**",
+      "vendor",
+      "**/vendor/**",
+      "bower_components",
+      "**/bower_components/**",
+
+      // Version control and tooling metadata
+      ".git",
+      "**/.git/**",
+      ".svn",
+      "**/.svn/**",
+      ".hg",
+      "**/.hg/**",
+
+      // Build / output directories
+      "build",
+      "**/build/**",
+      "dist",
+      "**/dist/**",
+      "out",
+      "**/out/**",
+      "target",
+      "**/target/**",
+      ".next",
+      "**/.next/**",
+      ".nuxt",
+      "**/.nuxt/**",
+      ".output",
+      "**/.output/**",
+
+      // Test coverage and reports
+      "coverage",
+      "**/coverage/**",
+      "**/*.lcov",
+      "**/test-results/**",
+
+      // Caches and virtual environments
+      ".cache",
+      "**/.cache/**",
+      ".venv",
+      "**/.venv/**",
+      "venv",
+      "**/venv/**",
+      "__pycache__",
+      "**/__pycache__/**",
+      ".pytest_cache",
+      "**/.pytest_cache/**",
+
+      // Logs and temp files
+      "logs",
+      "**/logs/**",
+      "tmp",
+      "**/tmp/**",
+      "**/*.log",
+
+      // Lockfiles and generated/minified assets (large, low-signal files)
+      "**/*.lock",
+      "**/package-lock.json",
+      "**/pnpm-lock.yaml",
+      "**/yarn.lock",
+      "**/bun.lockb",
+      "**/Cargo.lock",
+      "**/composer.lock",
+      "**/Gemfile.lock",
+      "**/poetry.lock",
+      "**/*.min.js",
+      "**/*.min.css",
+      "**/*.map"
+    ]
+  },
+
+  // ── Cap tool output that enters the context ────────────────────────────────
+  // Tool results are a major token sink. When output exceeds these limits the
+  // full text is still saved to disk and a preview is returned to the model.
+  // Defaults are 2000 lines / 51200 bytes; lowering them cuts context size.
+  // Raise these if you often need long command output verbatim.
+  "tool_output": {
+    "max_lines": 600,
+    "max_bytes": 30000
+  },
+
+  // ── Compact context earlier to keep requests small ─────────────────────────
+  // "keep.tokens" is how much recent context is preserved beside the summary
+  // (default 15000). "buffer" is the safety margin below the model's limit;
+  // a larger buffer starts automatic compaction sooner (default 20000). These
+  // values are slightly more aggressive than the defaults, which reduces the
+  // tokens sent on every subsequent request. Lower them further only if losing
+  // recent detail is acceptable.
+  "compaction": {
+    "auto": true,
+    "keep": {
+      "tokens": 12000
+    },
+    "buffer": 24000
+  },
+
+  // ── Shrink images before they reach the model ──────────────────────────────
+  // Images are token-expensive. Auto-resize oversized attachments down to these
+  // bounds instead of sending them at full resolution (defaults: 2000x2000 and
+  // 5 MiB). Lowering the limits reduces image tokens.
+  "media": {
+    "image": {
+      "auto_resize": true,
+      "max_width": 1600,
+      "max_height": 1600,
+      "max_base64_bytes": 2097152
+    }
+  },
+
+  // ── Optional token savers (disabled by default) ────────────────────────────
+  //
+  // Warming sends periodic keep-alive requests to idle sessions, which burns
+  // tokens. It is OFF by default, so leave this commented out:
+  // "warming": false,
+  //
+  // LSP diagnostics can be injected into context after edits. Disabling LSP
+  // saves tokens but reduces code intelligence:
+  // "lsp": false,
+  //
+  // Refuse to read huge/low-signal files outright (glob/grep already skip most
+  // of these via watcher.ignore above). Uncomment to hard-block them:
+  // "permissions": [
+  //   { "action": "read", "resource": "**/node_modules/**", "effect": "deny" },
+  //   { "action": "read", "resource": "**/*.lock", "effect": "deny" },
+  //   { "action": "read", "resource": "**/*-lock.json", "effect": "deny" }
+  // ],
+
+  // ── MCP servers ────────────────────────────────────────────────────────────
+  // Unrelated to token optimization; kept so the context7, grep-app, and
+  // websearch tools stay available.
+  //
+  // Secrets are never stored in this file (it is committed to a public repo).
+  // OpenCode substitutes {env:VAR} from the environment at load time. The Exa
+  // key below comes from EXA_API_KEY, exported in ~/.zshadditions (see the
+  // opencode/README.md "Secrets" section).
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true
+    },
+    "grep-app": {
+      "type": "remote",
+      "url": "https://mcp.grep.app",
+      "enabled": true
+    },
+    "websearch": {
+      "type": "remote",
+      "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
+      "enabled": true,
+      "headers": {
+        // Read from the environment; never commit the real key here.
+        "x-api-key": "{env:EXA_API_KEY}"
+      }
+    }
+  },
+  "plugins": [
+    "@tarquinen/opencode-dcp@latest"
+  ]
+}
