@@ -36,6 +36,42 @@ This module integrates with and depends on several other modules in this reposit
 | [`fonts`](../fonts) | Assets / Rendering | Powerlevel10k (`.p10k.zsh`) and CLI icons require **Adwaita Mono Nerd Font** for glyph rendering. |
 
 
+### 🔑 Secrets & Environment Variables
+
+Sensitive values are kept out of this repository. `50-integrations.zsh` sources
+`~/.zshadditions` when it exists:
+
+```bash
+[[ ! -f ~/.zshadditions ]] || source ~/.zshadditions
+```
+
+`~/.zshadditions` is **not** tracked by this repository. Export API keys there so
+other modules can consume them through environment substitution:
+
+| Variable | Used by | Purpose |
+| :--- | :--- | :--- |
+| `CODESTRAL_API_KEY` | [`neovim`](../neovim) | Mistral **Codestral** provider for inline AI suggestions (`minuet-ai.nvim`, `codestral-latest`). |
+| `GEMINI_API_KEY` | [`neovim`](../neovim) | Google **Gemini** provider for inline AI suggestions (`minuet-ai.nvim`, `gemini-3.5-flash-lite`) and CodeCompanion chat (`gemini-3.6-flash`). |
+| `EXA_API_KEY` | [`opencode`](../opencode) | Exa web search MCP server, referenced as `{env:EXA_API_KEY}` in `opencode.jsonc`. |
+
+The Neovim plugins read these variables by name in
+`lua/plugins/inline-suggestions.lua` (`api_key = "CODESTRAL_API_KEY"` /
+`"GEMINI_API_KEY"`) and `lua/plugins/codecompanion.lua`.
+
+Example:
+
+```bash
+export CODESTRAL_API_KEY="your-codestral-key"
+export GEMINI_API_KEY="your-gemini-key"
+export EXA_API_KEY="your-exa-key"
+```
+
+> [!NOTE]
+> After editing `~/.zshadditions`, open a new shell (or `source ~/.zshadditions`)
+> so new sessions inherit the values. Restart OpenCode's background service
+> (`opencode service restart`) and open a fresh Neovim instance for the plugins to
+> pick up the keys.
+
 ---
 
 ## 🔗 2. Deploy Configuration with GNU Stow

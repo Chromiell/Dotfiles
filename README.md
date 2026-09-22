@@ -27,6 +27,7 @@ This repository is structured into modular configuration packages designed to be
 | [`controllerMacros`](./controllerMacros) | Input / Gaming | Python input swap and macro scripts for game controllers |
 | [`composer`](./composer) | Development | Global PHP Composer settings and configurations |
 | [`php-cs-fixer`](./php-cs-fixer) | Development | PHP coding standards and PSR fixer configurations |
+| [`opencode`](./opencode) | AI / Development | Token-optimized global OpenCode CLI config with free-model titles, indexing ignores, and env-based MCP secrets |
 | [`fonts`](./fonts) | Assets | Custom fonts (including Adwaita Mono Nerd Font variants) |
 | [`images`](./images) | Assets | Shared desktop wallpapers and media assets |
 | [`mouseCursorDefault`](./mouseCursorDefault) | Desktop | Default XDG cursor theme definitions |
@@ -138,6 +139,7 @@ For dedicated setup guides, keybindings, and configuration walkthroughs, refer t
 - [Controller Macros](./controllerMacros/README.md)
 - [Composer Global Settings](./composer/README.md)
 - [PHP-CS-Fixer Settings](./php-cs-fixer/README.md)
+- [OpenCode Configuration](./opencode/README.md)
 - [Fonts Setup](./fonts/README.md)
 - [Wallpapers & Images](./images/README.md)
 - [Mouse Cursor Settings](./mouseCursorDefault/README.md)
