@@ -14,3 +14,11 @@ export VISUAL="micro"
 
 # Required by zsh-autocomplete
 skip_global_compinit=1
+
+# OpenCode / oh-my-opencode-slim
+# Enable native V2 background (async) subagent sessions, which the
+# oh-my-opencode-slim orchestrator uses to plan, dispatch, and reconcile
+# parallel specialist agents.
+export OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS=true
+# Enable OpenCode's built-in Exa-backed web search without a separate API key.
+export OPENCODE_ENABLE_EXA=1

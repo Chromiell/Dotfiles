@@ -32,7 +32,15 @@
   "agents": {
     "title": {
       "model": "opencode/mimo-v2.6-flash-free"
-    }
+    },
+
+    // ── Disabled by the oh-my-opencode-slim installer ──────────────────────
+    // The plugin ships its own `explorer` (and other) specialists, so the
+    // built-in generic `explore`/`general` subagents are turned off to avoid
+    // duplicate delegation targets. `disabled` is the native V2 spelling.
+    "explore": { "disabled": true },
+    "general": { "disabled": true }
+
     // Optional: also route conversation summaries to a free model to save more:
     // "summary": { "model": "opencode/mimo-v2.6-flash-free" }
   },
@@ -175,6 +183,13 @@
   //   { "action": "read", "resource": "**/*-lock.json", "effect": "deny" }
   // ],
 
+  // ── LSP ────────────────────────────────────────────────────────────────────
+  // The oh-my-opencode-slim installer enables LSP when the setting is absent.
+  // Note: OpenCode V2 accepts and preserves `lsp`, but does not run language
+  // servers, expose LSP tools, or emit LSP diagnostics, so this is currently
+  // inert on V2 and can be removed without changing behavior.
+  "lsp": true,
+
   // ── MCP servers ────────────────────────────────────────────────────────────
   // Unrelated to token optimization; kept so the context7, grep-app, and
   // websearch tools stay available.
@@ -183,28 +198,35 @@
   // OpenCode substitutes {env:VAR} from the environment at load time. The Exa
   // key below comes from EXA_API_KEY, exported in ~/.zshadditions (see the
   // opencode/README.md "Secrets" section).
+  // ── MCP servers (native V2 layout) ─────────────────────────────────────────
+  // V2 nests servers under `mcp.servers` and inverts the toggle: servers
+  // connect by default, and `"disabled": true` keeps one configured but
+  // unconnected. (V1's `enabled: true` is dropped; it is the default.)
   "mcp": {
-    "context7": {
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp",
-      "enabled": true
-    },
-    "grep-app": {
-      "type": "remote",
-      "url": "https://mcp.grep.app",
-      "enabled": true
-    },
-    "websearch": {
-      "type": "remote",
-      "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
-      "enabled": true,
-      "headers": {
-        // Read from the environment; never commit the real key here.
-        "x-api-key": "{env:EXA_API_KEY}"
+    "servers": {
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp"
+      },
+      "grep-app": {
+        "type": "remote",
+        "url": "https://mcp.grep.app"
+      },
+      "websearch": {
+        "type": "remote",
+        "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
+        "headers": {
+          // Read from the environment; never commit the real key here.
+          "x-api-key": "{env:EXA_API_KEY}"
+        }
       }
     }
   },
+  // ── Plugins ────────────────────────────────────────────────────────────────
+  // Loaded by both the server and the TUI in V2 (the TUI badge/`/preset` entry
+  // is resolved from this same `plugins` list).
   "plugins": [
-    "@tarquinen/opencode-dcp@latest"
+    "@tarquinen/opencode-dcp@latest",
+    "oh-my-opencode-slim"
   ]
 }
