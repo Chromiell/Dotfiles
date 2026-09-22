@@ -14,6 +14,15 @@
   // ───────────────────────────────────────────────────────────────────────────
   "$schema": "https://opencode.ai/config.json",
 
+  // ── Default primary agent ─────────────────────────────────────────────────
+  // OpenCode uses this agent for any session that does not explicitly pick one.
+  // oh-my-opencode-slim sets `default_agent: "orchestrator"` at load time, but
+  // only when this field is unset or points at a subagent, so pinning "build"
+  // here keeps plain single-model OpenCode as the default. You can still switch
+  // to the multi-agent orchestrator (or plan) per session with Shift+Tab, or
+  // with `--agent` on the CLI.
+  "default_agent": "build",
+
   // ── Session titles use a FREE model ────────────────────────────────────────
   // OpenCode has hidden maintenance agents (title, summary, compaction) that
   // generate session titles, conversation summaries, and compaction
