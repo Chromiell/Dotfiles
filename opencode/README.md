@@ -137,7 +137,13 @@ for quick switching with the `/preset` command.
 
 ### Usage
 
-- The **orchestrator** is the default primary agent and delegates automatically.
+- `build` is pinned as the default primary agent in `opencode.jsonc`
+  (`"default_agent": "build"`). The plugin would otherwise auto-select its
+  orchestrator, but it only does so when `default_agent` is unset or points at a
+  subagent, so the explicit value wins and a fresh session is plain single-model
+  OpenCode. Switch to the team per session with `shift+tab` (cycles
+  `build` → `plan` → `orchestrator` → `ask`).
+- The **orchestrator** delegates automatically once selected.
 - Delegate explicitly with `@explorer`, `@fixer`, `@oracle`, `@librarian`,
   `@designer`, `@council`, or `@observer`.
 - Skills: `/deepwork <task>`, `run codemap`, `/reflect`, `work in a worktree`,
@@ -162,7 +168,8 @@ tasks.
 
 ### Using a single model instead
 
-- Per session: press `shift+tab` to cycle to the built-in `build` (or `plan`) agent.
+- Per session: `build` is already the default (see above); `shift+tab` cycles
+  between `build`, `plan`, and the plugin's primary agents.
 - One shot: start OpenCode with `OH_MY_OPENCODE_SLIM_DISABLE=1 opencode`.
 - Permanently: comment out `"oh-my-opencode-slim"` in the `plugins` array and run
   `opencode service restart`.
