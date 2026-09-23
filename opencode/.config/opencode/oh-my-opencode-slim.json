@@ -63,20 +63,21 @@
         ]
       },
       "oracle": {
-        "model": "opencode-go/qwen3.7-max",
+        "model": "opencode-go/deepseek-v4-pro",
+        "variant": "max",
         "skills": [
           "simplify"
         ],
         "mcps": []
       },
       "explorer": {
-        "model": "opencode-go/deepseek-v4-flash",
-        "variant": "high",
+        "model": "opencode-go/deepseek-v4.1-flash",
+        "variant": "low",
         "skills": [],
         "mcps": []
       },
       "librarian": {
-        "model": "opencode-go/deepseek-v4-flash",
+        "model": "opencode-go/deepseek-v4.1-flash",
         "variant": "high",
         "skills": [],
         "mcps": [
@@ -90,15 +91,38 @@
         "mcps": []
       },
       "fixer": {
-        "model": "opencode-go/deepseek-v4-flash",
+        "model": "opencode-go/deepseek-v4.1-flash",
         "variant": "high",
         "skills": [],
         "mcps": []
       },
       "observer": {
-        "model": "opencode-go/mimo-v2.5",
+        "model": "opencode-go/mimo-v2.6-flash",
         "skills": [],
         "mcps": []
+      },
+      "council": {
+        "model": "opencode-go/deepseek-v4-pro",
+        "variant": "max"
+      }
+    }
+  },
+  "council": {
+    "default_preset": "default",
+    "presets": {
+      "default": {
+        "alpha": {
+          "model": "opencode-go/deepseek-v4-pro",
+          "variant": "max"
+        },
+        "beta": {
+          "model": "opencode-go/qwen3.8-max",
+          "variant": "xhigh"
+        },
+        "gamma": {
+          "model": "opencode-go/glm-5.3",
+          "variant": "high"
+        }
       }
     }
   },
