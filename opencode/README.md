@@ -60,8 +60,9 @@ Config files travel through Git, but a few things are per-machine:
    once stowed — see [section 5](#-5-multi-agent-setup-oh-my-opencode-slim)).
 4. `opencode service restart`, then confirm the plugin loaded with `opencode plugin list`.
 
-The `service.json`, plugin packages (`~/.cache/opencode/npm`), and session/credential
-data are all recreated automatically.
+The `service.json`, plugin packages (`~/.cache/opencode/npm`), the
+`.oh-my-opencode-slim/` runtime manifest, and session/credential data are all
+recreated automatically.
 
 ---
 
@@ -73,7 +74,7 @@ data are all recreated automatically.
 ├── cli.json                  # Tracked: TUI-only settings (paste, theme, keybinds, tabs)
 ├── oh-my-opencode-slim.json  # Tracked: multi-agent presets (opencode-go active)
 ├── skills/                   # Tracked: bundled plugin skills (managed by the plugin)
-├── .oh-my-opencode-slim/     # Tracked: skill reconciliation manifest
+├── .oh-my-opencode-slim/     # Runtime state (git-ignored): skill reconciliation manifest
 ├── agent/                    # Local custom agents (currently untracked)
 └── service.json              # Local service password (git-ignored)
 ```
@@ -84,6 +85,13 @@ which are separate from the server/project config in `opencode.jsonc`. For examp
 `"prompt": { "paste": "full" }` shows pasted text in full instead of a
 `[Pasted ~N lines]` placeholder so it can be edited in the prompt input (set it to
 `"compact"` to restore the placeholder). Valid edits reload while the TUI is running.
+
+> [!NOTE]
+> `.oh-my-opencode-slim/` holds the plugin's **runtime state** (`skills-manifest.json`
+> and `skills.lock`). It is regenerated automatically and is therefore **git-ignored** —
+> see `opencode/.gitignore`. The plugin recreates the directory and manifest on the
+> first **new top-level session** after it loads, re-adopting the tracked skills in
+> `skills/`. It is safe to delete; there is nothing to restore by hand.
 
 ---
 
@@ -214,7 +222,7 @@ tasks.
 | :--- | :--- |
 | OpenCode | `opencode upgrade` |
 | Plugin | Auto-updates by default (`autoUpdate: true`); manual: `opencode plugin check` then `opencode plugin update`. |
-| Bundled skills | Reconciled on service start; force-refresh with `npx -y oh-my-opencode-slim@latest install --skills=force`. |
+| Bundled skills | Reconciled on the first new top-level session after the plugin loads; force-refresh with `npx -y oh-my-opencode-slim@latest install --skills=force`. |
 
 Apply config changes with `opencode reload`; apply plugin code changes with
 `opencode service restart`.
