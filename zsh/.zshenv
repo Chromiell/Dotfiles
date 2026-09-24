@@ -15,6 +15,44 @@ export VISUAL="micro"
 # Required by zsh-autocomplete
 skip_global_compinit=1
 
+# -----------------------------------------------------------------------------------------------
+# Change the default directory for many applications that follow XDG Base Directory Specification
+# -----------------------------------------------------------------------------------------------
+# GnuPG
+export GNUPGHOME="$XDG_DATA_HOME"/gnupg
+
+# Node.js
+export NPM_CONFIG_INIT_MODULE="$XDG_CONFIG_HOME"/npm/config/npm-init.js
+export NPM_CONFIG_CACHE="$XDG_CACHE_HOME"/npm
+
+# npmrc
+export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME"/npm/npmrc
+
+# Bash History file
+export HISTFILE="${XDG_STATE_HOME}"/bash/history
+
+# .NET Core
+export DOTNET_CLI_HOME="$XDG_DATA_HOME"/dotnet
+
+# Rust
+export CARGO_HOME="$XDG_DATA_HOME"/cargo
+
+# Docker
+export DOCKER_CONFIG="$XDG_CONFIG_HOME"/docker
+
+# Codex
+export CODEX_HOME="$XDG_CONFIG_HOME"/codex
+
+# Claude
+export CLAUDE_CONFIG_DIR="$XDG_CONFIG_HOME"/claude
+
+# Less History file
+export LESSHISTFILE="${XDG_STATE_HOME}"/lesshst
+
+# zsh History file
+export HISTFILE="$XDG_STATE_HOME"/.zhistory
+# -----------------------------------------------------------------------------------------------
+
 # OpenCode / oh-my-opencode-slim
 # Enable native V2 background (async) subagent sessions, which the
 # oh-my-opencode-slim orchestrator uses to plan, dispatch, and reconcile

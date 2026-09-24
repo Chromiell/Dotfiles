@@ -31,8 +31,7 @@ bindkey '^Z' undo                              # Ctrl+Z undoes the last edit.
 bindkey '^Y' redo                              # Ctrl+Y redoes the last edit.
 bindkey '^e' list-expand                       # Ctrl+E previews glob expansion.
 
-# History file and retention settings.
-HISTFILE=~/.zhistory
+# History retention settings.
 HISTSIZE=10000
 SAVEHIST=10000
 setopt hist_expire_dups_first # Prefer unique entries when the history file reaches its limit.
