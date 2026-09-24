@@ -29,6 +29,9 @@ alias hl='rg --passthru --color=always'
 # Use fastfetch with a custom config file.
 alias fastfetch="fastfetch -c ~/.config/fastfetch/fastfetch.jsonc"
 
+# Use wget with a custom HSTS file.
+alias wget="wget --hsts-file=$XDG_DATA_HOME/wget-hsts"
+
 # Basic file and resource aliases.
 alias cp="cp -i"     # Ask before overwriting a file.
 alias df='df -h'     # Show disk sizes in a readable format.
