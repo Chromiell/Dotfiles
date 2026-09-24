@@ -54,6 +54,9 @@
       "orchestrator": {
         "model": "opencode-go/deepseek-v4-pro",
         "variant": "max",
+        "permission": {
+          "edit": "deny"
+        },
         "skills": [
           "*"
         ],
@@ -97,7 +100,7 @@
         "mcps": []
       },
       "observer": {
-        "model": "opencode-go/mimo-v2.6-flash",
+        "model": "opencode/mimo-v2.6-flash-free",
         "skills": [],
         "mcps": []
       },

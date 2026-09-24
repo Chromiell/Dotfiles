@@ -146,19 +146,20 @@
     "max_bytes": 30000
   },
 
-  // ── Compact context earlier to keep requests small ─────────────────────────
+  // ── Compaction ─────────────────────────────────────────────────────────────
   // "keep.tokens" is how much recent context is preserved beside the summary
   // (default 15000). "buffer" is the safety margin below the model's limit;
-  // a larger buffer starts automatic compaction sooner (default 20000). These
-  // values are slightly more aggressive than the defaults, which reduces the
-  // tokens sent on every subsequent request. Lower them further only if losing
-  // recent detail is acceptable.
+  // a larger buffer starts automatic compaction sooner (default 20000). The
+  // values below keep a full recent window while compacting slightly later than
+  // the default (smaller buffer), so a long orchestration session is interrupted
+  // less often. Keep the buffer comfortably above the tool-output cap above
+  // (30000 bytes ≈ 7500 tokens); 12000 leaves safe headroom.
   "compaction": {
     "auto": true,
     "keep": {
-      "tokens": 12000
+      "tokens": 15000
     },
-    "buffer": 24000
+    "buffer": 12000
   },
 
   // ── Shrink images before they reach the model ──────────────────────────────
