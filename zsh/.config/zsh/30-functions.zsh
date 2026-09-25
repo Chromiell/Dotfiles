@@ -10,6 +10,16 @@ else
     _PAGER_PROG=less
 fi
 
+# Locate the fd binary (Debian ships it as fdfind), leaving the variable empty
+# so search helpers fall back to find instead of testing for aliases.
+if whence -p fd >/dev/null 2>&1; then
+    _FD_PROG=fd
+elif whence -p fdfind >/dev/null 2>&1; then
+    _FD_PROG=fdfind
+else
+    _FD_PROG=""
+fi
+
 # File, search, display, and terminal helpers.
 # Extract one or more common archive formats.
 extract() {
@@ -155,23 +165,23 @@ ftext() {
     case "${_PAGER_PROG}" in
         batcat)
             if command -v rg >/dev/null 2>&1; then
-                command -v fd >/dev/null 2>&1 && fd --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | batcat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | batcat --style=plain
             else
-                command -v fd >/dev/null 2>&1 && fd --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | batcat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | batcat --style=plain
             fi
             ;;
         bat)
             if command -v rg >/dev/null 2>&1; then
-                command -v fd >/dev/null 2>&1 && fd --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | bat --style=plain || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | bat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | bat --style=plain || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | bat --style=plain
             else
-                command -v fd >/dev/null 2>&1 && fd --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | bat --style=plain || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | bat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | bat --style=plain || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | bat --style=plain
             fi
             ;;
         *)
             if command -v rg >/dev/null 2>&1; then
-                command -v fd >/dev/null 2>&1 && fd --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | less || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | less
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | less || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r rg --hidden -i -n ${COLOR_OPT} ${NO_IGNORE_OPT} -- "$1" | less
             else
-                command -v fd >/dev/null 2>&1 && fd --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | less || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | less
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -0 -d 1 -t f ${NO_IGNORE_OPT} . "$target_dir" | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | less || find "$target_dir" -maxdepth 1 -type f -print0 | xargs -0 -r grep -iIHn ${COLOR_OPT} -- "$1" | less
             fi
             ;;
     esac
@@ -283,23 +293,23 @@ ffile() {
     case "${_PAGER_PROG}" in
         batcat)
             if command -v rg >/dev/null 2>&1; then
-                command -v fd >/dev/null 2>&1 && fd --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | batcat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | batcat --style=plain
             else
-                command -v fd >/dev/null 2>&1 && fd --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | batcat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | batcat --style=plain
             fi
             ;;
         bat)
             if command -v rg >/dev/null 2>&1; then
-                command -v fd >/dev/null 2>&1 && fd --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | bat --style=plain || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | bat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | bat --style=plain || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | bat --style=plain
             else
-                command -v fd >/dev/null 2>&1 && fd --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | bat --style=plain || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | bat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | bat --style=plain || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | bat --style=plain
             fi
             ;;
         *)
             if command -v rg >/dev/null 2>&1; then
-                command -v fd >/dev/null 2>&1 && fd --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | less || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | less
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | less || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | less
             else
-                command -v fd >/dev/null 2>&1 && fd --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | less || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | less
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -d 1 -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | less || find "$target_dir" -maxdepth 1 -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | less
             fi
             ;;
     esac
@@ -356,23 +366,23 @@ frfile() {
     case "${_PAGER_PROG}" in
         batcat)
             if command -v rg >/dev/null 2>&1; then
-                command -v fd >/dev/null 2>&1 && fd --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | batcat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | batcat --style=plain
             else
-                command -v fd >/dev/null 2>&1 && fd --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | batcat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | batcat --style=plain || find "$target_dir" -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | batcat --style=plain
             fi
             ;;
         bat)
             if command -v rg >/dev/null 2>&1; then
-                command -v fd >/dev/null 2>&1 && fd --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | bat --style=plain || find "$target_dir" -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | bat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | bat --style=plain || find "$target_dir" -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | bat --style=plain
             else
-                command -v fd >/dev/null 2>&1 && fd --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | bat --style=plain || find "$target_dir" -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | bat --style=plain
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | bat --style=plain || find "$target_dir" -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | bat --style=plain
             fi
             ;;
         *)
             if command -v rg >/dev/null 2>&1; then
-                command -v fd >/dev/null 2>&1 && fd --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | less || find "$target_dir" -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | less
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | less || find "$target_dir" -iname "*$1*" 2>/dev/null | rg --hidden -i ${NO_IGNORE_OPT} ${COLOR_OPT} -- "$1" | less
             else
-                command -v fd >/dev/null 2>&1 && fd --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | less || find "$target_dir" -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | less
+                [[ -n "${_FD_PROG}" ]] && "${_FD_PROG}" --hidden -L -i "$1" ${NO_IGNORE_OPT} . "$target_dir" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | less || find "$target_dir" -iname "*$1*" 2>/dev/null | grep -i ${COLOR_OPT} -- "$1" | less
             fi
             ;;
     esac
