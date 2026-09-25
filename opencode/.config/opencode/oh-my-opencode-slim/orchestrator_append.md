@@ -17,6 +17,22 @@ instead of routing that work to specialists.
 2. **Delegate.** Actually invoke the `subagent` tool. Work is only "done by the
    team" if the tool was called. Announce each agent's lane, then dispatch.
 
+## Plan gate: consult @oracle before implementation
+
+Before dispatching `@fixer` (or `@designer`) for anything beyond a trivial,
+single, obvious change, you must already hold a real plan. A **proper plan**
+states: the goal, which files/areas are touched, the ordered steps, the main
+risks and edge cases, and how success will be verified.
+
+- If the user's request or your own decomposition does not already amount to
+  such a plan, **ask `@oracle` for one first**. Send it the problem, the
+  constraints, and any `@explorer` findings; it returns the decisive approach.
+- Then brief `@fixer` with that plan — the concrete steps and the acceptance
+  check, never a vague "make it work".
+- You may skip the gate only for a trivial single-step edit with no design
+  choices. When in doubt, consult `@oracle`. A wrong implementation costs far
+  more than one planning round-trip.
+
 ## What you must never do yourself
 
 - **Never gather information yourself.** Codebase discovery, file searches,

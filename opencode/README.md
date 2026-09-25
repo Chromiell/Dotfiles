@@ -209,6 +209,23 @@ preset-specific tuning) and are added *after* the built-in prompt, unlike
 > before trusting any preset. List them with `opencode api get /api/model`
 > (the `variants` field), or pick a model/variant in `/models`.
 
+#### Oracle: planner and advisor
+
+`@oracle` is the team's decisive technical authority: the orchestrator consults it
+for architecture, approach, hard-bug and debugging decisions, and — before
+implementation — for the plan. Its role is hardened in
+**`oh-my-opencode-slim/oracle_append.md`**, which requires every consultation to
+return a concrete, self-contained answer: a single recommended approach, the
+reasoning, the ordered implementation steps, the risks/edge cases, the exact
+verification, and an explicit scope. It ends with **READY TO IMPLEMENT** or
+**NEEDS INFO**, so the orchestrator knows whether it may dispatch `@fixer`.
+
+The **plan gate** ties the two together: before dispatching `@fixer`/`@designer`
+for anything beyond a trivial single-step edit, the orchestrator must already hold
+a proper plan (goal, files, steps, risks, verification). If the request or its own
+decomposition does not constitute one, it asks `@oracle` first and briefs the
+implementer with that plan — never with a vague "make it work".
+
 ### Usage
 
 - `build` is pinned as the default primary agent in `opencode.jsonc`
