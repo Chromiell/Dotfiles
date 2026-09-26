@@ -37,6 +37,12 @@ export DOTNET_CLI_HOME="$XDG_DATA_HOME"/dotnet
 # Rust
 export CARGO_HOME="$XDG_DATA_HOME"/cargo
 
+# Rustup
+export RUSTUP_HOME="$XDG_DATA_HOME"/rustup
+
+# Rustup toolchains
+export CARGO_HOME="$XDG_DATA_HOME"/cargo
+
 # Docker
 export DOCKER_CONFIG="$XDG_CONFIG_HOME"/docker
 
@@ -51,6 +57,14 @@ export LESSHISTFILE="${XDG_STATE_HOME}"/lesshst
 
 # zsh History file
 export HISTFILE="$XDG_STATE_HOME"/.zhistory
+
+# CUDA Cache
+export CUDA_CACHE_PATH="$XDG_CACHE_HOME"/nv
+
+# Ruby Bundler
+export BUNDLE_USER_CONFIG="$XDG_CONFIG_HOME"/bundle
+export BUNDLE_USER_CACHE="$XDG_CACHE_HOME"/bundle
+export BUNDLE_USER_PLUGIN="$XDG_DATA_HOME"/bundle
 # -----------------------------------------------------------------------------------------------
 
 # OpenCode / oh-my-opencode-slim
