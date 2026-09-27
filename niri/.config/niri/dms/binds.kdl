@@ -228,4 +228,7 @@ binds {
     Mod+Shift+S { spawn "flameshot" "gui"; }
     Mod+Space { switch-layout "next"; }
     Mod+Shift+E { spawn "~/Documents/Scripts/grab_text.sh"; }
+    Ctrl+Shift+Escape hotkey-overlay-title="GNOME System Monitor" {
+        spawn "gnome-system-monitor";
+    }
 }
