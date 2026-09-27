@@ -17,6 +17,7 @@ This repository is structured into modular configuration packages designed to be
 | [`neovim`](./neovim) | Editor / IDE | LazyVim IDE setup running via an Arch Linux Distrobox container with exported binaries and portable `.vimrc` |
 | [`git`](./git) | Version Control | Optimized `.gitconfig` with linear rebase workflows, global ignore, and productivity shortcuts |
 | [`scripts`](./scripts) | Automation | Administrative, database backup/sync, Let's Encrypt / HAProxy, and desktop utility scripts |
+| [`documents`](./documents) | Documentation | Personal technical guides and reference notes stored under `~/Documents` |
 | [`alacritty`](./alacritty) | Terminal | Fast, GPU-accelerated terminal emulator configuration with custom themes |
 | [`kitty`](./kitty) | Terminal | GPU-based terminal emulator configuration with session startup profiles |
 | [`niri`](./niri) | Window Manager | Modular KDL configuration for the scrollable-tiling Wayland compositor |
@@ -129,6 +130,7 @@ For dedicated setup guides, keybindings, and configuration walkthroughs, refer t
 - [Neovim & Distrobox Setup](./neovim/README.md)
 - [Git Profiles & Productivity Aliases](./git/README.md)
 - [System & Maintenance Scripts Catalog](./scripts/README.md)
+- [Personal Documents & Technical Guides](./documents/README.md)
 - [Alacritty Terminal Configuration](./alacritty/README.md)
 - [Kitty Terminal Configuration](./kitty/README.md)
 - [Niri Wayland Compositor Configuration](./niri/README.md)

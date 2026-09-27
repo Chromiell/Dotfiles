@@ -45,6 +45,7 @@ bash -c 'shopt -u dotglob; stow */'   # stow every module at once
 | `neovim/` | Editor / IDE | LazyVim setup (run via an Arch Distrobox container), plus portable `.vimrc`, Yazi and Lazygit configs. |
 | `git/` | Version Control | `.gitconfig` include chain, global ignore, and `_template` files copied to real secret files. |
 | `scripts/` | Automation | Admin, DB backup/sync, Certbot/HAProxy, deployment, and desktop utility scripts. Sensitive values live in gitignored `Documents/ScriptsData/config.env`. |
+| `documents/` | Documentation | Personal technical guides, how-to notes, and reference documents stowed into `~/Documents`. |
 | `alacritty/` | Terminal | GPU-accelerated terminal emulator config (TOML + legacy YAML). |
 | `kitty/` | Terminal | Kitty config and startup session profiles. |
 | `niri/` | Window Manager | Modular KDL config for the scrollable-tiling Wayland compositor (DMS sub-configs). |

@@ -22,6 +22,7 @@ sudo apt install rsync curl expect msmtp certbot cifs-utils mariadb-client \
 | Module | Dependency Type | Description |
 | :--- | :--- | :--- |
 | [`niri`](../niri) | Consumer / Keybinding | `grab_text.sh` is bound to the `Mod+Shift+E` shortcut in `niri` for desktop OCR capture. |
+| [`documents`](../documents) | Shared Directory | Both modules stow into `~/Documents`; `documents` adds standalone technical guides alongside the `Scripts/` and `ScriptsData/` trees. |
 
 ---
 
