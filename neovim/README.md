@@ -109,7 +109,8 @@ distrobox-export --bin /bin/lazygit
 
 File and folder icons are rendered as **real terminal images** through the Kitty Graphics Protocol using [real-icons.nvim](https://github.com/Mirsmog/real-icons.nvim), with the icon pack taken from the **Flow Icons** VS Code theme (variant *Flow Deep*).
 
-- **Pack source:** `lua/plugins/icons.lua` runs the lazy `build` step `~/.config/nvim/scripts/install-flow-icons.sh`, which downloads the Flow Icons extension (open-vsx, version pinned in the script) once into `~/.local/share/nvim/real-icons/packs/flow-icons`.
+- **Pack source:** the icons.lua build step runs `~/.config/nvim/scripts/install-flow-icons.sh`, which downloads the Flow Icons extension from Open VSX into `~/.local/share/nvim/real-icons/packs/flow-icons`. The script resolves the **latest published version** every run (early-exits when the installed pack matches, replaces an outdated pack in place).
+- **Startup update:** after `UIEnter`, `icons.lua` queries the Open VSX API in a background `vim.system` job; when a newer release exists and the network is reachable, the installer runs automatically and Neovim notifies the user to restart. Everything stays silent on network failure, and the existing pack is never touched in that case.
 - **Switching variants:** edit `theme` in `lua/plugins/icons.lua` (`flow-deep`, `flow-dim`, `flow-dawn`, `flow-you`) or pick another pack at runtime with `:RealIcons packs` (use `s` to save the default).
 - **Terminal requirements:** image icons only render in **Ghostty** or **Kitty**. Inside tmux the tmux module's `allow-passthrough` option is required. WezTerm, Neovide, Windows Terminal, etc. automatically fall back to font icons (`mini.icons` / Nerd Font).
 - **Dependencies:** `ImageMagick` (installed with the packages in section 5) rasterizes the SVG icons into a PNG cache.
