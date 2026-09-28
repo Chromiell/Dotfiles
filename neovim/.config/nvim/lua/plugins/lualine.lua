@@ -55,6 +55,37 @@ return {
 
             -- 3. Keep your existing encoding component on the right
             table.insert(opts.sections.lualine_x, "encoding")
+
+            -- 4. Replace LazyVim's default `{ "filetype", icon_only = true }`
+            --    statusline component (a mini.icons glyph) with the real-icons
+            --    component. real-icons' lualine integration would otherwise
+            --    auto-insert its own icon component right before that filetype
+            --    component, rendering a second, duplicated icon. The
+            --    `real_icons_lualine` marker key disables that auto-insertion
+            --    (see real-icons.integrations.lualine.has_real_icon), so exactly
+            --    one icon is shown: a real terminal image on Ghostty/Kitty, or
+            --    real-icons' glyph fallback elsewhere.
+            local lualine_c = opts.sections.lualine_c
+            for i, component in ipairs(lualine_c) do
+                if type(component) == "table" and component[1] == "filetype" and component.icon_only then
+                    table.remove(lualine_c, i)
+                    table.insert(lualine_c, i, {
+                        function()
+                            local ok, integration = pcall(require, "real-icons.integrations.lualine")
+                            if ok then
+                                return integration.component()
+                            end
+                            return ""
+                        end,
+                        real_icons_lualine = true,
+                        color = nil,
+                        -- The real component already supplies its leading space.
+                        padding = { left = 1, right = 0 },
+                        separator = "",
+                    })
+                    break
+                end
+            end
         end,
     },
 }
