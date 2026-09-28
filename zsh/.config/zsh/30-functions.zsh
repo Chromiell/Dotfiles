@@ -917,7 +917,7 @@ vardump() {
         echo '('
         local _vd_i
         for ((_vd_i = 1; _vd_i <= ${#_vd_ref_a}; _vd_i++)); do
-            printf '\t[%s]=%s\n' \
+            printf '    [%s]=%s\n' \
                 "${color_key}${_vd_i}${color_rst}" \
                 "${color_value}${(q+)_vd_ref_a[_vd_i]}${color_rst}"
         done
@@ -932,7 +932,7 @@ vardump() {
         echo '('
         local _vd_k
         for _vd_k in "${(k)_vd_ref_A[@]}"; do
-            printf '\t[%s]=%s\n' \
+            printf '    [%s]=%s\n' \
                 "${color_key}${(q+)_vd_k}${color_rst}" \
                 "${color_value}${(q+)_vd_ref_A[$_vd_k]}${color_rst}"
         done
