@@ -109,6 +109,13 @@ return {
                     theme = "flow-deep", -- Flow Dim / Deep / Dawn / You
                 },
             },
+            -- Images are scaled to fill the reserved 2x1 cell area, so the
+            -- visible glyph size is tuned with transparent padding (in PNG
+            -- pixels, out of the 64px canvas), not with `pixels` (sharpness).
+            -- Each padding point shrinks the icon ~3% per side; 2 is subtle.
+            size = {
+                padding = 7,
+            },
             integrations = {
                 bufferline = true,
                 lualine = true,

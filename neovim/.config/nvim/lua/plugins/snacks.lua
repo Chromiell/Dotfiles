@@ -1,6 +1,46 @@
 return {
     {
         "folke/snacks.nvim",
+        -- Defining `config` overrides LazyVim's own snacks config, so the
+        -- `vim.notify` restore hack from LazyVim must be reproduced here.
+        config = function(_, opts)
+            local notify = vim.notify
+            require("snacks").setup(opts)
+            if LazyVim.has("noice.nvim") then
+                vim.notify = notify
+            end
+
+            -- snacks' built-in tmux workaround for the TermResponse bug
+            -- (folke/snacks.nvim#2332) only runs when a `tmux` binary exists
+            -- *and* `extended-keys` is exactly `on` (that is the only value its
+            -- guard matches). Neovim here runs inside the `arch-nvidia`
+            -- distrobox container, which has no `tmux`, so the workaround never
+            -- runs and the XTVERSION probe reply (e.g. "kitty(0.48.2)") leaks
+            -- into the input buffer -- visible in the picker prompt. When the
+            -- native workaround is unusable, pre-seed the detection with what
+            -- it would have produced so no probe is ever sent. On the host (or
+            -- if `tmux` is installed in the container with `extended-keys on`)
+            -- this is skipped and snacks handles it natively.
+            local snacks_tmux_ok = false
+            if vim.fn.executable("tmux") == 1 then
+                local ok, out = pcall(vim.fn.system, { "tmux", "show", "-g", "extended-keys" })
+                snacks_tmux_ok = ok and vim.trim(out):find(" on$") ~= nil
+            end
+            if vim.env.TMUX and vim.env.KITTY_WINDOW_ID and not snacks_tmux_ok then
+                local ok, term = pcall(require, "snacks.image.terminal")
+                if ok then
+                    term.transform = function(data)
+                        return ("\27Ptmux;" .. data:gsub("\27", "\27\27")) .. "\27\\"
+                    end
+                    term._terminal = {
+                        terminal = "kitty",
+                        version = "unknown",
+                        supported = true,
+                        placeholders = true,
+                    }
+                end
+            end
+        end,
         opts = {
             dashboard = {
                 preset = {
