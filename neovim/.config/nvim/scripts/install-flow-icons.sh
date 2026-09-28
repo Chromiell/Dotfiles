@@ -74,4 +74,44 @@ fi
 rm -rf "$dest"
 cp -r "$tmp/ext/extension/." "$dest/"
 
+# Recolor the DEFAULT directory icon (folder_gray -> folder_blue). Flow Icons
+# ships generic folders in gray; real-icons picks the default folder icon
+# straight from the manifest "folder"/"folderExpanded"/"rootFolder*" keys and
+# offers no config hook for them (path rules would also override named
+# folders like src/test). Swap only those top-level defaults to the blue
+# variant where the icon definition exists; named/special folders keep their
+# own icons. Idempotent: already-replaced manifests are left untouched.
+python3 - "$dest" <<'PY'
+import json, os, sys
+
+DEFAULT_KEYS = ("folder", "folderExpanded", "rootFolder", "rootFolderExpanded")
+changed = 0
+for dirpath, _, files in os.walk(sys.argv[1]):
+    for name in files:
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(dirpath, name)
+        try:
+            with open(path, encoding="utf-8") as fh:
+                data = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        if not isinstance(data, dict) or not isinstance(data.get("iconDefinitions"), dict):
+            continue
+        definitions = data["iconDefinitions"]
+        modified = False
+        for key in DEFAULT_KEYS:
+            value = data.get(key)
+            if isinstance(value, str) and "_gray" in value:
+                replacement = value.replace("_gray", "_blue")
+                if replacement in definitions:
+                    data[key] = replacement
+                    modified = True
+        if modified:
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump(data, fh)
+            changed += 1
+print(f"Default folder icon recolored to blue in {changed} manifest(s)")
+PY
+
 echo "Flow Icons ${version} installed at $dest"
