@@ -71,6 +71,7 @@ Everything else should be taken care by Mason automatically.
 | [`php-cs-fixer`](../php-cs-fixer) | Formatter Config | Neovim's PHP formatter (`lua/plugins/php-cs-fixer.lua`) explicitly uses `~/.config/php-cs-fixer/.php-cs-fixer.php`. |
 | [`composer`](../composer) | Package Manager | Global Composer configuration provides `friendsofphp/php-cs-fixer` used for formatting. |
 | [`fonts`](../fonts) | Assets / Icons | File tree icons, Lualine statusline, and Snacks UI symbols require **Adwaita Mono Nerd Font**. |
+| [`tmux`](../tmux) | Terminal Pass-through | `set -g allow-passthrough on` in `~/.config/tmux/tmux.conf` is required so `real-icons.nvim` can render Kitty Graphics Protocol image icons while Neovim runs inside a tmux session. |
 
 ---
 
@@ -104,7 +105,19 @@ distrobox-export --bin /bin/lazygit
 
 ---
 
-## 8. Portable Standalone Vim Configuration (`.vimrc`)
+## 8. Real File Icons (real-icons.nvim)
+
+File and folder icons are rendered as **real terminal images** through the Kitty Graphics Protocol using [real-icons.nvim](https://github.com/Mirsmog/real-icons.nvim), with the icon pack taken from the **Flow Icons** VS Code theme (variant *Flow Deep*).
+
+- **Pack source:** `lua/plugins/icons.lua` runs the lazy `build` step `~/.config/nvim/scripts/install-flow-icons.sh`, which downloads the Flow Icons extension (open-vsx, version pinned in the script) once into `~/.local/share/nvim/real-icons/packs/flow-icons`.
+- **Switching variants:** edit `theme` in `lua/plugins/icons.lua` (`flow-deep`, `flow-dim`, `flow-dawn`, `flow-you`) or pick another pack at runtime with `:RealIcons packs` (use `s` to save the default).
+- **Terminal requirements:** image icons only render in **Ghostty** or **Kitty**. Inside tmux the tmux module's `allow-passthrough` option is required. WezTerm, Neovide, Windows Terminal, etc. automatically fall back to font icons (`mini.icons` / Nerd Font).
+- **Dependencies:** `ImageMagick` (installed with the packages in section 5) rasterizes the SVG icons into a PNG cache.
+
+> [!NOTE]
+> Flow Icons' upstream README markets the extension as a premium theme ("demo icons only" without a license). The published `2.0.9` VSIX verified here ships the complete icon set per its own manifests — verify your license terms at https://flow-icons.pages.dev before reuse outside this setup.
+
+## 9. Portable Standalone Vim Configuration (`.vimrc`)
 
 This module includes a standalone [`.vimrc`](./.vimrc) file located in the module root. It is designed to be exported to remote servers, minimal container environments, or machines where Neovim cannot be installed, while providing an editing experience that closely resembles this local LazyVim setup.
 
