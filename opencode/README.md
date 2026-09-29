@@ -75,7 +75,7 @@ recreated automatically.
 ├── oh-my-opencode-slim.json  # Tracked: multi-agent presets (opencode-go active)
 ├── skills/                   # Tracked: plugin skills + custom playwright-cli (reconciled by the plugin)
 ├── .oh-my-opencode-slim/     # Runtime state (git-ignored): skill reconciliation manifest
-├── agent/                    # Local custom agents (currently untracked)
+├── agent/                    # Local custom agents (currently only Ask agent is added)
 └── service.json              # Local service password (git-ignored)
 ```
 
