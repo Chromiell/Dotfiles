@@ -12,7 +12,7 @@ return {
         end,
         keys = {
             {
-                "<leader>cM",
+                "<leader>uM",
                 function()
                     local is_enabled = (vim.g.matchup_enabled == nil or vim.g.matchup_enabled == 1)
 
