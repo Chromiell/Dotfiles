@@ -52,6 +52,9 @@ export CODEX_HOME="$XDG_CONFIG_HOME"/codex
 # Claude
 export CLAUDE_CONFIG_DIR="$XDG_CONFIG_HOME"/claude
 
+# Copilot
+export COPILOT_HOME=~/.config/copilot
+
 # Less History file
 export LESSHISTFILE="${XDG_STATE_HOME}"/lesshst
 
