@@ -8,6 +8,7 @@ return {
             -- Explicitly tell the plugin which filetypes to watch
             filetypes = {
                 "html",
+                "mjml",
                 "javascript",
                 "typescript",
                 "javascriptreact",

@@ -156,3 +156,20 @@ The `.vimrc` is written in pure Vimscript with **zero plugin dependencies**. Vim
 - **Netrw explorer**: `<leader>e` toggles a banner-free tree at the current file’s directory and `<leader>fe` opens Netrw directly. Inside Netrw, `a`, `r`, and `d` create, rename, and delete entries.
 - **Completion and spelling**: Insert-mode arrow keys navigate the completion menu, `<Tab>` confirms suggestions, and completion can trigger after matching words. `<leader>uo` toggles spelling with English dictionary; `[s` and `]s` navigate spelling errors.
 - **Automatic integrations**: Autocommands refresh Git status and signs, restore the last cursor position, apply filetype-specific indentation/comment settings, configure Quickfix and Netrw buffers, sync yanks through `wl-copy`, and keep the completion and whitespace helpers updated.
+
+---
+
+## 10. MJML Support
+
+[MJML](https://mjml.io) (Mailjet Markup Language) is supported out of the box for `.mjml` files, wired up in `lua/plugins/mjml.lua`.
+
+- **Filetype & syntax:** `.mjml` files are detected as the dedicated `mjml` filetype. Neovim has no official MJML treesitter parser, so that filetype is registered against the existing **Blade** parser (`vim.treesitter.language.register("blade", "mjml")`). Blade is used rather than HTML because Laravel MJML templates contain Blade expressions and the plain `html` grammar treats a bare `>` inside text as fatal — every `->` wraps the whole document in a single `ERROR` node, leaving no tag/attribute nodes to colour (the symptom: highlighting appears to "stop" after the first lines). Blade is an HTML superset that parses those expressions and keeps the element tree intact. This gives full syntax highlighting, Blade directive highlighting, smart indentation, code folding and vim-matchup tag matching. CSS injection inside `<mj-style>` is added on top of the stock HTML query set by `after/queries/html/injections.scm` (the bundled queries only inject into `<style>`/`<script>`); Blade inherits the HTML queries, so the same file applies.
+- **Editors & tools:** `ts-autotag.nvim` auto-closes and live-renames MJML tags (`lua/plugins/autotag.lua`), the comment string is set to `<!-- %s -->` (`lua/config/autocmds.lua`), and tag rainbow-delimiter coloring is silenced for MJML to stay consistent with HTML/XML (`lua/plugins/rainbow.lua`).
+- **No language server:** MJML publishes no standalone language server, so no LSP is attached. Compiling/previewing emails is done outside Neovim via the `mjml-cli` npm package (not installed by this module).
+- **Formatting:** Prettier has no native MJML parser, so it is intentionally **not** wired into `conform.nvim`. If you want formatting anyway, add a formatter entry that forces the HTML parser (`--parser html`) — verify it against your templates first, as Prettier's whitespace handling can affect rendered email output.
+- **Not used:** the community `tree-sitter-mjml` grammars were deliberately skipped; they are unmaintained, and the most prominent one is explicitly marked "DO NOT USE" upstream.
+
+> [!NOTE]
+> The `mjml` filetype is mapped to the `blade` treesitter language, and the `blade` parser is already installed by `lua/plugins/laravel.lua` (`ensure_installed`), so no extra parser download (`:TSInstall`) is required.
+>
+> Custom query files under `after/queries/html/` must begin with a `; extends` (or `; inherits:`) modeline. Neovim silently discards a query file that lacks one once a base query for that language/query already exists. Blade inherits the HTML queries, so `after/queries/html/injections.scm` applies to `.mjml` as well.

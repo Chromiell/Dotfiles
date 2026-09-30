@@ -44,6 +44,14 @@ vim.api.nvim_create_autocmd("FileType", {
     end,
 })
 
+-- MJML is HTML-like: use HTML comments instead of Neovim's default /* */
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = "mjml",
+    callback = function()
+        vim.bo.commentstring = "<!-- %s -->"
+    end,
+})
+
 -- Center screen after half-page scrolling down and up
 vim.keymap.set("n", "<C-d>", "<C-d>zz", { desc = "Scroll down and center" })
 vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Scroll up and center" })
