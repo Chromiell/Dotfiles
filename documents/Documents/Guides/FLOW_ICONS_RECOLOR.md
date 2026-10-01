@@ -15,14 +15,16 @@ This guide recolors the *default* folder icon to the pack's built-in blue varian
 
 ## How the recolor works
 
-Icon-theme manifests (`dim.json`, `deep.json`, `dawn.json`, `you.json`, `*-light.json`) carry four top-level default keys:
+Icon-theme manifests (`dim.json`, `deep.json`, `dawn.json`, `you.json`) carry four top-level default keys:
 
 | Manifest key | Gray default | Blue replacement |
 | :--- | :--- | :--- |
 | `folder` | `folder_gray` | `folder_blue` |
 | `folderExpanded` | `folder_gray_open` | `folder_blue_open` |
-| `rootFolder` | `folder_gray` | `folder_blue` |
-| `rootFolderExpanded` | `folder_gray_open` | `folder_blue_open` |
+| `rootFolder` | `folder_root` | `folder_blue` |
+| `rootFolderExpanded` | `folder_root_open` | `folder_blue_open` |
+
+The root-folder keys use the `folder_root` definitions, not `folder_gray`; there is no `folder_root_blue`, so roots are pointed at the same `folder_blue` icons used for regular folders.
 
 Only these four top-level defaults are swapped (when the replacement definition exists). `folderNames` / `folderNamesExpanded` entries — which give `src`, `test`, etc. their own colors — are left untouched; the same applies to extension/file associations.
 
@@ -44,8 +46,8 @@ foreach ($f in (Get-ChildItem $ext.FullName -Recurse -Filter *.json)) {
     $new = $c `
         -replace '"folder"\s*:\s*"folder_gray"',              '"folder": "folder_blue"' `
         -replace '"folderExpanded"\s*:\s*"folder_gray_open"', '"folderExpanded": "folder_blue_open"' `
-        -replace '"rootFolder"\s*:\s*"folder_gray"',          '"rootFolder": "folder_blue"' `
-        -replace '"rootFolderExpanded"\s*:\s*"folder_gray_open"', '"rootFolderExpanded": "folder_blue_open"'
+        -replace '"rootFolder"\s*:\s*"folder_root"',          '"rootFolder": "folder_blue"' `
+        -replace '"rootFolderExpanded"\s*:\s*"folder_root_open"', '"rootFolderExpanded": "folder_blue_open"'
     if ($new -ne $c) { Set-Content $f.FullName $new -Encoding UTF8; Write-Host "patched $($f.Name)" }
 }
 ```
@@ -60,22 +62,22 @@ Run in a terminal on the machine where the editor is installed. The command dete
 
 ```bash
 python3 - <<'PY'
-import glob, os
+import glob, json, os
 
 # Extension roots for VS Code, VSCodium, Cursor, Windsurf.
-roots = glob.glob(os.path.expanduser(
-    "~/{.vscode,.vscode-oss,.vscodium,.cursor,.windsurf}/extensions/thang-nm.flow-icons-*"
-))
+# NOTE: Python's glob has no brace expansion, so expand explicitly.
+home = os.path.expanduser("~")
+roots = []
+for d in (".vscode", ".vscode-oss", ".vscodium", ".cursor", ".windsurf"):
+    roots += glob.glob(os.path.join(home, d, "extensions", "thang-nm.flow-icons-*"))
 
 # Manifest-level DEFAULT folder keys, same as the Windows patch.
 KEYS = [
     ("folder", "folder_gray", "folder_blue"),
     ("folderExpanded", "folder_gray_open", "folder_blue_open"),
-    ("rootFolder", "folder_gray", "folder_blue"),
-    ("rootFolderExpanded", "folder_gray_open", "folder_blue_open"),
+    ("rootFolder", "folder_root", "folder_blue"),
+    ("rootFolderExpanded", "folder_root_open", "folder_blue_open"),
 ]
-
-import json
 
 for ext in roots:
     for raw in glob.glob(os.path.join(ext, "*.json")):
