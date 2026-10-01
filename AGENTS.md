@@ -34,6 +34,28 @@ stow -R <package>       # restow / refresh after adding files
 bash -c 'shopt -u dotglob; stow */'   # stow every module at once
 ```
 
+### Shared Directories
+
+Most packages own an exclusive subtree of `$HOME`, so Stow folds them into a
+single symlink. A few packages instead write into directories that are shared
+with other packages or with runtime tools. Those directories **must exist as
+real directories before stowing**; otherwise Stow folds the whole directory into
+one symlink pointing into the repository, and runtime writers would write into
+the repo:
+
+```bash
+mkdir -p ~/.local/bin ~/Documents
+```
+
+| Directory | Stow packages | Layout after stowing | Also written at runtime by |
+| :--- | :--- | :--- | :--- |
+| `~/.local/bin` | `scripts` | real dir, files symlinked | Deja, znap, distrobox, `uv` |
+| `~/Documents` | `scripts`, `documents` | real dir; `Scripts/`, `ScriptsData/` and `Guides/` are symlinks | — |
+
+Because `~/Documents` itself already exists, Stow folds its subdirectories
+(`Scripts`, `ScriptsData`, `Guides`) into symlinks rather than real
+directories.
+
 ---
 
 ## Repository Map
@@ -44,8 +66,8 @@ bash -c 'shopt -u dotglob; stow */'   # stow every module at once
 | `tmux/` | Multiplexer | Catppuccin Mocha tmux config, prefix-less navigation, status bar resource modules. |
 | `neovim/` | Editor / IDE | LazyVim setup (run via an Arch Distrobox container), plus portable `.vimrc`, Yazi and Lazygit configs. Graphical file icons via `real-icons.nvim` (Flow Icons pack, installed by `lua/plugins/icons.lua` + `scripts/install-flow-icons.sh`). |
 | `git/` | Version Control | `.gitconfig` include chain, global ignore, and `_template` files copied to real secret files. |
-| `scripts/` | Automation | Admin, DB backup/sync, Certbot/HAProxy, deployment, and desktop utility scripts. Sensitive values live in gitignored `Documents/ScriptsData/config.env`. |
-| `documents/` | Documentation | Personal technical guides, how-to notes, and reference documents stowed into `~/Documents`. |
+| `scripts/` | Automation | Admin, DB backup/sync, Certbot/HAProxy, deployment, and desktop utility scripts, stowed into `~/Documents/Scripts`, `~/Documents/ScriptsData` and `~/.local/bin`. Sensitive values live in gitignored `Documents/ScriptsData/config.env`. |
+| `documents/` | Documentation | Personal technical guides, how-to notes, and reference documents stowed into `~/Documents/Guides`. |
 | `alacritty/` | Terminal | GPU-accelerated terminal emulator config (TOML + legacy YAML). |
 | `kitty/` | Terminal | Kitty config and startup session profiles. |
 | `niri/` | Window Manager | Modular KDL config for the scrollable-tiling Wayland compositor (DMS sub-configs). |
@@ -57,7 +79,6 @@ bash -c 'shopt -u dotglob; stow */'   # stow every module at once
 | `composer/` | Development | Global PHP Composer settings. |
 | `php-cs-fixer/` | Development | PHP coding-standards / PSR fixer config. |
 | `opencode/` | AI / Development | Token-optimized OpenCode CLI config plus the `oh-my-opencode-slim` orchestrator plugin. |
-| `fonts/` | Assets | Custom fonts (Adwaita Mono Nerd Font variants). |
 | `images/` | Assets | Shared wallpapers and media assets. |
 | `mouseCursorDefault/` | Desktop | Default XDG cursor theme definitions. |
 
@@ -75,9 +96,21 @@ Each module also has its own `README.md` with package requirements, module depen
    Always keep the tracked template (`*.example` / `*_template`) in sync with new variables, using sanitized placeholders.
 3. **Respect per-module `.gitignore` files.** They intentionally exclude secrets, machine-local overrides, and regenerated runtime state (e.g. `lazy-lock.json`, the oh-my-opencode-slim manifest). Do not force-add ignored files.
 4. **Keep module READMEs accurate.** When changing a module's packages, structure, or dependencies, update that module's `README.md`.
-5. **Dependencies are cross-module.** Many modules depend on `fonts/` for Nerd Font glyphs and on `zsh/` for aliases. When adding a dependency, document it in both modules' READMEs (see existing "Dotfiles Module Dependencies" tables).
+5. **Dependencies are cross-module.** Many modules depend on the Adwaita Mono Nerd Font installed by `scripts/.local/bin/install-adwaita-nerd-font`, and on `zsh/` for aliases. When adding a dependency, document it in both modules' READMEs (see existing "Dotfiles Module Dependencies" tables).
 6. **No destructive operations.** Do not delete user configuration, remove Stow packages, or rewrite live `$HOME` files unless explicitly asked.
 7. **Match existing style.** Config files, scripts, and READMEs follow consistent formatting and section conventions — mirror them.
+8. **Shared directories must exist before stowing.** `~/.local/bin` and `~/Documents` are written to by multiple packages and/or runtime tools. Create them first (see **Shared Directories**) so Stow links files into them instead of folding them into repo symlinks.
+
+---
+
+## Licensing
+
+- Original work in this repository is under the **MIT License** (`LICENSE`).
+- Bundled third-party components are **excluded** from that license and keep their own terms. Always preserve their notices and license files:
+  - `neovim/.config/nvim/**` → Apache-2.0 (`neovim/.config/nvim/LICENSE`, LazyVim)
+  - `opencode/.config/opencode/skills/simplify/**` → MIT, © Addy Osmani
+- Full attribution lives in `THIRD-PARTY-NOTICES.md`. Update it (and the README License table) when you add or remove third-party/adapted content.
+- Upstream dependencies installed at runtime (Zsh/Tmux plugins, Composer `vendor/`, the downloaded font binaries) are gitignored and not distributed, so their licenses do not apply to this repository.
 
 ---
 

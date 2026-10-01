@@ -19,7 +19,7 @@ sudo apt install eza
 
 | Module | Dependency Type | Description |
 | :--- | :--- | :--- |
-| [`fonts`](../fonts) | Assets / Icons | File and directory iconography (`--icons`) relies on **Adwaita Mono Nerd Font** from the fonts module. |
+| [`scripts`](../scripts) | Assets / Icons | File and directory iconography (`--icons`) relies on the **Adwaita Mono Nerd Font** installed by `install-adwaita-nerd-font`. |
 | [`zsh`](../zsh) | Complementary Shell | Provides custom Zsh aliases and functions (`l`, `la`, `ll`, `llt`, `lll`, `ld`, etc.) integrating with `eza`. |
 
 

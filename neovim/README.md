@@ -70,7 +70,7 @@ Everything else should be taken care by Mason automatically.
 | :--- | :--- | :--- |
 | [`php-cs-fixer`](../php-cs-fixer) | Formatter Config | Neovim's PHP formatter (`lua/plugins/php-cs-fixer.lua`) explicitly uses `~/.config/php-cs-fixer/.php-cs-fixer.php`. |
 | [`composer`](../composer) | Package Manager | Global Composer configuration provides `friendsofphp/php-cs-fixer` used for formatting. |
-| [`fonts`](../fonts) | Assets / Icons | File tree icons, Lualine statusline, and Snacks UI symbols require **Adwaita Mono Nerd Font**. |
+| [`scripts`](../scripts) | Assets / Icons | File tree icons, Lualine statusline, and Snacks UI symbols require the **Adwaita Mono Nerd Font** installed by `install-adwaita-nerd-font`. |
 | [`tmux`](../tmux) | Terminal Pass-through | `set -g allow-passthrough on` in `~/.config/tmux/tmux.conf` is required so `real-icons.nvim` can render Kitty Graphics Protocol image icons while Neovim runs inside a tmux session. |
 
 ---

@@ -42,7 +42,7 @@ This module integrates with and depends on several other modules in this reposit
 | [`eza`](../eza) | Aliases / Functions | Used for colorized file and directory listing aliases (`l`, `la`, `ll`, `llt`, `lll`, `ld`, etc.). |
 | [`fzf`](../fzf) | Keybindings / Scripts | Powers fuzzy searching and the `ff` file preview alias (`~/.config/fzf/fzf-preview.sh`). |
 | [`tmux`](../tmux) | Functions / Aliases | Helper functions (`t`, `taa`, `tbg`, `tsp`, `tlast`, `tnl`, `tp`) and shortcuts manage tmux sessions. |
-| [`fonts`](../fonts) | Assets / Rendering | Powerlevel10k (`.p10k.zsh`) and CLI icons require **Adwaita Mono Nerd Font** for glyph rendering. |
+| [`scripts`](../scripts) | Assets / Rendering | Powerlevel10k (`.p10k.zsh`) and CLI icons require the **Adwaita Mono Nerd Font** installed by `install-adwaita-nerd-font` for glyph rendering. |
 
 
 ### 🔑 Secrets & Environment Variables

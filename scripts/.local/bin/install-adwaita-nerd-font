@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+#
+# install-adwaita-nerd-font - fetch the Adwaita Mono Nerd Font family at runtime
+#
+# The font binaries are NOT vendored in the dotfiles repository. This script
+# downloads the official Nerd Fonts release archive and installs the *.ttf
+# files into the user font directory, then refreshes the font cache.
+#
+# By default the latest Nerd Fonts release is resolved and installed. Pass
+# --version <tag> to pin a specific release for reproducible setups.
+#
+# Usage:
+#   install-adwaita-nerd-font [--version <tag|latest>] [--force] [--no-cache]
+#
+# Options:
+#   --version <tag>   Release to install: a tag (e.g. v3.5.1) or "latest"
+#                     (default)
+#   --force, -f       Reinstall even if the resolved version is already present
+#   --no-cache        Do not run fc-cache afterwards
+#   -h, --help        Show this help
+#
+# Environment:
+#   XDG_DATA_HOME     Base data directory (default: ~/.local/share)
+#   GITHUB_TOKEN      Optional token used when querying the latest release
+#
+set -euo pipefail
+
+readonly FONT_FAMILY="AdwaitaMono"
+readonly DEFAULT_VERSION="latest"
+readonly RELEASES_API="https://api.github.com/repos/ryanoasis/nerd-fonts/releases"
+readonly RELEASE_BASE="https://github.com/ryanoasis/nerd-fonts/releases/download"
+
+VERSION="$DEFAULT_VERSION"
+FORCE=0
+RUN_FC_CACHE=1
+FONT_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/fonts"
+MARKER_FILE=""
+
+usage() {
+    sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+while (($#)); do
+    case "$1" in
+        --version)
+            VERSION="${2:?--version requires a value}"
+            shift 2
+            ;;
+        --version=*)
+            VERSION="${1#*=}"
+            shift
+            ;;
+        --force|-f)
+            FORCE=1
+            shift
+            ;;
+        --no-cache)
+            RUN_FC_CACHE=0
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "error: unknown option: $1" >&2
+            usage >&2
+            exit 2
+            ;;
+    esac
+done
+
+for dep in curl unzip; do
+    if ! command -v "$dep" >/dev/null 2>&1; then
+        echo "error: required command '$dep' not found in PATH" >&2
+        exit 1
+    fi
+done
+
+resolve_latest_tag() {
+    local tag
+    local -a auth=()
+    [[ -n "${GITHUB_TOKEN:-}" ]] && auth=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+
+    tag="$(curl -fsSL --proto '=https' --tlsv1.2 \
+        "${auth[@]}" \
+        -H 'Accept: application/vnd.github+json' \
+        "$RELEASES_API/latest" \
+        | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+        | head -n1)"
+
+    if [[ -z "$tag" ]]; then
+        echo "error: could not determine the latest Nerd Fonts release" >&2
+        echo "       (network or API failure; pin one explicitly with --version vX.Y.Z)" >&2
+        exit 1
+    fi
+    printf '%s' "$tag"
+}
+
+if [[ "$VERSION" == "latest" ]]; then
+    echo "Resolving the latest Nerd Fonts release..."
+    VERSION="$(resolve_latest_tag)"
+fi
+
+if [[ ! "$VERSION" =~ ^v[0-9] ]]; then
+    echo "error: invalid release tag '$VERSION' (expected something like v3.5.1 or 'latest')" >&2
+    exit 2
+fi
+
+mkdir -p "$FONT_DIR"
+MARKER_FILE="$FONT_DIR/.${FONT_FAMILY,,}-nerdfont.version"
+
+refresh_cache() {
+    if [[ "$RUN_FC_CACHE" -eq 1 ]] && command -v fc-cache >/dev/null 2>&1; then
+        echo "Refreshing font cache..."
+        fc-cache -f "$FONT_DIR" >/dev/null
+    fi
+}
+
+if [[ "$FORCE" -eq 0 && -f "$MARKER_FILE" ]] \
+    && [[ "$(cat "$MARKER_FILE")" == "$VERSION" ]] \
+    && compgen -G "$FONT_DIR/${FONT_FAMILY}NerdFont*.ttf" >/dev/null; then
+    echo "${FONT_FAMILY} Nerd Font ${VERSION} is already installed in $FONT_DIR"
+    echo "Use --force to reinstall."
+    exit 0
+fi
+
+archive_url="${RELEASE_BASE}/${VERSION}/${FONT_FAMILY}.zip"
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"' EXIT
+
+echo "Downloading ${FONT_FAMILY} Nerd Font ${VERSION}..."
+curl -fL --retry 3 --proto '=https' --tlsv1.2 \
+    -o "$tmp_dir/${FONT_FAMILY}.zip" "$archive_url"
+
+echo "Installing fonts to $FONT_DIR ..."
+unzip -o -q "$tmp_dir/${FONT_FAMILY}.zip" '*.ttf' -d "$tmp_dir/extract"
+
+installed=0
+for font in "$tmp_dir"/extract/*.ttf; do
+    [[ -e "$font" ]] || continue
+    install -m 0644 "$font" "$FONT_DIR/$(basename "$font")"
+    installed=$((installed + 1))
+done
+
+if [[ "$installed" -eq 0 ]]; then
+    echo "error: no .ttf files found in the downloaded archive" >&2
+    exit 1
+fi
+
+printf '%s' "$VERSION" >"$MARKER_FILE"
+refresh_cache
+
+echo "Installed $installed font file(s)."

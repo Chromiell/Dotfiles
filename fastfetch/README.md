@@ -19,7 +19,7 @@ sudo apt install fastfetch
 
 | Module | Dependency Type | Description |
 | :--- | :--- | :--- |
-| [`fonts`](../fonts) | Assets / Icons | System info module glyphs (OS, CPU, GPU, memory, etc.) in `fastfetch.jsonc` require **Adwaita Mono Nerd Font**. |
+| [`scripts`](../scripts) | Assets / Icons | System info module glyphs (OS, CPU, GPU, memory, etc.) in `fastfetch.jsonc` require the **Adwaita Mono Nerd Font** installed by `install-adwaita-nerd-font`. |
 | [`zsh`](../zsh) | Complementary Shell | Automatically invokes Fastfetch upon new interactive shell sessions and provides an alias for it. |
 
 

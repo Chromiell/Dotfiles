@@ -17,7 +17,7 @@ This repository is structured into modular configuration packages designed to be
 | [`neovim`](./neovim) | Editor / IDE | LazyVim IDE setup running via an Arch Linux Distrobox container with exported binaries and portable `.vimrc` |
 | [`git`](./git) | Version Control | Optimized `.gitconfig` with linear rebase workflows, global ignore, and productivity shortcuts |
 | [`scripts`](./scripts) | Automation | Administrative, database backup/sync, Let's Encrypt / HAProxy, and desktop utility scripts |
-| [`documents`](./documents) | Documentation | Personal technical guides and reference notes stored under `~/Documents` |
+| [`documents`](./documents) | Documentation | Personal technical guides and reference notes stowed under `~/Documents/Guides` |
 | [`alacritty`](./alacritty) | Terminal | Fast, GPU-accelerated terminal emulator configuration with custom themes |
 | [`kitty`](./kitty) | Terminal | GPU-based terminal emulator configuration with session startup profiles |
 | [`niri`](./niri) | Window Manager | Modular KDL configuration for the scrollable-tiling Wayland compositor |
@@ -29,7 +29,6 @@ This repository is structured into modular configuration packages designed to be
 | [`composer`](./composer) | Development | Global PHP Composer settings and configurations |
 | [`php-cs-fixer`](./php-cs-fixer) | Development | PHP coding standards and PSR fixer configurations |
 | [`opencode`](./opencode) | AI / Development | Token-optimized global OpenCode CLI config with free-model titles, indexing ignores, and env-based MCP secrets |
-| [`fonts`](./fonts) | Assets | Custom fonts (including Adwaita Mono Nerd Font variants) |
 | [`images`](./images) | Assets | Shared desktop wallpapers and media assets |
 | [`mouseCursorDefault`](./mouseCursorDefault) | Desktop | Default XDG cursor theme definitions |
 
@@ -67,6 +66,36 @@ git clone https://github.com/Chromiell/Dotfiles ~/.dotfiles
 cd ~/.dotfiles
 ```
 
+### 2. Create the Shared Directories
+
+A few packages write into directories that are shared with other packages or
+with runtime tools. Create them **before stowing**, otherwise Stow replaces the
+whole directory with a single symlink into the repository (and runtime tools
+would then write into your dotfiles repository):
+
+```bash
+mkdir -p ~/.local/bin ~/Documents
+```
+
+| Directory | Why it must exist first |
+| :--- | :--- |
+| `~/.local/bin` | `scripts` links its binaries here; Deja, znap, distrobox and `uv` write here at runtime |
+| `~/Documents` | `scripts` and `documents` both stow into it; this keeps it a real directory |
+
+### 3. Install Fonts
+
+Font binaries are not committed to the repository; they are downloaded on
+demand. Download the Adwaita Mono Nerd Font used for icons and glyphs:
+
+```bash
+cd ~/.dotfiles
+stow scripts
+install-adwaita-nerd-font
+```
+
+See the [`install-adwaita-nerd-font` script](./scripts/README.md) for installer
+options.
+
 ---
 
 ## 🛠️ Managing Configurations with GNU Stow
@@ -89,12 +118,20 @@ stow fastfetch
 stow fzf
 ```
 
+> ⚠️ **Create the shared directories first.** `scripts` (→ `~/.local/bin`,
+> `~/Documents`) and `documents` (→ `~/Documents`) rely on those directories
+> already existing. If a directory is missing, Stow folds it into a single
+> symlink into the repository and runtime tools will write into your dotfiles.
+> See [Create the Shared Directories](#2-create-the-shared-directories).
+
 ### Symlink All Modules
 
-To create symlinks for all configurations at once:
+Create the [shared directories](#2-create-the-shared-directories) first, then
+stow every module at once:
 
 ```bash
 cd ~/.dotfiles
+mkdir -p ~/.local/bin ~/Documents
 bash -c 'shopt -u dotglob; stow */'
 ```
 
@@ -121,6 +158,22 @@ stow -R <package-name>
 
 ---
 
+## ⚖️ License
+
+Original work in this repository is released under the [MIT License](./LICENSE).
+
+Bundled third-party components keep their own upstream licenses:
+
+| Component | Path | License |
+| :--- | :--- | :--- |
+| LazyVim-based Neovim config | `neovim/.config/nvim/` | Apache-2.0 |
+| Adapted `simplify` skill | `opencode/.config/opencode/skills/simplify/` | MIT (© Addy Osmani) |
+
+See [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) for full attribution and
+the retained `LICENSE` files.
+
+---
+
 ## 📖 Component Documentation
 
 For dedicated setup guides, keybindings, and configuration walkthroughs, refer to the individual component manuals:
@@ -142,6 +195,5 @@ For dedicated setup guides, keybindings, and configuration walkthroughs, refer t
 - [Composer Global Settings](./composer/README.md)
 - [PHP-CS-Fixer Settings](./php-cs-fixer/README.md)
 - [OpenCode Configuration](./opencode/README.md)
-- [Fonts Setup](./fonts/README.md)
 - [Wallpapers & Images](./images/README.md)
 - [Mouse Cursor Settings](./mouseCursorDefault/README.md)

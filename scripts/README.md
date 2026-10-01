@@ -26,6 +26,26 @@ sudo apt install rsync curl expect msmtp certbot cifs-utils mariadb-client \
 
 ---
 
+## 🚀 Installation with GNU Stow
+
+> ⚠️ **Create the shared directories first.** The module stows into
+> `~/.local/bin` (also used by Deja, znap, distrobox and `uv`) and into
+> `~/Documents`, which is shared with the [`documents`](../documents) module.
+> If those directories do not exist, Stow folds them into symlinks pointing
+> into the repository instead of linking files into them.
+
+```bash
+mkdir -p ~/.local/bin ~/Documents
+cd ~/.dotfiles
+stow scripts
+```
+
+After stowing, `~/Documents/Scripts` and `~/Documents/ScriptsData` are symlinks
+to this module, `~/.local/bin` stays a real directory (with the individual
+binaries symlinked inside), and `~/Documents` remains a real directory.
+
+---
+
 ## 📁 Directory Structure & Data Organization
 
 To maintain security and separation of concerns, executable scripts, sensitive data files, and system utilities are organized across designated locations:
@@ -171,6 +191,19 @@ All sensitive environment variables, passwords, network addresses, and private c
 ---
 
 ### 4. System Administration, Hardware & Desktop Utilities
+
+#### `install-adwaita-nerd-font`
+- **Location:** `.local/bin/install-adwaita-nerd-font`
+- **Description:** Resolves the latest Adwaita Mono Nerd Font release (or a pinned tag), downloads the official archive, and installs the `*.ttf` files into `~/.local/share/fonts`, then refreshes the font cache. Keeps the font binaries out of the Git repository.
+- **Dependencies:** `curl`, `unzip`, `fontconfig` (`fc-cache`).
+- **Options:** `--version <tag|latest>` (default `latest`), `--force`, `--no-cache`, `--help`.
+- **Key Operations:**
+  1. Resolves the target font directory from `XDG_DATA_HOME` (default `~/.local/share/fonts`).
+  2. Queries the GitHub API for the latest release tag (default) or uses the tag passed to `--version`.
+  3. Skips the download when the resolved version marker is already present (unless `--force`).
+  4. Fetches the Nerd Fonts archive over HTTPS, extracts only `*.ttf`, and installs them with `install -m 0644`.
+  5. Writes a version marker file and runs `fc-cache -f`.
+- **Notes:** Set `GITHUB_TOKEN` to raise the GitHub API rate limit for the latest-release lookup.
 
 #### `toggle-nvidia-pm`
 - **Location:** `.local/bin/toggle-nvidia-pm`
