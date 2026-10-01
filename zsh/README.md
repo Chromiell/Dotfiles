@@ -1,6 +1,6 @@
 # Zsh Configuration
 
-A rich, responsive, and modern Zsh configuration optimized for Debian-based systems featuring **Znap** plugin management, the **Powerlevel10k** prompt theme, auto-suggestions, substring search, syntax highlighting, and custom aliases.
+A rich, responsive, and modern Zsh configuration optimized for Debian-based systems featuring **Znap** plugin management, the **Powerlevel10k** prompt theme, autosuggestions (via **Deja**), substring search, syntax highlighting, and custom aliases.
 
 ---
 
@@ -11,8 +11,17 @@ To use this Zsh configuration (including the Znap plugin manager):
 
 ```bash
 sudo apt update
-sudo apt install zsh git
+sudo apt install zsh git curl
 ```
+
+> [!NOTE]
+> The **Deja** autosuggestion engine is not packaged for Debian. `10-plugins.zsh`
+> automatically downloads the latest release binary to `~/.local/bin/deja`
+> (checksum-verified) on first launch, imports the zsh history, and generates its
+> integration script. This requires `curl`, `tar`, and `sha256sum` (all standard). Deja's Tab
+> rebinding is disabled in favor of the config's completion bindings; suggestion cycling
+> lives on **Ctrl+N**. Running `znap pull` also reports whether a newer Deja release is
+> available (delete `~/.local/bin/deja` and restart zsh to apply it).
 
 ### Recommended CLI Tools & Enhancements
 For the complete terminal experience with all aliases, fast fetching, directory jumping, and enhanced previews:
@@ -99,7 +108,7 @@ configuration that uses them:
 ~/.zshrc
 └── ~/.config/zsh/
     ├── 00-startup.zsh         # Fastfetch, instant prompt, fallback widgets
-    ├── 10-plugins.zsh         # Znap and Zsh plugins
+    ├── 10-plugins.zsh         # Znap and Zsh plugins (Deja autosuggestions)
     ├── 20-settings.zsh        # Options, history, prompt, keybindings, colors
     ├── 30-functions.zsh       # Custom functions and pager detection
     ├── 40-aliases.zsh         # Command, eza, tmux, and utility aliases
@@ -141,7 +150,7 @@ chsh -s $(which zsh)
 
 - **Znap Plugin Manager:** Automatically clones and manages lightweight Zsh plugins upon first launch without manual setup.
 - **Powerlevel10k Prompt:** Ultra-fast, highly informative prompt with instant prompt loading and custom theme settings (`.p10k.zsh`).
-- **Autocompletion & Autosuggestions:** Fast Fish-like suggestions (`zsh-autosuggestions`) and interactive menu completion (`zsh-autocomplete`).
+- **Autocompletion & Autosuggestions:** Interactive menu completion (`zsh-autocomplete`) and predictive ghost-text suggestions via **[Deja](https://github.com/Giammarco-Ferranti/deja)** — a Go daemon-style engine with fuzzy matching, directory awareness, and frecency scoring. Installed and initialized automatically on first shell launch (a drop-in replacement for the old `zsh-autosuggestions` plugin).
 - **Syntax Highlighting:** Real-time command syntax highlighting (`fast-syntax-highlighting`).
 - **History Substring Search:** Interactive substring search through command history using arrow keys.
 - **Productivity Enhancements:** Integrated `zoxide` directory jumping, `eza` aliases, `fastfetch` system info display, and extensive utility aliases.

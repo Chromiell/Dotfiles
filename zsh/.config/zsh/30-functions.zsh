@@ -1,5 +1,45 @@
 # Reusable shell functions and pager detection.
 
+# Wrap "znap pull" to also check whether the Deja binary has a newer release.
+# The original znap function is captured here (after Znap is sourced in
+# 10-plugins.zsh) and re-exposed as a private function that the wrapper calls.
+eval "__znap_original() { ${functions[znap]} }"
+
+znap() {
+    if [[ "$1" == "pull" ]]; then
+        __znap_original "$@"
+        typeset -i znap_rc=$?
+        _deja_check_update
+        return "$znap_rc"
+    fi
+    __znap_original "$@"
+}
+
+# Compare the installed Deja binary against the latest GitHub release. The
+# upgrade itself is handled automatically: deleting ~/.local/bin/deja and
+# restarting zsh re-downloads the current release and regenerates its init.
+_deja_check_update() {
+    typeset deja_installed deja_latest
+    typeset deja_update_bin="$HOME/.local/bin/deja"
+    [[ -x "$deja_update_bin" ]] || return 0
+
+    command -v curl >/dev/null 2>&1 || return 0
+
+    deja_installed="$("$deja_update_bin" --version 2>/dev/null)"
+    deja_installed="${deja_installed#deja }"
+    deja_installed="${deja_installed%% *}"
+
+    deja_latest="$(curl -fsSL https://api.github.com/repos/Giammarco-Ferranti/deja/releases/latest \
+        | command grep '"tag_name":' | command sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
+    deja_latest="${deja_latest#v}"
+
+    if [[ "$deja_installed" != "$deja_latest" ]]; then
+        print "Deja: update available ($deja_installed -> $deja_latest). Run 'rm ~/.local/bin/deja && exec zsh' to upgrade."
+    else
+        print "Deja: up to date ($deja_installed)."
+    fi
+}
+
 # Pager selection is shared by the search, man, and fzf helpers.
 # Choose batcat, bat, or less as the pager used by search and man-page helpers.
 if whence -p batcat >/dev/null 2>&1; then
