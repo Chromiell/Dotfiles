@@ -14,7 +14,8 @@ This repository is structured into modular configuration packages designed to be
 | :--- | :--- | :--- |
 | [`zsh`](./zsh) | Shell | Zsh configuration powered by Znap, Powerlevel10k, autosuggestions, and fast syntax highlighting |
 | [`tmux`](./tmux) | Multiplexer | Catppuccin Mocha tmux setup with prefix-less pane navigation, double status bar, and resource monitoring |
-| [`neovim`](./neovim) | Editor / IDE | LazyVim IDE setup running via an Arch Linux Distrobox container with exported binaries and portable `.vimrc` |
+| [`neovim`](./neovim) | Editor / IDE | LazyVim IDE setup running via an Arch Linux Distrobox container with exported binaries |
+| [`vim`](./vim) | Editor | Portable standalone `.vimrc` mirroring the local LazyVim environment for remote servers and machines without Neovim |
 | [`git`](./git) | Version Control | Optimized `.gitconfig` with linear rebase workflows, global ignore, and productivity shortcuts |
 | [`scripts`](./scripts) | Automation | Administrative, database backup/sync, Let's Encrypt / HAProxy, and desktop utility scripts |
 | [`documents`](./documents) | Documentation | Personal technical guides and reference notes stowed under `~/Documents/Guides` |
@@ -181,6 +182,7 @@ For dedicated setup guides, keybindings, and configuration walkthroughs, refer t
 - [Zsh Setup & Plugin Guide](./zsh/README.md)
 - [Tmux Configuration & Keybindings](./tmux/README.md)
 - [Neovim & Distrobox Setup](./neovim/README.md)
+- [Portable Vim Configuration](./vim/README.md)
 - [Git Profiles & Productivity Aliases](./git/README.md)
 - [System & Maintenance Scripts Catalog](./scripts/README.md)
 - [Personal Documents & Technical Guides](./documents/README.md)

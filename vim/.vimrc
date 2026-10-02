@@ -5,9 +5,9 @@
 " Works 100% standalone out-of-the-box with zero external dependencies.
 "
 " Quick Remote Export:
-"   scp ~/.dotfiles/neovim/.vimrc user@remote-server:~/.vimrc
+"   scp ~/.dotfiles/vim/.vimrc user@remote-server:~/.vimrc
 " Or with GNU Stow:
-"   cd ~/.dotfiles && stow neovim
+"   cd ~/.dotfiles && stow vim
 " ============================================================================
 
 " Set to 1 if your terminal font supports Powerline/Nerd Fonts.

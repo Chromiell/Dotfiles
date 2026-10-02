@@ -64,7 +64,8 @@ directories.
 | :--- | :--- | :--- |
 | `zsh/` | Shell | Zsh config split into numbered `00-startup` … `50-integrations` files, Znap plugin manager, Powerlevel10k prompt, aliases, functions. |
 | `tmux/` | Multiplexer | Catppuccin Mocha tmux config, prefix-less navigation, status bar resource modules. |
-| `neovim/` | Editor / IDE | LazyVim setup (run via an Arch Distrobox container), plus portable `.vimrc`, Yazi and Lazygit configs. Graphical file icons via `real-icons.nvim` (Flow Icons pack, installed by `lua/plugins/icons.lua` + `scripts/install-flow-icons.sh`). |
+| `neovim/` | Editor / IDE | LazyVim setup (run via an Arch Distrobox container), plus Yazi and Lazygit configs. Graphical file icons via `real-icons.nvim` (Flow Icons pack, installed by `lua/plugins/icons.lua` + `scripts/install-flow-icons.sh`). |
+| `vim/` | Editor | Portable standalone `.vimrc` (pure Vimscript, zero plugins) mirroring LazyVim keybinds/theme; deployed via `stow vim` or `scp` to remote servers. |
 | `git/` | Version Control | `.gitconfig` include chain, global ignore, and `_template` files copied to real secret files. |
 | `scripts/` | Automation | Admin, DB backup/sync, Certbot/HAProxy, deployment, and desktop utility scripts, stowed into `~/Documents/Scripts`, `~/Documents/ScriptsData` and `~/.local/bin`. Sensitive values live in gitignored `Documents/ScriptsData/config.env`. |
 | `documents/` | Documentation | Personal technical guides, how-to notes, and reference documents stowed into `~/Documents/Guides`. |
