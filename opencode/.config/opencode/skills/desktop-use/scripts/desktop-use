@@ -1,0 +1,232 @@
+#!/usr/bin/env bash
+#
+# desktop-use — reliable GUI-control primitives for a Wayland/niri desktop.
+#
+# Wraps grim (screenshots), ydotool (pointer + keyboard) and `niri msg`
+# (windows) so an agent can observe the screen and act on it in a closed loop.
+# The two error-prone parts — absolute pointer movement and cursor detection —
+# are encapsulated here; do not re-derive them inline.
+#
+# Usage: desktop-use <command> [options]
+#        desktop-use help
+#
+set -euo pipefail
+
+WORKDIR="${DESKTOP_USE_DIR:-/tmp/opencode/desktop}"
+mkdir -p "$WORKDIR"
+
+die()  { printf 'desktop-use: %s\n' "$*" >&2; exit 1; }
+have() { command -v "$1" >/dev/null 2>&1; }
+need() { local b; for b in "$@"; do have "$b" || die "missing required tool: $b"; done; }
+
+# --- display helpers ---------------------------------------------------------
+
+# First Wayland output connector (override with DESKTOP_OUTPUT=<connector>).
+output_name() {
+  [[ -n "${DESKTOP_OUTPUT:-}" ]] && { printf '%s' "$DESKTOP_OUTPUT"; return 0; }
+  have niri && niri msg outputs 2>/dev/null |
+    sed -n 's/^Output .*(\([^)]*\))$/\1/p' | head -1
+}
+
+# Full-screen capture of one output (whole layout if the name is unknown).
+capture() { # capture <file> [--cursor]
+  local f="$1"; shift
+  local out; out="$(output_name)"
+  local cargs=(); [[ "${1:-}" == "--cursor" ]] && cargs=(-c)
+  if [[ -n "$out" ]]; then grim -o "$out" "${cargs[@]}" "$f"
+  else grim "${cargs[@]}" "$f"; fi
+}
+
+# Region capture. slurp geometry is "X,Y WxH"; -o and -g are mutually exclusive.
+capture_region() { # capture_region <file> <x> <y> <w> <h> [--cursor]
+  local f="$1" x="$2" y="$3" w="$4" h="$5"; shift 5
+  local cargs=(); [[ "${1:-}" == "--cursor" ]] && cargs=(-c)
+  grim -g "${x},${y} ${w}x${h}" "${cargs[@]}" "$f"
+}
+
+is_uint() { [[ "$1" =~ ^[0-9]+$ ]]; }
+
+# --- commands ----------------------------------------------------------------
+
+cmd_info() {
+  printf 'session: %s  desktop: %s  display: %s\n' \
+    "${XDG_SESSION_TYPE:-?}" "${XDG_CURRENT_DESKTOP:-?}" "${DISPLAY:-?}"
+  printf 'output: %s\n' "$(output_name)"
+  local b
+  for b in grim ydotool ydotoold niri magick jq slurp wl-copy; do
+    if have "$b"; then printf '  ok   %s\n' "$b"; else printf '  MISS %s\n' "$b"; fi
+  done
+  if pgrep -x ydotoold >/dev/null 2>&1; then printf 'ydotoold: running\n'
+  else printf 'ydotoold: NOT running\n'; fi
+  have niri && niri msg outputs 2>/dev/null | sed -n 's/^Output \(.*\)$/  \1/p'
+}
+
+cmd_shot() { need grim; local f="${1:-$WORKDIR/shot.png}"; capture "$f"; printf '%s\n' "$f"; }
+
+cmd_crop() { # crop X Y W H [file]
+  need grim
+  [[ $# -ge 4 ]] || die "crop: need X Y W H [file]"
+  local x="$1" y="$2" w="$3" h="$4" f="${5:-$WORKDIR/crop.png}"
+  for v in "$x" "$y" "$w" "$h"; do is_uint "$v" || die "crop: X Y W H must be non-negative integers"; done
+  capture_region "$f" "$x" "$y" "$w" "$h"; printf '%s\n' "$f"
+}
+
+cmd_move() { # move X Y
+  need ydotool
+  [[ $# -ge 2 ]] || die "move: need X Y"
+  local x="$1" y="$2"
+  is_uint "$x" && is_uint "$y" || die "move: X and Y must be non-negative integers"
+  # Clamp to a known origin with a large *relative* move, then apply the exact
+  # delta. Never use --absolute: pointer acceleration makes it overshoot.
+  ydotool mousemove -x -100000 -y -100000
+  ydotool mousemove -x "$x" -y "$y"
+  printf 'moved %s %s\n' "$x" "$y"
+}
+
+cmd_cursor() { # cursor [--around X Y] [--radius N]
+  need grim magick
+  local ax="" ay="" r=120
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --around) [[ $# -ge 3 ]] || die "cursor: --around needs X Y"; ax="$2"; ay="$3"; shift 3;;
+      --radius) r="$2"; shift 2;;
+      *) die "cursor: unknown option '$1'";;
+    esac
+  done
+  local off="$WORKDIR/.cursor_off.png" on="$WORKDIR/.cursor_on.png"
+  local x=0 y=0 w h
+  if [[ -n "$ax" ]]; then
+    is_uint "$ax" && is_uint "$ay" || die "cursor: --around needs non-negative integers"
+    w=$((2*r)); h=$((2*r)); x=$((ax-r)); y=$((ay-r))
+    (( x < 0 )) && x=0; (( y < 0 )) && y=0
+    capture_region "$off" "$x" "$y" "$w" "$h"
+    capture_region "$on"  "$x" "$y" "$w" "$h" --cursor
+  else
+    printf 'desktop-use: full-screen diff is unreliable on animated desktops; prefer --around X Y\n' >&2
+    capture "$off"; capture "$on" --cursor
+  fi
+  local bb; bb="$(magick "$on" "$off" -compose difference -composite \
+    -threshold 12% -format '%@' info: 2>/dev/null || true)"
+  [[ "$bb" =~ ^[0-9]+x[0-9]+\+[0-9]+\+[0-9]+$ ]] || { printf 'cursor: not found\n'; return 1; }
+  local gw gh gx gy; IFS='x+' read -r gw gh gx gy <<<"$bb"
+  printf '%s,%s %sx%s\n' "$((x+gx))" "$((y+gy))" "$gw" "$gh"
+}
+
+cmd_click() { # click [X Y] [--button left|right|middle] [--double]
+  need ydotool
+  local x="" y="" btn=left double=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --button) btn="$2"; shift 2;;
+      --right)  btn=right;  shift;;
+      --middle) btn=middle; shift;;
+      --double) double=1;   shift;;
+      -*) die "click: unknown option '$1'";;
+      *) if [[ -z "$x" ]]; then x="$1"; elif [[ -z "$y" ]]; then y="$1"; else die "click: too many arguments"; fi; shift;;
+    esac
+  done
+  if [[ -n "$x" || -n "$y" ]]; then
+    [[ -n "$x" && -n "$y" ]] || die "click: give both X and Y, or neither"
+    cmd_move "$x" "$y" >/dev/null
+  fi
+  local code
+  case "$btn" in
+    left)   code=0xC0;;
+    right)  code=0xC1;;
+    middle) code=0xC2;;
+    *) die "click: unknown button '$btn' (left|right|middle)";;
+  esac
+  if (( double )); then ydotool click -r 2 -D 70 "$code"; else ydotool click "$code"; fi
+  printf 'clicked %s%s at %s,%s\n' "$btn" "$( ((double)) && printf ' (double)' || true)" "${x:-current}" "${y:-}"
+}
+
+declare -A KEYMAP=(
+  [esc]=1 [enter]=28 [space]=57 [tab]=15 [backspace]=14 [delete]=111
+  [home]=102 [end]=107 [pageup]=104 [pagedown]=109 [insert]=110
+  [up]=103 [down]=108 [left]=105 [right]=106
+  [leftctrl]=29 [rightctrl]=97 [leftalt]=56 [rightalt]=100
+  [leftshift]=42 [rightshift]=54 [leftmeta]=125 [rightmeta]=126 [capslock]=58
+  [1]=2 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9 [9]=10 [0]=11
+  [minus]=12 [equal]=13
+  [q]=16 [w]=17 [e]=18 [r]=19 [t]=20 [y]=21 [u]=22 [i]=23 [o]=24 [p]=25
+  [a]=30 [s]=31 [d]=32 [f]=33 [g]=34 [h]=35 [j]=36 [k]=37 [l]=38
+  [z]=44 [x]=45 [c]=46 [v]=47 [b]=48 [n]=49 [m]=50
+  [comma]=51 [period]=52 [slash]=53 [semicolon]=39 [apostrophe]=40
+  [leftbrace]=26 [rightbrace]=27 [backslash]=43 [grave]=41
+  [f1]=59 [f2]=60 [f3]=61 [f4]=62 [f5]=63 [f6]=64
+  [f7]=65 [f8]=66 [f9]=67 [f10]=68 [f11]=87 [f12]=88
+)
+
+keycode() {
+  local k="$1" lc
+  is_uint "$k" && { printf '%s' "$k"; return 0; }
+  lc="$(printf '%s' "$k" | tr '[:upper:]' '[:lower:]')"
+  [[ -n "${KEYMAP[$lc]:-}" ]] || die "unknown key '$k' (use a name or a raw Linux keycode)"
+  printf '%s' "${KEYMAP[$lc]}"
+}
+
+cmd_key() { # key NAME...
+  need ydotool
+  [[ $# -ge 1 ]] || die "key: give a key name or keycode"
+  local args=() k c
+  for k in "$@"; do c="$(keycode "$k")"; args+=("$c:1" "$c:0"); done
+  ydotool key "${args[@]}"
+}
+cmd_keydown() { need ydotool; [[ $# -eq 1 ]] || die "keydown: one key"; local c; c="$(keycode "$1")"; ydotool key "$c:1"; }
+cmd_keyup()   { need ydotool; [[ $# -eq 1 ]] || die "keyup: one key";   local c; c="$(keycode "$1")"; ydotool key "$c:0"; }
+
+cmd_type() { need ydotool; [[ $# -ge 1 ]] || die "type: give text"; ydotool type -- "$1"; }
+
+cmd_windows() {
+  need niri jq
+  niri msg --json windows | jq -r \
+    '.[] | "\(.id)\t\(if .is_focused then "focused" else "-" end)\t\(.app_id)\t\(.title)"'
+}
+cmd_focused() { need niri jq; niri msg --json focused-window | jq -r '"\(.id)\t\(.app_id)\t\(.title)"'; }
+cmd_focus()   { need niri; [[ $# -eq 1 ]] || die "focus: need a window ID"; niri msg action focus-window --id "$1"; printf 'focused %s\n' "$1"; }
+cmd_close()   { need niri; niri msg action close-window; printf 'closed focused window\n'; }
+
+usage() {
+  cat <<'EOF'
+desktop-use — reliable GUI-control primitives for a Wayland/niri desktop.
+
+Usage: desktop-use <command> [args]
+
+  info                                   Show session, output, and tool status
+  shot [file]                            Full-screen screenshot (prints path)
+  crop X Y W H [file]                    Region screenshot
+  move X Y                               Move pointer to absolute (X,Y)
+  cursor [--around X Y] [--radius N]     Detect pointer; prints "X,Y WxH"
+  click [X Y] [--button l|r|m] [--double]  Click (moves first if X Y given)
+  key NAME...                            Tap one or more keys
+  keydown NAME | keyup NAME              Hold / release a key
+  type TEXT                              Type a string
+  windows | focused                      List windows / show focused window
+  focus ID | close                       Focus a window / close focused window
+  help                                   This message
+
+Keys: esc enter space tab backspace delete home end pageup pagedown insert
+up down left right leftctrl rightctrl leftalt rightalt leftshift rightshift
+leftmeta rightmeta capslock, a-z, 0-9, f1-f12, or a raw Linux keycode.
+EOF
+}
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  info)                 cmd_info "$@";;
+  shot|screenshot)      cmd_shot "$@";;
+  crop)                 cmd_crop "$@";;
+  move)                 cmd_move "$@";;
+  cursor)               cmd_cursor "$@";;
+  click)                cmd_click "$@";;
+  key|tap)              cmd_key "$@";;
+  keydown)              cmd_keydown "$@";;
+  keyup)                cmd_keyup "$@";;
+  type)                 cmd_type "$@";;
+  windows|ls)           cmd_windows "$@";;
+  focused)              cmd_focused "$@";;
+  focus)                cmd_focus "$@";;
+  close)                cmd_close "$@";;
+  help|-h|--help|"")    usage;;
+  *) die "unknown command '$cmd' (try: help)";;
+esac

@@ -73,7 +73,7 @@ recreated automatically.
 ├── opencode.jsonc            # Tracked (stowed): global config, MCP servers, plugins
 ├── cli.json                  # Tracked: TUI-only settings (paste, theme, keybinds, tabs)
 ├── oh-my-opencode-slim.json  # Tracked: multi-agent presets (opencode-go active)
-├── skills/                   # Tracked: plugin skills + custom playwright-cli (reconciled by the plugin)
+├── skills/                   # Tracked: plugin skills + custom skills (playwright-cli, browser-use, desktop-use)
 ├── .oh-my-opencode-slim/     # Runtime state (git-ignored): skill reconciliation manifest
 ├── agent/                    # Local custom agents (currently only Ask agent is added)
 └── service.json              # Local service password (git-ignored)
@@ -238,7 +238,8 @@ implementer with that plan — never with a vague "make it work".
 - Delegate explicitly with `@explorer`, `@fixer`, `@oracle`, `@librarian`,
   `@designer`, `@council`, or `@observer`.
 - Skills: `/deepwork <task>`, `run codemap`, `/reflect`, `work in a worktree`,
-  `clone dependencies`, and `playwright-cli` (browser automation).
+  `clone dependencies`, `playwright-cli` (browser automation), and `desktop-use`
+  (local GUI automation).
 - Swap the whole team's models at runtime with `/preset` (reload to apply).
 - Verify delegation with `ping all agents`.
 
@@ -251,6 +252,28 @@ UI/visual verification, **`@fixer`** for automated test suites, **`@explorer`** 
 read-only page reconnaissance, and **`@observer`** analyses the resulting screenshots.
 The skill documents the session model (`-s=<session>`), the open → snapshot →
 interact → verify workflow, and the full command reference.
+
+### Desktop control with `desktop-use`
+
+A custom `desktop-use` skill (tracked at `skills/desktop-use/`) lets an agent
+drive the **local** desktop — the same Wayland/niri screen a human sees — for GUI
+apps, game launchers, and native dialogs (browsers still go through
+`playwright-cli`). It ships `SKILL.md` plus a helper at
+`skills/desktop-use/scripts/desktop-use` that wraps `grim` (screenshots),
+`ydotool` (pointer/keyboard), and `niri msg` (windows).
+
+The helper encapsulates the two error-prone primitives: pointer movement
+(clamp-to-origin + relative move, because `ydotool --absolute` overshoots under
+pointer acceleration) and region-scoped cursor detection (a full-screen
+`grim -c` diff is corrupted by animated content). The skill documents the closed
+loop — screenshot, read the PNG, act, verify — plus the grim/ydotool/niri
+gotchas learned from real use.
+
+The primary `build`/`plan` agents and the orchestrator (`skills: ["*"]`) load it
+automatically; to let a specialist drive the desktop, add `desktop-use` to that
+agent's `skills` list in `oh-my-opencode-slim.json`. Prerequisites are `grim`,
+`ydotool` (with `ydotoold` running), `niri`, `imagemagick`, and `jq`; check with
+`~/.config/opencode/skills/desktop-use/scripts/desktop-use info`.
 
 ### Background subagents
 
