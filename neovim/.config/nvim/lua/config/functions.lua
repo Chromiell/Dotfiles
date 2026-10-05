@@ -483,4 +483,72 @@ vim.api.nvim_create_autocmd("LspAttach", {
     end,
 })
 
+--------------------------------------------------------------------------------
+-- 6. BROWSER INTEROP (WSL + DISTROBOX)
+--------------------------------------------------------------------------------
+
+-- `vim.ui.open`'s default handler on Linux is `xdg-open`. Inside a Distrobox
+-- container that resolves to Distrobox's own host-delegating wrapper
+-- (`/usr/local/bin/xdg-open` -> `distrobox-host-exec`), and the host process it
+-- spawns runs with a sanitized PATH that drops the `/mnt/c/...` Windows interop
+-- directories. On WSL, xdg-open only picks its WSL handler when `explorer.exe`
+-- is reachable (xdg-utils 1.2.1: `/proc/version` contains "microsoft" AND
+-- `command -v explorer.exe`), so inside the container detection fails and it
+-- falls through to the generic method: no `BROWSER`, no GUI browser, only the
+-- text-browser loop -> exits 3 "no method available", which Neovim reports as
+-- `vim.ui.open: command failed (3): { "xdg-open", ... }` on `gx`.
+--
+-- Fix: when Neovim runs in a container on a WSL kernel with working interop,
+-- open things directly with the Windows binaries by absolute path, mirroring
+-- the host xdg-open's own WSL branch (rundll32 for URIs, explorer.exe for
+-- files/directories). Native Linux (no WSL kernel) keeps the stock handler, so
+-- the same config keeps working there unchanged.
+do
+    local rundll32 = "/mnt/c/Windows/System32/rundll32.exe"
+    local explorer = "/mnt/c/Windows/explorer.exe"
+
+    local is_wsl = vim.uv.os_uname().release:find("microsoft", 1, true) ~= nil
+    local has_interop = vim.uv.fs_stat(rundll32) ~= nil and vim.uv.fs_stat(explorer) ~= nil
+    local in_container = vim.uv.fs_stat("/run/.containerenv") ~= nil or vim.uv.fs_stat("/.dockerenv") ~= nil
+
+    if is_wsl and has_interop and in_container then
+        --- Convert a Linux path to a Windows-openable one: `/mnt/<drive>/...`
+        --- becomes `<DRIVE>:/...` and everything else is addressed through the
+        --- WSL UNC share (`\\wsl.localhost\<distro>\...`).
+        local function windows_path(path)
+            local p = vim.fs.normalize(path)
+            local drive, rest = p:match("^/mnt/(%a)/?(.*)$")
+            if drive then
+                return drive:upper() .. ":/" .. rest
+            end
+            local distro = vim.env.WSL_DISTRO_NAME or "Ubuntu"
+            return "\\\\wsl.localhost\\" .. distro .. "\\" .. (p:sub(2):gsub("/", "\\"))
+        end
+
+        local stock_open = vim.ui.open
+        ---@param path string
+        ---@param opt? vim.SystemOpenOpts
+        vim.ui.open = function(path, opt)
+            -- Explicit overrides are passed through untouched.
+            if opt and opt.cmd then
+                return stock_open(path, opt)
+            end
+
+            -- rundll32's FileProtocolHandler handles URIs and Windows paths
+            -- alike (it is what the host xdg-open's WSL branch uses for URIs),
+            -- and exits 0 on success. explorer.exe would also work for paths
+            -- but exits 1 on success, which stock error reporting cannot tell
+            -- apart from a failure, so it is avoided.
+            local is_uri = path:match("^%w+:")
+            local arg = is_uri and path or windows_path(path)
+
+            local ok, out = pcall(vim.system, { rundll32, "url.dll,FileProtocolHandler", arg }, { detach = true })
+            if not ok then
+                return nil, out ---@cast out string
+            end
+            return out, nil
+        end
+    end
+end
+
 return M
