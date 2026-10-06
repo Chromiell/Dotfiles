@@ -19,6 +19,8 @@ return {
                 bash = { "shfmt" },
                 sh = { "shfmt" },
                 zsh = { "shfmt" },
+                json = { "prettier" },
+                jsonc = { "prettier_jsonc" },
                 sql = { "sql_formatter_custom" },
                 html = { "prettier_html" },
                 xml = { "xmlformatter" },
@@ -60,6 +62,27 @@ return {
                 xmlformatter = {
                     prepend_args = { "--indent", "4" },
                 },
+                -- JSONC uses Prettier's dedicated `jsonc` parser (Prettier >= 3.2)
+                -- so comments are preserved, unlike the strict `json` parser used
+                -- for plain `.json` files. The jsonc parser also respects
+                -- `trailingComma` (default "all"), so `--trailing-comma none`
+                -- strips the trailing commas it would otherwise keep or insert.
+                prettier_jsonc = {
+                    command = "prettier",
+                    args = {
+                        "--parser",
+                        "jsonc",
+                        "--trailing-comma",
+                        "none",
+                        "--tab-width",
+                        "4",
+                        "--use-tabs",
+                        "false",
+                        "--stdin-filepath",
+                        "$FILENAME",
+                    },
+                },
+                -- General Prettier formatter (js/ts/css/html/markdown/json/...)
                 prettier = {
                     prepend_args = { "--tab-width", "4", "--use-tabs", "false" },
                 },

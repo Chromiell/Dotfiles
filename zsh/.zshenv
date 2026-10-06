@@ -28,9 +28,6 @@ export NPM_CONFIG_CACHE="$XDG_CACHE_HOME"/npm
 # npmrc
 export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME"/npm/npmrc
 
-# Bash History file
-export HISTFILE="${XDG_STATE_HOME}"/bash/history
-
 # .NET Core
 export DOTNET_CLI_HOME="$XDG_DATA_HOME"/dotnet
 
