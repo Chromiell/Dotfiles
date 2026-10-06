@@ -7,7 +7,9 @@ titles with a **free** model — while keeping API keys out of this public repos
 
 It also ships the [oh-my-opencode-slim](https://github.com/alvinunreal/oh-my-opencode-slim)
 plugin, which turns OpenCode into an **orchestrator plus a team of specialist
-subagents** running on the OpenCode Go subscription.
+subagents** running on the OpenCode Go subscription, and the
+[opencode-tps-meter](https://github.com/ChiR24/opencode-tps-meter) plugin, which adds a
+live tokens-per-second meter to the TUI ([section 6](#-6-live-throughput-meter-opencode-tps-meter)).
 
 ---
 
@@ -118,12 +120,14 @@ The plugin is loaded by both the server and the TUI from the `plugins` array in
 ```jsonc
 "plugins": [
   "@tarquinen/opencode-dcp@latest",
-  "oh-my-opencode-slim"
+  "oh-my-opencode-slim",
+  { "package": "opencode-tps-meter@latest", "options": { /* see section 6 */ } }
 ]
 ```
 
-OpenCode resolves `oh-my-opencode-slim` from npm on first start, so no install step is
-needed on a new machine. Its behavior is configured in `oh-my-opencode-slim.json`,
+OpenCode resolves plugins from npm on first start, so no install step is
+needed on a new machine. `oh-my-opencode-slim`'s behavior is configured in
+`oh-my-opencode-slim.json`,
 which defines two model presets — **`opencode-go` is active**, and `openai` is kept
 for quick switching with the `/preset` command.
 
@@ -315,7 +319,57 @@ Apply config changes with `opencode reload`; apply plugin code changes with
 
 ---
 
-## 🔑 6. Secrets & Environment Variables
+## 📊 6. Live Throughput Meter (opencode-tps-meter)
+
+The [opencode-tps-meter](https://github.com/ChiR24/opencode-tps-meter) plugin renders a
+live tokens-per-second readout beside the prompt while the model streams. While tokens
+are flowing, the leading figure is the rolling instant rate; once the turn settles it
+switches to the session average, so a frozen meter reads as a summary rather than a
+stale live value. Final totals always come from the provider-reported token counts, so
+they are exact rather than estimated.
+
+It is configured in two places with identical values: inline in the `plugins` array of
+`opencode.jsonc` (the commented block documents every option) **and** in the plugin's
+own `tps-meter.json` under this directory. The global file is the reliable source: the
+plugin reads `~/.config/opencode/tps-meter.json` directly, whereas the inline `options`
+may not reach the TUI half on every build. The options produce a compact footer format
+with instant/average TPS, total tokens and elapsed time, TPS-based color coding
+(red < 10 t/s, yellow 10–50, green > 50), and a 1.5 s rolling window.
+`updateIntervalMs` is deliberately left unset — keeping the default value selects the
+plugin's fast 8 ms V2 TUI refresh instead of the 50 ms fallback.
+
+`tps-meter.json` must be **strict JSON** (no comments, no trailing commas): the plugin
+parses it with `JSON.parse` and silently ignores the whole file on any error.
+
+| Command | Effect |
+| :--- | :--- |
+| `/tps` | Open the throughput dashboard: per-model mean/best t/s, mean TTFT and step count, backed by a durable ledger. |
+| `/tps detail` | Toast with per-session t/s, tokens, generation rate (tool time excluded), TTFT, and title/compaction overhead. |
+| `/tps reset` | Clear the durable per-model ledger. |
+| `/tps detailed` | Footer detail mode: adds generation rate, TTFT, overhead and an `aborted` marker to the meter line. |
+| `/tps hidden` / `/tps compact` | Hide the footer meter / restore the compact line. |
+
+When the active session has subagent children (e.g. the orchestrator's specialists), a
+per-subagent throughput breakdown appears in the sidebar automatically.
+
+Inline options win over the plugin's other configuration sources (project
+`.opencode/tps-meter.json` < global `~/.config/opencode/tps-meter.json` <
+`TPS_METER_*` environment variables < inline `options`). Apply option changes with
+`opencode reload`.
+
+> [!NOTE]
+> **Color coding does not render on OpenCode 2.0.24+.** The released plugin (v0.4.0)
+> resolves its colors from old theme token names (`text.default`, `text.subdued`,
+> `text.feedback.*.default`) that V2 no longer exposes, so every branch returns
+> `undefined` and the meter falls back to the default (white) foreground — even with
+> `enableColorCoding: true` and the thresholds above. The fix is upstream
+> [PR #10](https://github.com/ChiR24/opencode-tps-meter/pull/10); until it is merged and
+> released, only the text/elapsed options apply. Revisit this section after the next
+> `opencode plugin update`.
+
+---
+
+## 🔑 7. Secrets & Environment Variables
 
 No secrets are stored in this repository. `opencode.jsonc` reads the Exa web search
 key from the environment using OpenCode's `{env:...}` substitution:
@@ -350,7 +404,7 @@ opencode service restart
 
 ---
 
-## 🧩 7. MCP Servers
+## 🧩 8. MCP Servers
 
 | Server | Type | Purpose | Secret |
 | :--- | :--- | :--- | :--- |
@@ -367,7 +421,7 @@ opencode service restart
 
 ---
 
-## 🔧 8. Editor Schema Warnings (Neovim)
+## 🔧 9. Editor Schema Warnings (Neovim)
 
 Some editors report that `agents`, `media`, `watcher`, `compaction`, or
 `tool_output` are "not allowed", or that `compaction.keep` / `compaction.buffer`

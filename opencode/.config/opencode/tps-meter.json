@@ -1,0 +1,13 @@
+{
+  "format": "compact",
+  "showInstant": true,
+  "showAverage": true,
+  "showTotalTokens": true,
+  "showElapsed": true,
+  "enableColorCoding": true,
+  "slowTpsThreshold": 10,
+  "fastTpsThreshold": 50,
+  "rollingWindowMs": 1500,
+  "minVisibleTPS": 0,
+  "fallbackTokenHeuristic": "chars_div_4"
+}

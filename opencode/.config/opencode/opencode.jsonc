@@ -1,242 +1,293 @@
 {
-  // ───────────────────────────────────────────────────────────────────────────
-  // Global OpenCode configuration (applies to every project for this user).
-  //
-  // Location: ~/.config/opencode/opencode.jsonc
-  // This file is JSONC, so it supports comments and trailing commas. OpenCode
-  // also loads ~/.config/opencode/opencode.json, but this file is the one it
-  // writes to when it updates settings, so keep everything here.
-  //
-  // Goal: minimize token / usage consumption on OpenCode Go or Zen (Console)
-  // subscriptions by (1) not indexing junk directories, (2) capping tool output
-  // and image sizes, (3) compacting context a bit earlier, and (4) generating
-  // session titles with a free model instead of a paid one.
-  // ───────────────────────────────────────────────────────────────────────────
-  "$schema": "https://opencode.ai/config.json",
+    // ───────────────────────────────────────────────────────────────────────────
+    // Global OpenCode configuration (applies to every project for this user).
+    //
+    // Location: ~/.config/opencode/opencode.jsonc
+    // This file is JSONC, so it supports comments and trailing commas. OpenCode
+    // also loads ~/.config/opencode/opencode.json, but this file is the one it
+    // writes to when it updates settings, so keep everything here.
+    //
+    // Goal: minimize token / usage consumption on OpenCode Go or Zen (Console)
+    // subscriptions by (1) not indexing junk directories, (2) capping tool output
+    // and image sizes, (3) compacting context a bit earlier, and (4) generating
+    // session titles with a free model instead of a paid one.
+    // ───────────────────────────────────────────────────────────────────────────
+    "$schema": "https://opencode.ai/config.json",
 
-  // ── Default primary agent ─────────────────────────────────────────────────
-  // OpenCode uses this agent for any session that does not explicitly pick one.
-  // oh-my-opencode-slim sets `default_agent: "orchestrator"` at load time, but
-  // only when this field is unset or points at a subagent, so pinning "build"
-  // here keeps plain single-model OpenCode as the default. You can still switch
-  // to the multi-agent orchestrator (or plan) per session with Shift+Tab, or
-  // with `--agent` on the CLI.
-  "default_agent": "build",
+    // ── Default primary agent ─────────────────────────────────────────────────
+    // OpenCode uses this agent for any session that does not explicitly pick one.
+    // oh-my-opencode-slim sets `default_agent: "orchestrator"` at load time, but
+    // only when this field is unset or points at a subagent, so pinning "build"
+    // here keeps plain single-model OpenCode as the default. You can still switch
+    // to the multi-agent orchestrator (or plan) per session with Shift+Tab, or
+    // with `--agent` on the CLI.
+    "default_agent": "build",
 
-  // ── Session titles use a FREE model ────────────────────────────────────────
-  // OpenCode has hidden maintenance agents (title, summary, compaction) that
-  // generate session titles, conversation summaries, and compaction
-  // checkpoints. By default the title agent picks a low-cost paid model
-  // (Haiku / Nano / Flash), which still counts against your Go/Zen usage.
-  //
-  // "agents.title.model" overrides just the title agent. Any model available in
-  // /models works. Free Zen models (opencode/<id>-free) cost nothing. The free
-  // lineup changes over time, so run /models (or `opencode models`) to confirm
-  // what your account currently offers. Available right now:
-  //   opencode/mimo-v2.6-flash-free          (fast, good default for titles)
-  //   opencode/nemotron-3.5-lightning-free
-  //   opencode/nemotron-3-ultra-free
-  //   opencode/ling-3.0-flash-fin-free
-  //   opencode/muse-spark-1.3-contributor-free
-  "agents": {
-    "title": {
-      "model": "opencode/mimo-v2.6-flash-free"
+    // ── Session titles use a FREE model ────────────────────────────────────────
+    // OpenCode has hidden maintenance agents (title, summary, compaction) that
+    // generate session titles, conversation summaries, and compaction
+    // checkpoints. By default the title agent picks a low-cost paid model
+    // (Haiku / Nano / Flash), which still counts against your Go/Zen usage.
+    //
+    // "agents.title.model" overrides just the title agent. Any model available in
+    // /models works. Free Zen models (opencode/<id>-free) cost nothing. The free
+    // lineup changes over time, so run /models (or `opencode models`) to confirm
+    // what your account currently offers. Available right now:
+    //   opencode/mimo-v2.6-flash-free          (fast, good default for titles)
+    //   opencode/nemotron-3.5-lightning-free
+    //   opencode/nemotron-3-ultra-free
+    //   opencode/ling-3.0-flash-fin-free
+    //   opencode/muse-spark-1.3-contributor-free
+    "agents": {
+        "title": {
+            "model": "opencode/mimo-v2.6-flash-free",
+        },
+
+        // ── Disabled by the oh-my-opencode-slim installer ──────────────────────
+        // The plugin ships its own `explorer` (and other) specialists, so the
+        // built-in generic `explore`/`general` subagents are turned off to avoid
+        // duplicate delegation targets. `disabled` is the native V2 spelling.
+        "explore": { "disabled": true },
+        "general": { "disabled": true },
+
+        // Optional: also route conversation summaries to a free model to save more:
+        // "summary": { "model": "opencode/mimo-v2.6-flash-free" }
     },
 
-    // ── Disabled by the oh-my-opencode-slim installer ──────────────────────
-    // The plugin ships its own `explorer` (and other) specialists, so the
-    // built-in generic `explore`/`general` subagents are turned off to avoid
-    // duplicate delegation targets. `disabled` is the native V2 spelling.
-    "explore": { "disabled": true },
-    "general": { "disabled": true }
+    // ── Do not watch / index junk directories ──────────────────────────────────
+    // "watcher.ignore" keeps build artifacts, dependency trees, VCS data, caches
+    // and lockfiles out of the filesystem watcher and search indexing. Fewer
+    // indexed files means smaller glob/grep results and less context spent on
+    // noise. Patterns containing glob characters use picomatch; bare names match
+    // the watched root. Nested copies need the "**/…/**" form, so both are listed
+    // for the common directories.
+    "watcher": {
+        "ignore": [
+            // Dependency / package trees
+            "node_modules",
+            "**/node_modules/**",
+            "vendor",
+            "**/vendor/**",
+            "bower_components",
+            "**/bower_components/**",
 
-    // Optional: also route conversation summaries to a free model to save more:
-    // "summary": { "model": "opencode/mimo-v2.6-flash-free" }
-  },
+            // Version control and tooling metadata
+            ".git",
+            "**/.git/**",
+            ".svn",
+            "**/.svn/**",
+            ".hg",
+            "**/.hg/**",
 
-  // ── Do not watch / index junk directories ──────────────────────────────────
-  // "watcher.ignore" keeps build artifacts, dependency trees, VCS data, caches
-  // and lockfiles out of the filesystem watcher and search indexing. Fewer
-  // indexed files means smaller glob/grep results and less context spent on
-  // noise. Patterns containing glob characters use picomatch; bare names match
-  // the watched root. Nested copies need the "**/…/**" form, so both are listed
-  // for the common directories.
-  "watcher": {
-    "ignore": [
-      // Dependency / package trees
-      "node_modules",
-      "**/node_modules/**",
-      "vendor",
-      "**/vendor/**",
-      "bower_components",
-      "**/bower_components/**",
+            // Build / output directories
+            "build",
+            "**/build/**",
+            "dist",
+            "**/dist/**",
+            "out",
+            "**/out/**",
+            "target",
+            "**/target/**",
+            ".next",
+            "**/.next/**",
+            ".nuxt",
+            "**/.nuxt/**",
+            ".output",
+            "**/.output/**",
 
-      // Version control and tooling metadata
-      ".git",
-      "**/.git/**",
-      ".svn",
-      "**/.svn/**",
-      ".hg",
-      "**/.hg/**",
+            // Test coverage and reports
+            "coverage",
+            "**/coverage/**",
+            "**/*.lcov",
+            "**/test-results/**",
 
-      // Build / output directories
-      "build",
-      "**/build/**",
-      "dist",
-      "**/dist/**",
-      "out",
-      "**/out/**",
-      "target",
-      "**/target/**",
-      ".next",
-      "**/.next/**",
-      ".nuxt",
-      "**/.nuxt/**",
-      ".output",
-      "**/.output/**",
+            // Caches and virtual environments
+            ".cache",
+            "**/.cache/**",
+            ".venv",
+            "**/.venv/**",
+            "venv",
+            "**/venv/**",
+            "__pycache__",
+            "**/__pycache__/**",
+            ".pytest_cache",
+            "**/.pytest_cache/**",
 
-      // Test coverage and reports
-      "coverage",
-      "**/coverage/**",
-      "**/*.lcov",
-      "**/test-results/**",
+            // Logs and temp files
+            "logs",
+            "**/logs/**",
+            "tmp",
+            "**/tmp/**",
+            "**/*.log",
 
-      // Caches and virtual environments
-      ".cache",
-      "**/.cache/**",
-      ".venv",
-      "**/.venv/**",
-      "venv",
-      "**/venv/**",
-      "__pycache__",
-      "**/__pycache__/**",
-      ".pytest_cache",
-      "**/.pytest_cache/**",
-
-      // Logs and temp files
-      "logs",
-      "**/logs/**",
-      "tmp",
-      "**/tmp/**",
-      "**/*.log",
-
-      // Lockfiles and generated/minified assets (large, low-signal files)
-      "**/*.lock",
-      "**/package-lock.json",
-      "**/pnpm-lock.yaml",
-      "**/yarn.lock",
-      "**/bun.lockb",
-      "**/Cargo.lock",
-      "**/composer.lock",
-      "**/Gemfile.lock",
-      "**/poetry.lock",
-      "**/*.min.js",
-      "**/*.min.css",
-      "**/*.map"
-    ]
-  },
-
-  // ── Cap tool output that enters the context ────────────────────────────────
-  // Tool results are a major token sink. When output exceeds these limits the
-  // full text is still saved to disk and a preview is returned to the model.
-  // Defaults are 2000 lines / 51200 bytes; lowering them cuts context size.
-  // Raise these if you often need long command output verbatim.
-  "tool_output": {
-    "max_lines": 600,
-    "max_bytes": 30000
-  },
-
-  // ── Compaction ─────────────────────────────────────────────────────────────
-  // "keep.tokens" is how much recent context is preserved beside the summary
-  // (default 15000). "buffer" is the safety margin below the model's limit;
-  // a larger buffer starts automatic compaction sooner (default 20000). The
-  // values below keep a full recent window while compacting slightly later than
-  // the default (smaller buffer), so a long orchestration session is interrupted
-  // less often. Keep the buffer comfortably above the tool-output cap above
-  // (30000 bytes ≈ 7500 tokens); 12000 leaves safe headroom.
-  "compaction": {
-    "auto": true,
-    "keep": {
-      "tokens": 15000
+            // Lockfiles and generated/minified assets (large, low-signal files)
+            "**/*.lock",
+            "**/package-lock.json",
+            "**/pnpm-lock.yaml",
+            "**/yarn.lock",
+            "**/bun.lockb",
+            "**/Cargo.lock",
+            "**/composer.lock",
+            "**/Gemfile.lock",
+            "**/poetry.lock",
+            "**/*.min.js",
+            "**/*.min.css",
+            "**/*.map",
+        ],
     },
-    "buffer": 12000
-  },
 
-  // ── Shrink images before they reach the model ──────────────────────────────
-  // Images are token-expensive. Auto-resize oversized attachments down to these
-  // bounds instead of sending them at full resolution (defaults: 2000x2000 and
-  // 5 MiB). Lowering the limits reduces image tokens.
-  "media": {
-    "image": {
-      "auto_resize": true,
-      "max_width": 1600,
-      "max_height": 1600,
-      "max_base64_bytes": 2097152
-    }
-  },
+    // ── Cap tool output that enters the context ────────────────────────────────
+    // Tool results are a major token sink. When output exceeds these limits the
+    // full text is still saved to disk and a preview is returned to the model.
+    // Defaults are 2000 lines / 51200 bytes; lowering them cuts context size.
+    // Raise these if you often need long command output verbatim.
+    "tool_output": {
+        "max_lines": 600,
+        "max_bytes": 30000,
+    },
 
-  // ── Optional token savers (disabled by default) ────────────────────────────
-  //
-  // Warming sends periodic keep-alive requests to idle sessions, which burns
-  // tokens. It is OFF by default, so leave this commented out:
-  // "warming": false,
-  //
-  // LSP diagnostics can be injected into context after edits. Disabling LSP
-  // saves tokens but reduces code intelligence:
-  // "lsp": false,
-  //
-  // Refuse to read huge/low-signal files outright (glob/grep already skip most
-  // of these via watcher.ignore above). Uncomment to hard-block them:
-  // "permissions": [
-  //   { "action": "read", "resource": "**/node_modules/**", "effect": "deny" },
-  //   { "action": "read", "resource": "**/*.lock", "effect": "deny" },
-  //   { "action": "read", "resource": "**/*-lock.json", "effect": "deny" }
-  // ],
+    // ── Compaction ─────────────────────────────────────────────────────────────
+    // "keep.tokens" is how much recent context is preserved beside the summary
+    // (default 15000). "buffer" is the safety margin below the model's limit;
+    // a larger buffer starts automatic compaction sooner (default 20000). The
+    // values below keep a full recent window while compacting slightly later than
+    // the default (smaller buffer), so a long orchestration session is interrupted
+    // less often. Keep the buffer comfortably above the tool-output cap above
+    // (30000 bytes ≈ 7500 tokens); 12000 leaves safe headroom.
+    "compaction": {
+        "auto": true,
+        "keep": {
+            "tokens": 15000,
+        },
+        "buffer": 12000,
+    },
 
-  // ── LSP ────────────────────────────────────────────────────────────────────
-  // The oh-my-opencode-slim installer enables LSP when the setting is absent.
-  // Note: OpenCode V2 accepts and preserves `lsp`, but does not run language
-  // servers, expose LSP tools, or emit LSP diagnostics, so this is currently
-  // inert on V2 and can be removed without changing behavior.
-  "lsp": true,
+    // ── Shrink images before they reach the model ──────────────────────────────
+    // Images are token-expensive. Auto-resize oversized attachments down to these
+    // bounds instead of sending them at full resolution (defaults: 2000x2000 and
+    // 5 MiB). Lowering the limits reduces image tokens.
+    "media": {
+        "image": {
+            "auto_resize": true,
+            "max_width": 1600,
+            "max_height": 1600,
+            "max_base64_bytes": 2097152,
+        },
+    },
 
-  // ── MCP servers ────────────────────────────────────────────────────────────
-  // Unrelated to token optimization; kept so the context7, grep-app, and
-  // websearch tools stay available.
-  //
-  // Secrets are never stored in this file (it is committed to a public repo).
-  // OpenCode substitutes {env:VAR} from the environment at load time. The Exa
-  // key below comes from EXA_API_KEY, exported in ~/.zshadditions (see the
-  // opencode/README.md "Secrets" section).
-  // ── MCP servers (native V2 layout) ─────────────────────────────────────────
-  // V2 nests servers under `mcp.servers` and inverts the toggle: servers
-  // connect by default, and `"disabled": true` keeps one configured but
-  // unconnected. (V1's `enabled: true` is dropped; it is the default.)
-  "mcp": {
-    "servers": {
-      "context7": {
-        "type": "remote",
-        "url": "https://mcp.context7.com/mcp"
-      },
-      "grep-app": {
-        "type": "remote",
-        "url": "https://mcp.grep.app"
-      },
-      "websearch": {
-        "type": "remote",
-        "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
-        "headers": {
-          // Read from the environment; never commit the real key here.
-          "x-api-key": "{env:EXA_API_KEY}"
-        }
-      }
-    }
-  },
-  // ── Plugins ────────────────────────────────────────────────────────────────
-  // Loaded by both the server and the TUI in V2 (the TUI badge/`/preset` entry
-  // is resolved from this same `plugins` list).
-  "plugins": [
-    "@tarquinen/opencode-dcp@latest",
-    "oh-my-opencode-slim"
-  ]
+    // ── Optional token savers (disabled by default) ────────────────────────────
+    //
+    // Warming sends periodic keep-alive requests to idle sessions, which burns
+    // tokens. It is OFF by default, so leave this commented out:
+    // "warming": false,
+    //
+    // LSP diagnostics can be injected into context after edits. Disabling LSP
+    // saves tokens but reduces code intelligence:
+    // "lsp": false,
+    //
+    // Refuse to read huge/low-signal files outright (glob/grep already skip most
+    // of these via watcher.ignore above). Uncomment to hard-block them:
+    // "permissions": [
+    //   { "action": "read", "resource": "**/node_modules/**", "effect": "deny" },
+    //   { "action": "read", "resource": "**/*.lock", "effect": "deny" },
+    //   { "action": "read", "resource": "**/*-lock.json", "effect": "deny" }
+    // ],
+
+    // ── LSP ────────────────────────────────────────────────────────────────────
+    // The oh-my-opencode-slim installer enables LSP when the setting is absent.
+    // Note: OpenCode V2 accepts and preserves `lsp`, but does not run language
+    // servers, expose LSP tools, or emit LSP diagnostics, so this is currently
+    // inert on V2 and can be removed without changing behavior.
+    "lsp": true,
+
+    // ── MCP servers ────────────────────────────────────────────────────────────
+    // Unrelated to token optimization; kept so the context7, grep-app, and
+    // websearch tools stay available.
+    //
+    // Secrets are never stored in this file (it is committed to a public repo).
+    // OpenCode substitutes {env:VAR} from the environment at load time. The Exa
+    // key below comes from EXA_API_KEY, exported in ~/.zshadditions (see the
+    // opencode/README.md "Secrets" section).
+    // ── MCP servers (native V2 layout) ─────────────────────────────────────────
+    // V2 nests servers under `mcp.servers` and inverts the toggle: servers
+    // connect by default, and `"disabled": true` keeps one configured but
+    // unconnected. (V1's `enabled: true` is dropped; it is the default.)
+    "mcp": {
+        "servers": {
+            "context7": {
+                "type": "remote",
+                "url": "https://mcp.context7.com/mcp",
+            },
+            "grep-app": {
+                "type": "remote",
+                "url": "https://mcp.grep.app",
+            },
+            "websearch": {
+                "type": "remote",
+                "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
+                "headers": {
+                    // Read from the environment; never commit the real key here.
+                    "x-api-key": "{env:EXA_API_KEY}",
+                },
+            },
+        },
+    },
+    // ── Plugins ────────────────────────────────────────────────────────────────
+    // Loaded by both the server and the TUI in V2 (the TUI badge/`/preset` entry
+    // is resolved from this same `plugins` list).
+    "plugins": [
+        "@tarquinen/opencode-dcp@latest",
+        "oh-my-opencode-slim",
+
+        // ── Live tokens/sec meter (opencode-tps-meter) ────────────────────────
+        // Live tok/s readout beside the prompt while the model streams; when the
+        // turn settles the leading figure switches from instant to average, so a
+        // frozen meter reads as a summary. Final totals always come from the
+        // provider-reported token counts, so they are exact.
+        //
+        // V2-only extras (beyond the footer line):
+        //   /tps           open the throughput dashboard: per-model mean/best t/s,
+        //                  mean TTFT and step count over a durable ledger
+        //   /tps detail    toast with per-session t/s, tokens, generation rate
+        //                  (tool time excluded), TTFT and title/compaction overhead
+        //   /tps reset     clear the durable per-model ledger
+        //   /tps detailed  footer detail mode: adds gen rate, TTFT, overhead,
+        //                  and an "aborted" marker to the meter line
+        //   /tps hidden    hide the footer meter (cycle back with /tps compact)
+        // A per-subagent throughput breakdown shows up in the sidebar
+        // automatically whenever the session has subagent children.
+        {
+            "package": "opencode-tps-meter@latest",
+            "options": {
+                // Footer line: "TPS: 92.4 (avg 78.1) | tokens: 1,842 | 00:23".
+                // ("minimal" drops the average; "verbose" is too wide for the footer.)
+                "format": "compact",
+                "showInstant": true,
+                "showAverage": true,
+                "showTotalTokens": true,
+                "showElapsed": true,
+
+                // Streaming color: red below 10 t/s, yellow 10–50, green above 50.
+                // Once the turn settles the meter dims to a subdued color.
+                "enableColorCoding": true,
+                "slowTpsThreshold": 10,
+                "fastTpsThreshold": 50,
+
+                // A 1.5s rolling window keeps the instant figure from jittering
+                // on short pauses without making the reading feel laggy.
+                "rollingWindowMs": 1500,
+                "minVisibleTPS": 0,
+
+                // Live estimate for streamed deltas (final totals are exact
+                // regardless): chars_div_4 ≈ mixed code/prose, chars_div_3 for
+                // code-heavy output, words_div_0_75 for prose.
+                "fallbackTokenHeuristic": "chars_div_4",
+
+                // Leave "updateIntervalMs" unset on purpose: keeping the 50ms
+                // default selects the plugin's fast 8ms V2 TUI throttle; any
+                // explicit value replaces it. "toastFallback" stays false —
+                // V2 server plugins have no UI surface for toasts.
+            },
+        },
+    ],
 }

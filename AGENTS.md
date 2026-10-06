@@ -79,7 +79,7 @@ directories.
 | `controllerMacros/` | Input / Gaming | Python controller button-swap and macro scripts. |
 | `composer/` | Development | Global PHP Composer settings. |
 | `php-cs-fixer/` | Development | PHP coding-standards / PSR fixer config. |
-| `opencode/` | AI / Development | Token-optimized OpenCode CLI config plus the `oh-my-opencode-slim` orchestrator plugin. |
+| `opencode/` | AI / Development | Token-optimized OpenCode CLI config plus the `oh-my-opencode-slim` orchestrator and `opencode-tps-meter` plugins. |
 | `images/` | Assets | Shared wallpapers and media assets. |
 | `mouseCursorDefault/` | Desktop | Default XDG cursor theme definitions. |
 
