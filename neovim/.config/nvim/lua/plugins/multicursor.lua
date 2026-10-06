@@ -29,6 +29,29 @@ return {
             layerSet("n", "<Esc>", mc.clearCursors)
         end)
 
+        -- 2b. Repair Which-Key's <leader> trigger
+        -- While cursors are active, the layer above registers a buffer-local
+        -- <leader> mapping. That overwrites Which-Key's auto-generated
+        -- buffer-local <leader> trigger. When the cursors are cleared,
+        -- multicursor's KeymapManager:restore() *deletes* that buffer-local
+        -- mapping by key instead of restoring Which-Key's original one, so
+        -- Which-Key no longer reacts to <leader> (until something else, e.g.
+        -- recording a macro, makes Which-Key rebuild its triggers).
+        -- Rebuild Which-Key's triggers when leaving multicursor mode.
+        local hadCursors = false
+        mc.onSafeState(function()
+            local hasCursors = mc.hasCursors()
+            if hadCursors and not hasCursors then
+                local ok, which_key_buf = pcall(require, "which-key.buf")
+                if ok then
+                    local buf = vim.api.nvim_get_current_buf()
+                    which_key_buf.clear({ buf = buf })
+                    which_key_buf.get({ buf = buf, update = true })
+                end
+            end
+            hadCursors = hasCursors
+        end)
+
         -- 3. Standard Mappings
         ---@section Add Cursors
         set({ "n", "v" }, "<leader>mj", function()
