@@ -15,6 +15,44 @@ znap() {
     __znap_original "$@"
 }
 
+# Edit the Zsh history file ($HISTFILE) with the first installed editor among
+# vim, micro and nano. When the editor closes cleanly, wipe the Deja database
+# (db + WAL/SHM files), rebuild it from the history file alone, and restart the
+# suggestion daemon detached in the background so all stale suggestions are
+# flushed. Skips the Deja steps when the editor is quit without saving changes.
+vimhistory() {
+    local editor
+    for editor in vim micro nano; do
+        if (( ${+commands[$editor]} )); then
+            "$editor" "$HISTFILE" || return "$?"
+            # NOTE: plain "return _deja_rebuild" silently no-ops in zsh —
+            # "return" arithmetic-evaluates its argument (unknown name -> 0).
+            _deja_rebuild
+            return "$?"
+        fi
+    done
+    print -u2 "vimhistory: none of vim, micro or nano is installed."
+    return 127
+}
+
+# Rebuild the Deja database from the Zsh history file and restart its daemon
+# so the running daemon drops its old in-memory state entirely.
+_deja_rebuild() {
+    local deja_bin="$HOME/.local/bin/deja"
+    local deja_dir="$HOME/.local/share/deja"
+
+    [[ -x "$deja_bin" ]] || return 0
+
+    # Empty the database, then rebuild it solely from the history file.
+    # The WAL and SHM files must go too, or SQLite resurrects them on reopen.
+    rm -f "$deja_dir/deja.db" "$deja_dir/deja.db-wal" "$deja_dir/deja.db-shm"
+    "$deja_bin" import || return "$?"
+
+    # Detached background restart (zsh: &! backgrounds and disowns): the
+    # daemon is long-lived and hangs the terminal when run in the foreground.
+    { "$deja_bin" daemon --restart >/dev/null 2>&1 < /dev/null &! }
+}
+
 # Compare the installed Deja binary against the latest GitHub release. The
 # upgrade itself is handled automatically: deleting ~/.local/bin/deja and
 # restarting zsh re-downloads the current release and regenerates its init.

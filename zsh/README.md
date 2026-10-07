@@ -153,6 +153,7 @@ chsh -s $(which zsh)
 - **Autocompletion & Autosuggestions:** Interactive menu completion (`zsh-autocomplete`) and predictive ghost-text suggestions via **[Deja](https://github.com/Giammarco-Ferranti/deja)** — a Go daemon-style engine with fuzzy matching, directory awareness, and frecency scoring. Installed and initialized automatically on first shell launch (a drop-in replacement for the old `zsh-autosuggestions` plugin).
 - **Syntax Highlighting:** Real-time command syntax highlighting (`fast-syntax-highlighting`).
 - **History Substring Search:** Interactive substring search through command history using arrow keys.
+- **vim History Cleanup:** `vimhistory` opens `$HISTFILE` with vim (falling back to micro or nano), then — after saving changes — recreates the Deja suggestion database from scratch (`_deja_rebuild`: wipes `deja.db`/`-wal`/`-shm`, re-imports the history file, and restarts the suggestion daemon detached).
 - **Productivity Enhancements:** Integrated `zoxide` directory jumping, `eza` aliases, `fastfetch` system info display, and extensive utility aliases.
 
 ---
