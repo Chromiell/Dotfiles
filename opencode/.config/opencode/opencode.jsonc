@@ -271,7 +271,7 @@
                 // Once the turn settles the meter dims to a subdued color.
                 "enableColorCoding": true,
                 "slowTpsThreshold": 10,
-                "fastTpsThreshold": 50,
+                "fastTpsThreshold": 100,
 
                 // A 1.5s rolling window keeps the instant figure from jittering
                 // on short pauses without making the reading feel laggy.

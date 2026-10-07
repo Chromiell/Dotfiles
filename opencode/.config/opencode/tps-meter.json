@@ -6,7 +6,7 @@
   "showElapsed": true,
   "enableColorCoding": true,
   "slowTpsThreshold": 10,
-  "fastTpsThreshold": 50,
+  "fastTpsThreshold": 100,
   "rollingWindowMs": 1500,
   "minVisibleTPS": 0,
   "fallbackTokenHeuristic": "chars_div_4"
