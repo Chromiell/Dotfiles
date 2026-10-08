@@ -29,7 +29,7 @@ stow vim
 
 This creates the symbolic link `~/.vimrc` → `~/.dotfiles/vim/.vimrc`.
 
-### 🚀 Remote Deployment
+### 🌐 Remote Deployment
 
 To quickly copy the `.vimrc` configuration to any remote machine via SSH:
 
@@ -57,7 +57,7 @@ Optional integrations use the following tools when they are available: Git, `rg`
 - **TokyoNight Moon UI**: TrueColor theme with syntax, search, popup, quickfix, diff, Git-sign, statusline, and bufferline highlights. The configuration falls back to terminal colors when TrueColor is unavailable.
 - **Dynamic statusline**: Shows the current mode, file name, modified/read-only state, file type, encoding and format, cursor position, Git branch, and a cached count of changed files. The statusline adapts its content to the available window width.
 - **Top bufferline**: Displays listed buffers with active-buffer highlighting, modified indicators, optional pin markers, custom buffer ordering, and navigation/reordering commands.
-- **Whitespace tools**: Highlights trailing whitespace and toggles that highlighting with `<leader>cT`; trims trailing whitespace from the current file or a Visual selection with `<leader>ct`.
+- **Whitespace tools**: Highlights trailing whitespace and toggles that highlighting with `<leader>uR`; trims trailing whitespace from the current file or a Visual selection with `<leader>ct`.
 - **Color conversion**: `<leader>co` and `:ToggleHexHsl` convert the color under the cursor between `#RRGGBB` and `hsl(H, S%, L%)`.
 - **Date conversion**: `<leader>cx` converts a Visual selection between Unix timestamps and `YYYY-MM-DD HH:MM:SS` dates, using the system `date` command or a Python 3 fallback.
 - **Project path utility**: `<leader>fP` detects a project root from `.git`, `package.json`, or `Makefile`, then copies the buffer’s relative path to the system and unnamed registers.

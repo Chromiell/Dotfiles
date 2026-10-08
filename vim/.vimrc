@@ -1809,7 +1809,7 @@ command! -nargs=0 ToggleHexHsl call s:ToggleHexHsl()
 nnoremap <silent> <leader>fP :call <SID>CopyProjectPath()<CR>
 nnoremap <silent> <leader>ct :call <SID>TrimTrailingWhitespace()<CR>
 vnoremap <silent> <leader>ct :call <SID>TrimTrailingWhitespaceSelection()<CR>
-nnoremap <silent> <leader>cT :call <SID>ToggleTrailspace()<CR>
+nnoremap <silent> <leader>uR :call <SID>ToggleTrailspace()<CR>
 nnoremap <silent> <leader>co :call <SID>ToggleHexHsl()<CR>
 vnoremap <silent> <leader>cx :<C-u>call <SID>ToggleDateTimestamp()<CR>
 
