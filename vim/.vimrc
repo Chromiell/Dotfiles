@@ -36,8 +36,18 @@ set clipboard=unnamedplus
 " Leader keys (Space as leader, matching LazyVim)
 let mapleader = " "
 let maplocalleader = " "
-nnoremap <Space> <Nop>
-vnoremap <Space> <Nop>
+
+" Which-Key popups (section 8.28): press <Space>, g, [ or ] and pause to
+" preview all mappings under that prefix, like the which-key Neovim plugin.
+" The actual interceptor mappings are defined at the very end of this file as
+" buffer-local <nowait> maps that are (re)installed into every buffer. Only
+" buffer-local mappings short-circuit before the 'timeoutlen' wait, so they
+" still come after the mappings they list (buffer-local maps are found first).
+if !get(g:, 'which_key_enabled', 1) || !exists('*popup_create')
+    " Feature off (or Vim 8): plain no-op leader keys
+    nnoremap <Space> <Nop>
+    vnoremap <Space> <Nop>
+endif
 
 " Global configuration flags
 let g:autoformat = 0
@@ -1795,6 +1805,467 @@ function! QuickFuzzyFind(...)
 endfunction
 
 " ============================================================================
+" 8.28 Which-Key Popup (LazyVim-style, 100% self-contained)
+" ----------------------------------------------------------------------------
+" Press <Space> (leader), g, [ or ] and pause to open a floating menu listing
+" every mapping under that prefix, mirroring the which-key plugin of Neovim.
+" The keymap tree is derived at runtime from maplist() (Vim 9+), so popups
+" always mirror the real mappings; g:which_key_names can override names.
+"
+"   * <Esc> / Ctrl-C      -> abort, nothing runs
+"   * <Backspace>         -> back up one menu level
+"   * Unlisted key        -> closes the menu and replays the keys, so plain
+"                            Vim built-ins (gg, gv, ga...) keep working
+"
+" The menu only appears when the next keystroke is delayed (which_key_delay
+" ms), so fast sequences like <leader>fP or gcc never flash the popup.
+" <Space>, g, [ and ] are all intercepted by buffer-local <nowait> mappings
+" (installed per buffer), so each menu opens after ~which_key_delay ms instead
+" of waiting timeoutlen for prefix disambiguation; built-ins (gg, gv, [m...) are
+" replayed by the interceptor.
+" Options: g:which_key_enabled (default 1) and g:which_key_delay (ms, 250).
+" ============================================================================
+
+let g:which_key_enabled = get(g:, 'which_key_enabled', 1)
+let g:which_key_delay   = get(g:, 'which_key_delay', 250)
+
+" --- TokyoNight palette for the popup ------------------------------------
+function! s:ApplyWhichKeyHighlights() abort
+    highlight default WhichKeyFloat  guibg=#1e2030 guifg=#c8d3f5 ctermbg=234 ctermfg=253
+    highlight default WhichKeyBorder guibg=#1e2030 guifg=#589ed7 ctermbg=234 ctermfg=74
+    highlight default WhichKey       guifg=#86e1fc ctermfg=117
+    highlight default WhichKeySep    guifg=#636da6 ctermfg=61
+    highlight default WhichKeyDesc   guifg=#c099ff ctermfg=141
+    highlight default WhichKeyGroup  guifg=#82aaff ctermfg=111
+endfunction
+call s:ApplyWhichKeyHighlights()
+
+" --- Keymap tree ------------------------------------------------------------
+" Nothing is hard-coded: s:WhichKeyInit() inspects maplist() on first use and
+" nests every mapping under <Space>, g, [ or ] into a tree, so popups mirror
+" the real mappings of this file (including any mapping added at runtime).
+" Leaf:  {'desc': 'text', 'exec': 'ex-commands or feedkeys string'}
+" Group: {'name': 'label', 'children': { 'k': {...}, ... }}
+" Tree entries of s:WK are addressed as "<mode>:<root>", root being one of
+" SPC (leader), g, [ or ]. Requires Vim 9.0+ (maplist()) - below that the
+" tree stays empty and the mapping (un)listing degrades gracefully.
+
+" Descriptions are declared next to the mappings themselves (section 10) via
+" s:Keymap() / s:KeymapGroup(), so this registry is populated from the real key
+" definitions instead of being maintained here by hand. Group paths use the
+" "<root>:<path>" shape (e.g. SPC:c), leaves the "<mode>:<root>:<path>" shape
+" (e.g. n:SPC:c:t); both mirror what s:WhichKeyInit() derives from maplist().
+" g:which_key_names can still override any entry with the same shape; it is
+" applied lazily in s:WhichKeyInit(), once all mappings exist.
+let s:WKNames = {}
+
+" Normalises a mapping mode to the n/x pair used by the which-key tree
+function! s:WKCanonMode(mode) abort
+    if a:mode ==# 'n' || a:mode ==# ' '
+        return 'n'
+    elseif a:mode ==# 'x' || a:mode ==# 'v' || a:mode ==# 's'
+        return 'x'
+    endif
+    return a:mode
+endfunction
+
+" Expands <leader> the way maplist() reports it (<Space>)
+function! s:WKCanonLhs(lhs) abort
+    return substitute(a:lhs, '\c^<leader>', '<Space>', '')
+endfunction
+
+" Turns an lhs into the registry key ("<mode>:<root>:<path>") that
+" s:WKLeafMake() looks up (<leader>ct -> n:SPC:c:t, gcc -> n:g:c:c)
+function! s:WKRegKey(mode, lhs) abort
+    let l:lhs  = s:WKCanonLhs(a:lhs)
+    let l:root = l:lhs =~# '^<Space>' ? 'SPC' : strcharpart(l:lhs, 0, 1)
+    let l:rest = l:root ==# 'SPC' ? strpart(l:lhs, 7) : strcharpart(l:lhs, 1)
+    return s:WKCanonMode(a:mode) . ':' . l:root . ':'
+                \ . join(split(l:rest, '\zs'), ':')
+endfunction
+
+" Names a submenu (path uses the "<root>:<path>" shape, e.g. SPC:c)
+function! s:WKGroup(path, label) abort
+    let s:WKNames[a:path] = a:label
+endfunction
+
+" Defines one mapping and, when desc is non-empty, records its which-key label.
+" mode is the raw map mode; "<mode>noremap" keeps each shortcut's original
+" semantics (nnoremap / xnoremap / vnoremap / inoremap ...). The rhs is handed
+" to :execute verbatim, so <SID>, <CR> and friends resolve exactly as usual.
+function! s:WKMapAdd(mode, lhs, rhs, desc) abort
+    execute (empty(a:mode) ? 'noremap' : a:mode . 'noremap')
+                \ . ' <silent> ' . a:lhs . ' ' . a:rhs
+    if !empty(a:desc)
+        let s:WKNames[s:WKRegKey(a:mode, a:lhs)] = a:desc
+    endif
+endfunction
+
+" Defines a single mapping with an optional description
+function! s:Keymap(mode, lhs, rhs, ...) abort
+    call s:WKMapAdd(a:mode, a:lhs, a:rhs, a:0 ? a:1 : '')
+endfunction
+
+" Opens a which-key submenu and defines its [lhs, rhs, desc] triples in one go
+function! s:KeymapGroup(mode, path, label, pairs) abort
+    if !empty(a:label)
+        call s:WKGroup(a:path, a:label)
+    endif
+    for l:p in a:pairs
+        call s:WKMapAdd(a:mode, l:p[0], l:p[1], get(l:p, 2, ''))
+    endfor
+endfunction
+
+" Runtime listing of all mappings is what feeds the tree
+let s:wk_can_list = exists('*maplist')
+
+" Translates the <>-notation text maplist() reports (e.g. ":buffers<CR>:buffer
+" ") into the real byte sequence feedkeys() expects: feedkeys does not decode
+" notation in its argument
+function! s:WKRhsToKeys(rhs) abort
+    let l:esc = substitute(a:rhs, '\\', '\\\\', 'g')
+    let l:esc = substitute(l:esc, '<lt>', '<', 'g')
+    let l:esc = substitute(l:esc, '"', '\\"', 'g')
+    let l:esc = substitute(l:esc, '<', '\\<', 'g')
+    execute 'return "' . l:esc . '"'
+endfunction
+
+" Adds one maplist() entry under its keystroke path (path excludes the root).
+" Intermediate characters become submenus; where a shorter real mapping
+" already occupies a spot the stored entry wins and longer variants keep
+" working through Vim's own disambiguation (the unknown-key replay).
+function! s:WKTreeAdd(node, root, path, map, mode) abort
+    let l:node = a:node
+    let l:i    = 0
+
+    while l:i < strchars(a:path) - 1
+        let l:k = strcharpart(a:path, l:i, 1)
+        if !has_key(l:node, l:k)
+            let l:node[l:k] = {'name': l:k, 'children': {}}
+        elseif has_key(l:node[l:k], 'exec')
+            return
+        endif
+
+        " Submenu titles come from the overrides (else the plain key). Keys
+        " use ':'-joined keystroke path, e.g. SPC:g:h for nested ghp
+        let l:node[l:k].name =
+                    \ get(s:WKNames, a:root . ':'
+                    \     . join(split(strcharpart(a:path, 0, l:i + 1), '\zs'), ':'),
+                    \     l:node[l:k].name)
+        let l:node = l:node[l:k].children
+        let l:i += 1
+    endwhile
+
+    let l:k = strcharpart(a:path, l:i)
+    if has_key(l:node, l:k) | return | endif " first registered entry wins
+    let l:leaf = s:WKLeafMake(a:map, a:root, a:path, a:mode)
+    if !empty(l:leaf)
+        let l:node[l:k] = l:leaf
+    endif
+endfunction
+
+" Builds a leaf from a maplist() entry. exec stores the RAW right-hand side
+" instead of re-typing the lhs: the lhs would just run into the <nowait>
+" root interceptor again and re-open the menu forever.
+function! s:WKLeafMake(map, root, path, mode) abort
+    let l:pk  = a:mode . ':' . a:root . ':' . join(split(a:path, '\zs'), ':')
+    let l:rhs  = a:map.rhs
+    let l:isx  = a:mode ==# 'x'
+    let l:name = get(s:WKNames, l:pk, '')
+
+    if l:rhs =~# '^:'
+        " Ex commands: a CR-terminated rhs is one or more complete commands
+        " joined with | and run through :execute like the typed mapping;
+        " an unterminated rhs is an interactive keystroke chain (e.g.
+        " ":buffers<CR>:buffer<Space>") that must replay its raw keys
+        let l:cmds = []
+        for l:part in filter(split(l:rhs, '<CR>', 1), 'v:val !=# ""')
+            let l:one = strpart(l:part, 1)
+            let l:one = substitute(l:one, '<SNR>\d\+_', '<SID>', 'g')
+            let l:one = substitute(l:one, '<C-u>', '', 'g')
+            let l:one = substitute(l:one, '\c<lt>', '<', 'g')
+            if l:isx && strpart(l:one, 0, 5) !=# "'<,'>"
+                let l:one = "'<,'>" . l:one " visual : adds the range
+            endif
+            call add(l:cmds, l:one)
+        endfor
+
+        if l:rhs !~# '<CR>$'
+            " Interactive chain: script functions cannot be typed as raw
+            " keys, so drop the leaf (it stays reachable by typing the keys)
+            if l:rhs =~# '<SNR>\|<SID>'
+                return {}
+            endif
+            let l:keys = s:WKRhsToKeys(l:rhs)
+            let l:exec = "feedkeys('" . substitute(l:keys, "'", "''", 'g')
+                        \ . "', '" . (l:isx ? 'mx' : 'm') . "')"
+        else
+            let l:exec = join(l:cmds, ' | ')
+        endif
+    else
+        " Plain keystroke rhs (e.g. nnoremap <leader>cf =)
+        if l:isx && l:rhs ==# '='
+            let l:exec = "'<,'>normal! ="
+        elseif l:isx
+            let l:exec = "feedkeys('gv', 'mx') | feedkeys('"
+                        \ . substitute(s:WKRhsToKeys(l:rhs), "'", "''", 'g') . "', 'mx')"
+        else
+            let l:exec = "feedkeys('" . substitute(s:WKRhsToKeys(l:rhs), "'", "''", 'g') . "', 'm')"
+        endif
+    endif
+
+    if empty(l:name)
+        let l:name = s:WKDescDerive(l:rhs, a:path)
+    endif
+    return {'desc': l:name, 'exec': l:exec}
+endfunction
+
+" Describes a mapping from its right-hand side (after s:WKNames): function
+" calls become camel-cased names ("call <SID>ToggleExplorer()" becomes
+" "Toggle Explorer"), other commands are shown as typed
+function! s:WKDescDerive(rhs, path) abort
+    let l:t = a:rhs
+    if l:t =~# '^:'
+        let l:t = strpart(l:t, 1)
+        let l:t = substitute(l:t, '<SNR>\d\+_', '', 'g')
+        let l:t = substitute(l:t, '<C-u>', '', 'g')
+        let l:t = substitute(l:t, '\c<lt>', '<', 'g')
+        let l:t = substitute(l:t, '<CR>', ' ', 'g')
+        if l:t =~# '\c^\s*call\s'
+            let l:fn = matchstr(l:t, '\c^\s*call\s\+\(<SID>\)\?\zs[A-Za-z_0-9]\+')
+            let l:fn = substitute(l:fn, '\v(\l)(\u)', '\1 \2', 'g')
+            let l:fn = substitute(l:fn, '\v(\u)(\u\l)', '\1 \2', 'g')
+            return toupper(strcharpart(l:fn, 0, 1)) . strcharpart(l:fn, 1)
+        endif
+        return trim(l:t)
+    endif
+    return 'keys "' . a:rhs . '"'
+endfunction
+
+" Derives the menu tree from maplist() the first time a popup opens
+function! s:WhichKeyInit() abort
+    if exists('s:WK') | return | endif
+
+    " User overrides win: s:Keymap()/s:KeymapGroup() already filled the
+    " registry from the real key definitions by the time the popup first opens
+    if exists('g:which_key_names')
+        call extend(s:WKNames, g:which_key_names)
+    endif
+
+    let s:WK = {}
+    for l:mk in ['n', 'x']
+        let s:WK[l:mk . ':SPC'] = {}
+        let s:WK[l:mk . ':g']   = {}
+    endfor
+    let s:WK['n:['] = {}
+    let s:WK['n:]'] = {}
+
+    if !s:wk_can_list | return | endif
+
+    for l:M in maplist()
+        " Mappings without an executable payload are not menu entries
+        if empty(trim(l:M.rhs)) || l:M.rhs =~# '<Plug>'
+                    \ || trim(l:M.rhs) ==# '<Nop>'
+            continue
+        endif
+
+        " <Space>-prefixed mappings (the leader)
+        if l:M.lhs =~? '^<space>\|^<leader>'
+            let l:rest = strpart(l:M.lhs,
+                        \         len(matchstr(l:M.lhs, '\c^<\(space\|leader\)>')))
+            if empty(l:rest) | continue | endif " the interceptor mapping itself
+            if l:M.mode ==# 'n' || l:M.mode ==# ' '
+                call s:WKTreeAdd(s:WK['n:SPC'], 'SPC', l:rest, l:M, 'n')
+            endif
+            if l:M.mode ==# 'x' || l:M.mode ==# 'v' || l:M.mode ==# ' '
+                call s:WKTreeAdd(s:WK['x:SPC'], 'SPC', l:rest, l:M, 'x')
+            endif
+
+        " g / [ / ] prefixed mappings (real Vim prefixes)
+        else
+            let l:root = strcharpart(l:M.lhs, 0, 1)
+            if !(index(['g', '[', ']'], l:root) >= 0)
+                continue
+            endif
+            if l:M.mode ==# 'n' || l:M.mode ==# ' '
+                let l:mk = 'n'
+            elseif l:root ==# 'g' && (l:M.mode ==# 'x' || l:M.mode ==# 'v')
+                let l:mk = 'x'
+            else
+                continue
+            endif
+            let l:rest = strcharpart(l:M.lhs, 1)
+            if empty(l:rest) | continue | endif " the interceptor mapping itself
+            call s:WKTreeAdd(s:WK[l:mk . ':' . l:root], l:root, l:rest, l:M, l:mk)
+        endif
+    endfor
+endfunction
+
+" --- Popup helpers ----------------------------------------------------------
+function! s:WKPopupClose() abort
+    if exists('s:wk_winid') && s:wk_winid > 0
+        silent! call popup_close(s:wk_winid)
+        let s:wk_winid = 0
+    endif
+endfunction
+
+function! s:WKPopupShow(node, title) abort
+    call s:WKPopupClose()
+
+    " One row per entry: leaves first, then submenu groups (like which-key)
+    let l:lines = []
+    let l:leafs = []
+    let l:groups = []
+    for l:k in sort(keys(a:node), 'i')
+        if has_key(a:node[l:k], 'children')
+            call add(l:groups, l:k)
+        else
+            call add(l:leafs, l:k)
+        endif
+    endfor
+    for l:k in l:leafs + l:groups
+        let l:v = a:node[l:k]
+        let l:desc = has_key(l:v, 'children') ? '+' . l:v.name : l:v.desc
+        call add(l:lines, ' ' . l:k . ' ➜ ' . l:desc)
+    endfor
+    if empty(l:lines)
+        call add(l:lines, ' (no keymaps)')
+    endif
+    call add(l:lines, ' <esc> close · <bs> back')
+
+    " Fixed width wide enough for the longest description
+    let l:w = 40
+    for l:l in l:lines
+        let l:w = max([l:w, strdisplaywidth(l:l) + 2])
+    endfor
+
+    let s:wk_winid = popup_create(l:lines, {
+                \ 'padding': [0, 1, 0, 1],
+                \ 'border': [1, 1, 1, 1],
+                \ 'borderchars': ['─', '│', '─', '│', '╭', '╮', '╯', '╰'],
+                \ 'title': ' ' . a:title . ' ',
+                \ 'titlehighlight': ['WhichKeyBorder'],
+                \ 'highlight': 'WhichKeyFloat',
+                \ 'borderhighlight': ['WhichKeyBorder'],
+                \ 'minwidth': l:w,
+                \ 'maxwidth': l:w,
+                \ 'maxheight': max([6, winheight(0) - 4]),
+                \ 'scrollbar': 0,
+                \ 'zindex': 300,
+                \ })
+
+    " Recreate the which-key coloring: cyan keys, grey arrows,
+    " blue group names (+) and magenta descriptions
+    for l:pat in [
+                \   ['WhichKey',      '^\s\zs\S\ze\s*➜'],
+                \   ['WhichKeySep',   '➜'],
+                \   ['WhichKeyGroup', '➜ \zs+.*'],
+                \   ['WhichKeyDesc',  '➜ \(+\)\@!\zs.*'],
+                \   ['WhichKeySep',   '^ <esc>.*'],
+                \ ]
+        call win_execute(s:wk_winid,
+                    \ 'call matchadd("' . l:pat[0] . '", "' . escape(l:pat[1], '"\') . '")')
+    endfor
+
+    " Anchor the popup to the bottom-right corner of the editor window
+    let l:geo  = popup_getpos(s:wk_winid)
+    let l:orig = win_screenpos(win_getid())
+    let l:line = max([l:orig[0], l:orig[0] + winheight(0) - l:geo.height])
+    let l:col  = max([l:orig[1], l:orig[1] + winwidth(0) - l:geo.width])
+    call popup_move(s:wk_winid, {'line': l:line, 'col': l:col})
+    redraw
+endfunction
+
+" --- Main loop ---------------------------------------------------------------
+" state: stack of [node, title] for <BS>; typed holds chars after the root,
+" replayed verbatim (plus the root char for g / [ / ]) on unsupported keys so
+" built-ins keep their semantics. Uses 'n' (no-remap) for those fallbacks so
+" this trigger never re-enters itself.
+function! s:WhichKey(mode, ...) abort
+    if !exists('*popup_create') || !get(g:, 'which_key_enabled', 1)
+        return
+    endif
+    call s:WhichKeyInit()
+
+    let l:root = a:0 ? a:1 : 'SPC'
+    if !has_key(s:WK, a:mode . ':' . l:root) | return | endif
+
+    let l:node     = s:WK[a:mode . ':' . l:root]
+    let l:title    = l:root ==# 'SPC' ? 'SPC' : l:root
+    let l:stack    = []
+    let l:typed    = ''
+    " <Space> was <Nop>: never replay it, other roots are real Vim prefixes
+    let l:rootchar = l:root ==# 'SPC' ? '' : l:root
+    let l:fmode    = (l:root ==# 'SPC' ? 'm' : 'n') . (a:mode ==# 'x' ? 'x' : '')
+    " With <nowait> the interceptor fires before a count (e.g. 5gg) can be
+    " applied, so remember any count and re-feed it on the unlisted-key
+    " fallback. Leader counts are meaningless, so only g / [ / ] preserve them.
+    let l:count    = l:root ==# 'SPC' ? 0 : v:count
+
+    while 1
+        " Wait which_key_delay for the next key: buffered keystrokes are
+        " consumed directly, a pause opens the menu first
+        let l:t = 0
+        while getchar(1) == 0 && l:t < g:which_key_delay
+            execute 'sleep 25m'
+            let l:t += 25
+        endwhile
+
+        if getchar(1) != 0
+            let l:nr = getchar()
+        else
+            call s:WKPopupShow(l:node, l:title)
+            let l:nr = getchar()
+            call s:WKPopupClose()
+        endif
+        " getchar() returns raw byte strings for terminal special keys
+        " (backspace arrives as \x80kb): decode those so BS still works
+        if type(l:nr) == v:t_string
+            let l:nr = (l:nr =~# "\x80kb") ? 8 : 256
+        endif
+
+        " Esc, Ctrl-C, special keys (arrows, mouse, F-keys, Unicode): abort
+        if l:nr == 27 || l:nr == 3 || l:nr >= 256
+            break
+        endif
+
+        " Backspace: one menu level up
+        if l:nr == 8 || l:nr == 127
+            if empty(l:stack)
+                break
+            endif
+            let l:prev  = remove(l:stack, -1)
+            let l:node  = l:prev[0]
+            let l:title = l:prev[1]
+            let l:typed = strpart(l:typed, 0, len(l:typed) - 1)
+            continue
+        endif
+
+        let l:c = nr2char(l:nr)
+        let l:child = has_key(l:node, l:c) ? l:node[l:c] : {}
+        if empty(l:child)
+            " Unlisted key: hand everything back to Vim unaltered (count too)
+            call feedkeys((l:count > 0 ? l:count : '') . l:rootchar . l:typed . l:c, l:fmode)
+            break
+        endif
+
+        let l:typed .= l:c
+        if has_key(l:child, 'children')
+            call add(l:stack, [l:node, l:title])
+            let l:node  = l:child.children
+            let l:title = '+' . l:child.name
+            continue
+        endif
+
+        " Leaf: execute the stored command exactly like the real mapping
+        execute l:child.exec
+        break
+    endwhile
+
+    call s:WKPopupClose()
+endfunction
+
+" ============================================================================
 " 9. COMMANDS
 " ============================================================================
 
@@ -1803,16 +2274,104 @@ command! -nargs=0 ToggleHexHsl call s:ToggleHexHsl()
 
 " ============================================================================
 " 10. KEYMAPS & SHORTCUTS (Faithful to LazyVim & project keymaps)
+" ----------------------------------------------------------------------------
+" Menu shortcuts (shown by the which-key popup: <Space>, g, [ and ]) are
+" declared through s:Keymap() / s:KeymapGroup(), which define the mapping and
+" record its menu description in the same call. Every other shortcut stays a
+" plain :noremap below.
 " ============================================================================
 
-" --- General & Editing ---
-nnoremap <silent> <leader>fP :call <SID>CopyProjectPath()<CR>
-nnoremap <silent> <leader>ct :call <SID>TrimTrailingWhitespace()<CR>
-vnoremap <silent> <leader>ct :call <SID>TrimTrailingWhitespaceSelection()<CR>
-nnoremap <silent> <leader>uR :call <SID>ToggleTrailspace()<CR>
-nnoremap <silent> <leader>co :call <SID>ToggleHexHsl()<CR>
-vnoremap <silent> <leader>cx :<C-u>call <SID>ToggleDateTimestamp()<CR>
+" --- <Space> menus -----------------------------------------------------------
+" <Space>f : file / find
+call s:KeymapGroup('n', 'SPC:f', 'file/find', [
+            \ ['<leader>fP', ':call <SID>CopyProjectPath()<CR>', 'Copy Project Path'],
+            \ ['<leader>ff', ':call QuickFuzzyFind(0)<CR>', 'Fuzzy Find Files'],
+            \ ['<leader>fh', ':call QuickFuzzyFind(1)<CR>', 'Fuzzy Find (+ignored)'],
+            \ ['<leader>fg', ':call <SID>ProjectGrep()<CR>', 'Grep (Quickfix)'],
+            \ ['<leader>fe', ':Lexplore<CR>', 'Explorer CWD (Lexplore)'],
+            \ ['<leader>fn', ':enew<CR>', 'New File'],
+            \ ])
 
+" <Space>c : code
+call s:KeymapGroup('n', 'SPC:c', 'code', [
+            \ ['<leader>ct', ':call <SID>TrimTrailingWhitespace()<CR>', 'Trim Trailing Whitespace'],
+            \ ['<leader>co', ':call <SID>ToggleHexHsl()<CR>', 'Hex <-> HSL Converter'],
+            \ ['<leader>cf', ':call <SID>FormatIndent()<CR>', 'Format / Indent File'],
+            \ ])
+call s:KeymapGroup('v', 'SPC:c', '', [
+            \ ['<leader>ct', ':call <SID>TrimTrailingWhitespaceSelection()<CR>', 'Trim Selection'],
+            \ ['<leader>cx', ':<C-u>call <SID>ToggleDateTimestamp()<CR>', 'Timestamp <-> Date'],
+            \ ['<leader>cf', '=', 'Format / Indent Selection'],
+            \ ])
+
+" <Space>b : buffer
+call s:KeymapGroup('n', 'SPC:b', 'buffer', [
+            \ ['<leader>bb', ':buffers<CR>:buffer<Space>', 'Buffer List Menu'],
+            \ ['<leader>bd', ':confirm bdelete<CR>', 'Delete Buffer'],
+            \ ['<leader>bp', ':call <SID>TogglePinBuffer()<CR>', 'Pin Buffer'],
+            \ ['<leader>bP', ':call <SID>CloseUnpinnedBuffers()<CR>', 'Close Unpinned Buffers'],
+            \ ['<leader>b[', ':call <SID>MoveBufferRepeatable(-1)<CR>', 'Move Buffer Left (repeat)'],
+            \ ['<leader>b]', ':call <SID>MoveBufferRepeatable(1)<CR>', 'Move Buffer Right (repeat)'],
+            \ ['<leader>bc', ':call <SID>DiffTwoBuffers()<CR>', 'Diff Two Buffers'],
+            \ ])
+
+" <Space>g : git
+call s:KeymapGroup('n', 'SPC:g', 'git', [
+            \ ['<leader>gb', ':call <SID>GitBlame()<CR>', 'Blame Sidebar'],
+            \ ['<leader>gd', ':vsplit \| Gdiffsplit<CR>', 'Git Diff Split'],
+            \ ['<leader>gH', ":execute '!git log -p %'<CR>", 'Git Log (whole file)'],
+            \ ])
+call s:KeymapGroup('n', 'SPC:g:h', 'hunk', [
+            \ ['<leader>ghp', ':call <SID>PreviewGitHunk()<CR>', 'Preview Hunk'],
+            \ ['<leader>ghr', ':call <SID>ResetHunk()<CR>', 'Reset Hunk'],
+            \ ])
+
+" <Space>m : marks
+call s:KeymapGroup('n', 'SPC:m', 'marks', [
+            \ ['<leader>md', ':call <SID>DeleteLineMarks()<CR>:call <SID>UpdateMarkSigns()<CR>', 'Delete Marks on Line'],
+            \ ['<leader>mD', ':call <SID>DeleteAllMarks()<CR>:call <SID>UpdateMarkSigns()<CR>', 'Delete All Marks'],
+            \ ])
+
+" <Space>u : ui
+call s:KeymapGroup('n', 'SPC:u', 'ui', [
+            \ ['<leader>uo', ':setlocal spell!<CR>', 'Toggle Spell Check'],
+            \ ['<leader>uR', ':call <SID>ToggleTrailspace()<CR>', 'Toggle Trailing Highlight'],
+            \ ])
+
+" <Space>w : windows
+call s:KeymapGroup('n', 'SPC:w', 'windows', [
+            \ ['<leader>wd', ':close<CR>', 'Close Window'],
+            \ ])
+
+" Remaining single-key <Space> shortcuts
+call s:Keymap('n', '<leader>\', ':call <SID>ProjectGrep()<CR>', 'Grep (Quickfix)')
+call s:Keymap('n', '<leader>e', ':call <SID>ToggleExplorer()<CR>', 'Explorer (netrw)')
+if executable('wl-paste')
+    call s:Keymap('n', '<leader>P', ":put =system('wl-paste --no-newline')<CR>", 'Paste After (Wayland)')
+    call s:Keymap('n', '<leader>p', ":put! =system('wl-paste --no-newline')<CR>", 'Paste Before (Wayland)')
+endif
+call s:Keymap('v', '<leader>mi', ":<C-u>'<,'>call <SID>MultiCursorMode()<CR>", 'Multi-Cursor (lines)')
+
+" --- g menus -----------------------------------------------------------------
+call s:KeymapGroup('n', 'g:c', 'comment', [
+            \ ['gcc', ':call <SID>ToggleComment()<CR>', 'Toggle Comment Line'],
+            \ ])
+call s:Keymap('x', 'gc', ":<C-u>'<,'>call <SID>ToggleComment()<CR>", 'Comment Selection (gc)')
+call s:KeymapGroup('x', 'g:s', 'surround', [
+            \ ['gsa', ":<C-u>call <SID>VisualSurround()<CR>", 'Add Surround (gsa)'],
+            \ ])
+
+" --- [ / ] menus -------------------------------------------------------------
+call s:Keymap('n', '[b', ':call <SID>NavBuffer(-1)<CR>', 'Previous Buffer')
+call s:Keymap('n', '[h', ':call <SID>JumpGitHunk(-1)<CR>', 'Previous Git Hunk')
+call s:Keymap('n', '[q', ':cprevious<CR>', 'Previous Quickfix Item')
+call s:Keymap('n', '[Q', ':cfirst<CR>', 'First Quickfix Item')
+call s:Keymap('n', ']b', ':call <SID>NavBuffer(1)<CR>', 'Next Buffer')
+call s:Keymap('n', ']h', ':call <SID>JumpGitHunk(1)<CR>', 'Next Git Hunk')
+call s:Keymap('n', ']q', ':cnext<CR>', 'Next Quickfix Item')
+call s:Keymap('n', ']Q', ':clast<CR>', 'Last Quickfix Item')
+
+" --- General & Editing -------------------------------------------------------
 " Save buffer with Ctrl+S (Automatic Sudo Fallback) and return to Normal mode
 nnoremap <silent> <C-s> :call <SID>SmartSave()<CR>
 inoremap <silent> <C-s> <Esc>:call <SID>SmartSave()<CR>
@@ -1826,92 +2385,19 @@ vnoremap <S-Tab> <gv
 
 " Marks (With Instant Sign Column Display)
 nnoremap <silent> m :call <SID>SetMarkInteractive()<CR>
-nnoremap <silent> <leader>md :call <SID>DeleteLineMarks()<CR>:call <SID>UpdateMarkSigns()<CR>
-nnoremap <silent> <leader>mD :call <SID>DeleteAllMarks()<CR>:call <SID>UpdateMarkSigns()<CR>
 
-" Buffer Navigation & Reordering
+" Buffer Navigation (H / L)
 nnoremap <silent> H :call <SID>NavBuffer(-1)<CR>
 nnoremap <silent> L :call <SID>NavBuffer(1)<CR>
-nnoremap <silent> [b :call <SID>NavBuffer(-1)<CR>
-nnoremap <silent> ]b :call <SID>NavBuffer(1)<CR>
-nnoremap <silent> <leader>b[ :call <SID>MoveBufferRepeatable(-1)<CR>
-nnoremap <silent> <leader>b] :call <SID>MoveBufferRepeatable(1)<CR>
-nnoremap <silent> <leader>bb :buffers<CR>:buffer<Space>
-nnoremap <silent> <leader>bd :confirm bdelete<CR>
 
 " Window Navigation
 nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
-nnoremap <silent> <leader>wd :close<CR>
-
-" Toggle Comments
-nnoremap <silent> gcc :call <SID>ToggleComment()<CR>
-xnoremap <silent> gc :<C-u>'<,'>call <SID>ToggleComment()<CR>
-
-" Interactive Multi-Cursor Submode
-xnoremap <silent> <leader>mi :<C-u>'<,'>call <SID>MultiCursorMode()<CR>
 
 " Search & Clear
 nnoremap <silent> <Esc> :nohlsearch<CR><Esc>
-
-" Project Grep via Quickfix
-nnoremap <silent> <leader>fg :call <SID>ProjectGrep()<CR>
-nnoremap <silent> <leader>\  :call <SID>ProjectGrep()<CR>
-
-" Standard search (Ignores hidden folders like .config via wildignore)
-nnoremap <leader>ff :call QuickFuzzyFind(0)<CR>
-
-" Include gitignored files in search
-nnoremap <leader>fh :call QuickFuzzyFind(1)<CR>
-
-" Quickfix list navigation
-nnoremap <silent> [q :cprevious<CR>
-nnoremap <silent> ]q :cnext<CR>
-nnoremap <silent> [Q :cfirst<CR>
-nnoremap <silent> ]Q :clast<CR>
-
-" Spelling navigation & toggle (<leader>uo, ]s, [s)
-nnoremap <silent> <leader>uo :setlocal spell!<CR>
-
-" Git & Diffing
-nnoremap <silent> <leader>bc :call <SID>DiffTwoBuffers()<CR>
-nnoremap <silent> <leader>gd :vsplit \| Gdiffsplit<CR>
-nnoremap <silent> <leader>gb :call <SID>GitBlame()<CR>
-nnoremap <silent> <leader>gH :execute '!git log -p %'<CR>
-
-" File Explorer (Netrw tree mode)
-nnoremap <silent> <leader>e :call <SID>ToggleExplorer()<CR>
-nnoremap <silent> <leader>fe :Lexplore<CR>
-
-" Format file or visual selection
-nnoremap <silent> <leader>cf :call <SID>FormatIndent()<CR>
-vnoremap <silent> <leader>cf =
-
-" File / Buffer Management
-nnoremap <silent> <leader>fn :enew<CR>
-
-" Paste from Wayland system clipboard
-if executable('wl-paste')
-    nnoremap <silent> <leader>P :put =system('wl-paste --no-newline')<CR>
-    nnoremap <silent> <leader>p :put! =system('wl-paste --no-newline')<CR>
-endif
-
-" Visual Surround (LazyVim / gsa style)
-xnoremap <silent> gsa :<C-u>call <SID>VisualSurround()<CR>
-
-" Buffer Pinning & Mass Operations
-nnoremap <silent> <leader>bp :call <SID>TogglePinBuffer()<CR>
-nnoremap <silent> <leader>bP :call <SID>CloseUnpinnedBuffers()<CR>
-
-" Git Hunk Navigation
-nnoremap <silent> ]h :call <SID>JumpGitHunk(1)<CR>
-nnoremap <silent> [h :call <SID>JumpGitHunk(-1)<CR>
-
-" Git Hunk Actions
-nnoremap <silent> <Leader>ghp :call <SID>PreviewGitHunk()<CR>
-nnoremap <silent> <Leader>ghr :call <SID>ResetHunk()<CR>
 
 " Navigate UP and DOWN through the menu using Arrow Keys
 inoremap <expr> <Down> pumvisible() ? "\<C-n>" : "\<Down>"
@@ -1988,7 +2474,7 @@ augroup END
 augroup DotfilesVimrc
     autocmd!
     " Maintain TokyoNight palette on colorscheme change
-    autocmd ColorScheme * call s:ApplyTokyoNightHighlights()
+    autocmd ColorScheme * call s:ApplyTokyoNightHighlights() | call s:ApplyWhichKeyHighlights()
 
     " Update Git branch status in statusline
     autocmd BufEnter,BufWritePost,FocusGained * call RefreshGitCache()
@@ -2059,3 +2545,32 @@ augroup NetrwKeymaps
     autocmd!
     autocmd FileType netrw call s:SetNetrwMappings()
 augroup END
+
+" --- Which-Key interceptors (must stay last) ---------------------------------
+" Defined AFTER every other mapping on purpose. Unlike plain <nowait> global
+" mappings, these are BUFFER-LOCAL: only buffer-local mappings are guaranteed
+" to short-circuit before the 'timeoutlen' wait, and a GLOBAL g mapping waits
+" the full timeoutlen even with <nowait> (verified empirically). So
+" s:SetWhichKeyMaps() installs them into every buffer, and they beat the global
+" <Space>e / <Space>b / ... mappings because buffer-local maps are found first.
+" <Cmd> (not ":") is used so a count (5gg) is not turned into a line range. The
+" menu opens ~which_key_delay ms after a pause, and a fast burst (gcc, gv, [q,
+" <Space>fP ...) is consumed key-by-key by the interceptor itself without
+" flashing the popup. Keys the tree does not know (built-ins like gg / gv / [m)
+" are replayed verbatim by s:WhichKey().
+function! s:SetWhichKeyMaps() abort
+    nnoremap <silent> <buffer> <nowait> <Space> <Cmd>call <SID>WhichKey('n')<CR>
+    xnoremap <silent> <buffer> <nowait> <Space> <Cmd>call <SID>WhichKey('x')<CR>
+    nnoremap <silent> <buffer> <nowait> g <Cmd>call <SID>WhichKey('n', 'g')<CR>
+    xnoremap <silent> <buffer> <nowait> g <Cmd>call <SID>WhichKey('x', 'g')<CR>
+    nnoremap <silent> <buffer> <nowait> [ <Cmd>call <SID>WhichKey('n', '[')<CR>
+    nnoremap <silent> <buffer> <nowait> ] <Cmd>call <SID>WhichKey('n', ']')<CR>
+endfunction
+
+if get(g:, 'which_key_enabled', 1) && exists('*popup_create')
+    augroup WhichKeyMaps
+        autocmd!
+        autocmd BufEnter,BufWinEnter,FileType * call s:SetWhichKeyMaps()
+    augroup END
+    call s:SetWhichKeyMaps()
+endif
