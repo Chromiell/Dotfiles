@@ -1413,6 +1413,24 @@ psq() {
 # Current directory listing as JSON records (filename, flags, size, owner, date, ...).
 # -h makes sizes human-readable (K/M/G) instead of raw bytes.
 lsq() {
+    # jc --ls dates ("Oct 9 11:55" / "Oct 9 2025") do not sort; rewrite
+    # them to ISO-like "YYYY-MM-DD HH:MM" so sort-by date works.
+    local jqdate='(
+        def mnum: {"Jan":1,"Feb":2,"Mar":3,"Apr":4,"May":5,"Jun":6,
+                   "Jul":7,"Aug":8,"Sep":9,"Oct":10,"Nov":11,"Dec":12};
+        map(
+            (.date // "" | split(" ")) as $p |
+            (($p[2] // "") | test("^[0-9]{4}$")) as $hasyear |
+            ((mnum[$p[0]] // 1) |
+                if . < 10 then "0" + tostring else tostring end) as $mo |
+            (($p[1] // "1") | if length == 1 then "0" + . else . end) as $dd |
+            .date = ((if $hasyear then ($p[2] // "")
+                  else (now | strftime("%Y")) end)
+                 + "-" + $mo + "-" + $dd
+                 + " " + (if $hasyear then "00:00"
+                  else ($p[2] // "00:00") end))
+    )
+)'
     if [[ "$1" == "-h" ]]; then
         # jc --ls cannot parse humanReadable sizes reliably ("4.0K" -> 4),
         # so keep byte sizes from `ls -la` and humanize them here.
@@ -1423,7 +1441,7 @@ lsq() {
                 elif . >= 1048576 then ((. / 1048576 * 100) | round / 100 | tostring) + "M"
                 elif . >= 1024 then ((. / 1024 * 100) | round / 100 | tostring) + "K"
                 else tostring end;
-            map(if .size | type == "number" then .size = (.size | human) else . end)'
+            map(if .size | type == "number" then .size = (.size | human) else . end)' | jq "$jqdate"
         return 0
     fi
     help_check "$1" && {
@@ -1431,11 +1449,14 @@ lsq() {
         echo "       lsq --help"
         echo ""
         echo "Current directory listing as JSON records via 'ls -la | jc --ls'."
-        echo "Fields: filename, flags, mode, owner, group, size, USER, GROUP, date, ..."
+        echo "Fields: filename, flags, mode, owner, group, size, date, ..."
+        echo "Dates are rewritten to ISO-like 'YYYY-MM-DD HH:MM' strings, so"
+        echo "'sort-by date' sorts chronologically (recent files infer the"
+        echo "current year from ls; year-form dates become 00:00)."
         echo "With -h, sizes are humanized to K/M/G from the raw byte sizes."
         return 0
     }
-    ls -la | jc --ls
+    ls -la | jc --ls | jq "$jqdate"
 }
 
 # Mounted filesystems as JSON records (filesystem, size, used, use_percent, ...).
@@ -1552,7 +1573,9 @@ sep() {
         echo "Usage: sep [sep] <field>... | sep --help"
         echo ""
         echo "Split each stdin line by <sep> and build JSON records with the given"
-        echo "field names in order (extra/missing columns become null/absent)."
+        echo "field names in order. Splitting STOPS once every field has a value:"
+        echo "any extra separators (e.g. colons inside the text) stay in the"
+        echo "last field, so the last field 'absorbs' the remainder."
         echo "With a single argument (no separator), each whole line becomes the"
         echo "value of that one field. Numeric-looking values are auto-converted"
         echo "to numbers. ANSI color escapes in the data are stripped first (so"
@@ -1570,13 +1593,14 @@ sep() {
             "              from the END of the line, and the first field gets the" \
             "              whole remainder (rg-style path:line:snippet where the" \
             "              path itself may contain the separator)." \
-            "  '*snippet'  last field = remainder of the line, no matter how many" \
-            "              separators it contains (trailing chunks are re-joined)." \
+            "  '*snippet'  explicit marker for the default remainder behavior on the" \
+            "              last field (kept only for readability/wrapping apps that" \
+            "              used it before)." \
             "Prefixes cannot be combined, and are only allowed on the first (^)" \
             "or last (*) field. Caveat: '^' counts all following fields from" \
             "the END of the line, so those fields themselves must not contain" \
-            "the separator; if the LAST field may contain it, use '*field'" \
-            "instead (then the earlier fields must not contain it)." \
+            "the separator; the LAST field may contain it (remainder is kept" \
+            "there by default), but all MIDDLE fields must not." \
             "Tip: to keep a whole line as one field (e.g. paths with spaces" \
             "under sep ' '), use a separator that never occurs," \
             "e.g. sep '\x01' path."
@@ -1608,7 +1632,7 @@ sep() {
         [[ "${fields[-1]}" == '*'* ]] || [[ "${fields[-1]}" == '^'* ]] && {
             echo "sep: '^' and '*' prefixes are mutually exclusive" >&2; return 1 }
     elif [[ "${fields[-1]}" == '*'* ]]; then
-        mode="rest"
+        # Remainder-on-last-field is the default; the prefix is kept for explicitness.
         fields[-1]="${fields[-1]#'*'}"
     fi
     local j f
@@ -1649,20 +1673,19 @@ sep() {
             (( ++i < nf )) && jqprog+=", "
         done
     else
-        jqprog+='def splitsep($s):
+        jqprog+='def splitsep($s; $k):
         { parts: [], rest: . }
-        | until ((.rest | index($s)) == null;
+        | until ((.parts | length) >= $k or (.rest | index($s)) == null;
             (.rest | index($s)) as $i
             | { parts: (.parts + [.rest[0:$i]]),
                 rest:  .rest[($i + ($s | length)):] })
         | .parts + [.rest];
     (rtrimstr("\n") | split("\n") | map(select(length > 0)))
-    | map(splitsep($esep) as $v | {'
-        local -i i=0 rem=-1
-        [[ "$mode" == rest ]] && rem=$(( nf - 1 ))
+    | map(splitsep($esep; '"$(( nf - 1 ))"') as $v | {'
+        local -i i=0
         for f in "${fields[@]}"; do
-            if (( i == rem )); then
-                jqprog+="\"$f\": (\$v[$i:] | join(\$esep) | an)"
+            if (( i == nf - 1 )); then
+                jqprog+="\"$f\": ((if (\$v | length) > $i then (\$v[$i:] | join(\$esep)) else null end) | an)"
             else
                 jqprog+="\"$f\": (\$v[$i] | an)"
             fi
@@ -1683,7 +1706,9 @@ where() {
         echo ""
         echo "Keep only the records of a JSON array (from stdin) that match."
         echo "Numeric operators: >, >=, <, <=, ==, != (values are compared as numbers)"
-        echo "String operators:  eq, ne, contains (case-insensitive), matches (regex)"
+        echo "String operators:  eq, ne, contains (case-insensitive), matches (regex),"
+        echo "                   after / before (lexicographic compare — correct for"
+        echo "                   ISO-8601 UTC timestamps like journalq's ts)"
         echo "Multiple triples are combined with AND by default; --or keeps"
         echo "records matching ANY triple."
         echo ""
@@ -1728,6 +1753,8 @@ where() {
             elif $op == "ne" then ($r[$f] | tostring) != $v
             elif $op == "contains" then ($r[$f] | tostring | ascii_downcase) | contains($v | ascii_downcase)
             elif $op == "matches" then ($r[$f] | tostring) | test($v)
+            elif $op == "after" then ($r[$f] | tostring) > $v
+            elif $op == "before" then ($r[$f] | tostring) < $v
             else false end;
         map(select(
             . as $r |
