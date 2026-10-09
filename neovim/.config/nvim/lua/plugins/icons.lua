@@ -118,7 +118,17 @@ return {
             },
             integrations = {
                 bufferline = true,
-                lualine = true,
+                -- Disabled on purpose: real-icons' lualine integration patches
+                -- `lualine.setup`, and lualine re-runs `setup()` with no
+                -- arguments on every ColorScheme event. With no config passed,
+                -- the integration injects its own default
+                -- `{ icon, "filename" }` lualine_c section, clobbering ours
+                -- (losing root_dir/diagnostics/pretty_path and turning the
+                -- filename grey). We already insert the real-icons component
+                -- manually in lua/plugins/lualine.lua, so the auto-integration
+                -- is redundant; disabling it keeps our sections intact across
+                -- colorscheme changes.
+                lualine = false,
                 snacks_picker = true,
                 telescope = true,
             },

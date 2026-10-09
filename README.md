@@ -50,7 +50,7 @@ The rest of the packages depend on which dotfiles you need to install. Here is t
 
 ```bash
 sudo apt update
-sudo apt install zsh eza fzf bat fastfetch pv rsync micro rar gzip tar unzip 7zip bzip2 tmux fd-find ripgrep vim zoxide jc jq miller csvkit
+sudo apt install zsh eza fzf bat fastfetch pv rsync micro rar gzip tar unzip 7zip bzip2 tmux fd-find ripgrep vim zoxide jc jq
 ```
 
 ---

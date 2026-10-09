@@ -58,13 +58,14 @@ return {
 
             -- 4. Replace LazyVim's default `{ "filetype", icon_only = true }`
             --    statusline component (a mini.icons glyph) with the real-icons
-            --    component. real-icons' lualine integration would otherwise
-            --    auto-insert its own icon component right before that filetype
-            --    component, rendering a second, duplicated icon. The
-            --    `real_icons_lualine` marker key disables that auto-insertion
-            --    (see real-icons.integrations.lualine.has_real_icon), so exactly
-            --    one icon is shown: a real terminal image on Ghostty/Kitty, or
-            --    real-icons' glyph fallback elsewhere.
+            --    component. real-icons' own lualine integration is disabled in
+            --    lua/plugins/icons.lua (it clobbers this section on every
+            --    ColorScheme event), so we insert the icon ourselves. The
+            --    `real_icons_lualine` marker key is kept as a guard: it makes
+            --    real-icons.integrations.lualine.has_real_icon detect this
+            --    component and skip auto-insertion, so exactly one icon is
+            --    shown: a real terminal image on Ghostty/Kitty, or real-icons'
+            --    glyph fallback elsewhere.
             local lualine_c = opts.sections.lualine_c
             for i, component in ipairs(lualine_c) do
                 if type(component) == "table" and component[1] == "filetype" and component.icon_only then
@@ -87,39 +88,6 @@ return {
                 end
             end
 
-            -- 5. Restore the filename colouring: bright (theme foreground)
-            --    while the buffer is clean, orange once it has unsaved changes.
-            --    LazyVim's default pretty_path relies on `filename_hl = "Bold"`
-            --    / `modified_hl = "MatchParen"`, which are resolved once through
-            --    LazyVim.lualine.format() and cached in the component's
-            --    hl_cache. When a later ColorScheme event makes lualine run
-            --    clear_highlights(), that cached highlight group is wiped and
-            --    never recreated, so the filename falls back to the section's
-            --    dim `fg_sidebar` colour (the grey filename). A component-level
-            --    `color` function is re-evaluated on every draw instead, so it
-            --    survives the wipe. The "grey filename" and the "grey icons"
-            --    (see lua/config/autocmds.lua) share the same trigger.
-            --
-            --    LazyVim ships the path as `{ LazyVim.lualine.pretty_path() }`,
-            --    i.e. a table whose only key is the function itself (unlike
-            --    root_dir, which also carries `cond`/`color`, and the icon
-            --    component above, which carries `real_icons_lualine`).
-            for i, component in ipairs(lualine_c) do
-                if type(component) == "table" and type(component[1]) == "function" and next(component, 1) == nil then
-                    lualine_c[i] = {
-                        -- Disable pretty_path's own highlighting so the whole
-                        -- component is painted by the dynamic colour below.
-                        LazyVim.lualine.pretty_path({ filename_hl = "", modified_hl = "", directory_hl = "" }),
-                        color = function()
-                            return {
-                                fg = vim.bo.modified and Snacks.util.color("MatchParen") or Snacks.util.color("Bold"),
-                                gui = "bold",
-                            }
-                        end,
-                    }
-                    break
-                end
-            end
         end,
     },
 }

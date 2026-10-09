@@ -1696,6 +1696,62 @@ sep() {
     jq -Rs --arg esep "$esep" "$jqprog"
 }
 
+# Read CSV from a file or stdin into JSON records (RFC 4180 via python3 csv).
+csvq() {
+    help_check "$1" && {
+        printf '%s\n' \
+        "Usage: csvq [file]" \
+        "       csvq [-d <char>] [file]" \
+        "       csvq --help" \
+        "" \
+        "Read CSV (first row = header) from <file> or stdin and emit one JSON" \
+        "record per data row. RFC 4180 rules: quoted fields, commas inside" \
+        "quotes, doubled double-quotes, and multi-line cells are all handled." \
+        "Missing columns become null; extra columns are ignored. Values that" \
+        "look like numbers (no leading zero) are converted to numbers." \
+        "Only csvq uses python3 (preinstalled on Debian); csv export is jq-only." \
+        "" \
+        "  -d <char>   use <char> as the field delimiter (default ',')" \
+        "" \
+        "Example: csvq data.csv | where qty '>' 2 | pretty" \
+        "         sep : '^path' line snippet | sel path line | csv"
+        return 0
+    }
+    local delim="," src="-"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -d) delim="$2"; shift 2 ;;
+            *)  src="$1"; shift ;;
+        esac
+    done
+    (( ${#delim} == 1 )) || { echo "csvq: delimiter must be a single character" >&2; return 1 }
+    [[ "$src" == "-" || -r "$src" ]] || { echo "csvq: cannot read file: $src" >&2; return 1 }
+    local pyprog='import csv, json, re, sys
+delim, src = sys.argv[1], sys.argv[2]
+fh = open(src, encoding="utf-8") if src != "-" else sys.stdin
+reader = csv.reader(fh, delimiter=delim)
+try:
+    header = next(reader)
+except StopIteration:
+    print("[]")
+    raise SystemExit
+out = []
+numeric = re.compile(r"^[+-]?[0-9]+([.][0-9]+)?$")
+for row in reader:
+    if not row:
+        continue
+    rec = {}
+    for i, key in enumerate(header):
+        v = row[i] if i < len(row) else None
+        if v is not None and numeric.match(v) and not re.match(r"^[+-]?0[0-9]", v):
+            rec[key] = float(v) if "." in v else int(v)
+        else:
+            rec[key] = v
+    out.append(rec)
+print(json.dumps(out))'
+    python3 -c "$pyprog" "$delim" "$src"
+}
+
 # Filter a JSON array from stdin by field, operator, and value.
 # Multiple field/operator/value triples are AND-combined by default;
 # pass --or to keep records matching ANY triple instead.
@@ -1740,8 +1796,8 @@ where() {
             $cond as [$f, $op, $v] |
             if ($op == ">" or $op == ">=" or $op == "<" or $op == "<=" or $op == "==" or $op == "!=")
             then
-                ($r[$f] | tonumber?) as $x |
-                ($v | tonumber?) as $n |
+                ($r[$f] | (tonumber? // null)) as $x |
+                ($v | (tonumber? // null)) as $n |
                 if $x == null or $n == null then false
                 elif $op == ">" then $x > $n
                 elif $op == ">=" then $x >= $n
@@ -1919,6 +1975,35 @@ get() {
         return 0
     }
     jq --arg f "$1" -r '.[] | .[$f] | if type == "object" or type == "array" then tojson else tostring end'
+}
+
+# Export records from stdin to RFC 4180 CSV (header row + data rows).
+csv() {
+    help_check "$1" && {
+        printf '%s\n' \
+        "Usage: <...> | csv" \
+        "       csv --help" \
+        "" \
+        "Export a JSON array of records (from stdin) as RFC 4180 CSV: a header" \
+        "row using the union of keys (first-seen order), then one data row per" \
+        "record. Missing fields become empty cells; nested objects/arrays are" \
+        "serialized as JSON inside their cell. Fields containing newlines are" \
+        "not supported. Import back with csvq." \
+        "" \
+        "Example: psq | sel pid mem_percent command | csv > ps.csv" \
+        return 0
+    }
+    jq -r '
+        (reduce (.[] | keys_unsorted[]) as $key (
+            [];
+            . as $acc |
+            if ($acc | any(. == $key)) then $acc else $acc + [$key] end
+        )) as $cols |
+        ($cols | @csv),
+        (.[] | [.[$cols[]] |
+            if type == "object" or type == "array" then (tojson)
+            else . end] | @csv)
+    '
 }
 
 # Render a JSON array of objects from stdin as a Nushell-style table:
