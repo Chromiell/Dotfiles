@@ -77,13 +77,21 @@ _deja_check_update() {
     typeset deja_update_bin="$HOME/.local/bin/deja"
     [[ -x "$deja_update_bin" ]] || return 0
 
-    command -v curl >/dev/null 2>&1 || return 0
+    # Minimal Debian installs ship wget but not curl, so accept either.
+    typeset -a deja_fetch
+    if command -v curl >/dev/null 2>&1; then
+        deja_fetch=(curl -fsSL)
+    elif command -v wget >/dev/null 2>&1; then
+        deja_fetch=(wget -qO-)
+    else
+        return 0
+    fi
 
     deja_installed="$("$deja_update_bin" --version 2>/dev/null)"
     deja_installed="${deja_installed#deja }"
     deja_installed="${deja_installed%% *}"
 
-    deja_latest="$(curl -fsSL https://api.github.com/repos/Giammarco-Ferranti/deja/releases/latest \
+    deja_latest="$("${deja_fetch[@]}" https://api.github.com/repos/Giammarco-Ferranti/deja/releases/latest \
         | command grep '"tag_name":' | command sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
     deja_latest="${deja_latest#v}"
 
@@ -1629,27 +1637,54 @@ journalq() {
         })'
 }
 
-# Run any command through one of jc's parsers ("magic" syntax) and always
-# emit a JSON array, so every jc-supported command feeds the verbs.
+# Run any command and parse its output with the matching jc parser, always
+# emitting a JSON array, so every jc-supported command feeds the verbs.
+# jcq picks the parser itself and pipes the output into it instead of using
+# jc "magic" syntax ('jc <command> [args]'): some parsers (find, ...) have no
+# magic support, and magic mode reads the command's own flags as jc flags
+# ('jc find . -iname x' turns -iname into jc's -a and prints jc's info).
 jcq() {
     _nu_help "$1" && {
         printf '%s\n' \
         "Usage: jcq <command> [args...]" \
         "       jcq --help" \
         "" \
-        "Run <command> and parse its output with the matching jc parser" \
-        "(jc magic syntax: 'jc <command> [args]'), always emitting a JSON array" \
-        "(single-object parsers such as date or uptime are wrapped in [...])." \
-        "Supported commands: 'jc --help' lists all parsers (~150)." \
+        "Run <command> and parse its output with the matching jc parser," \
+        "always emitting a JSON array (single-object parsers such as date or" \
+        "uptime are wrapped in [...]). The parser is the one jc registers for" \
+        "the command line (longest match, e.g. 'git log', 'pip list'), else the" \
+        "parser named after the command (find -> --find). The command runs" \
+        "directly, so its flags never reach jc. Some parsers expect specific" \
+        "flags (e.g. ls needs -l); 'jc --help' lists all parsers." \
         "" \
         "Example: jcq lsblk | where type eq disk | pretty" \
-        "         jcq mount | sel filesystem mount_point type | pretty" \
-        "         jcq dig example.com | get answer"
+        "         jcq find . -iname '*readme*' | sel path node | pretty" \
+        "         jcq git log -n 20 | sel commit author date message | pretty" \
+        "         jcq dig example.com | unnest answer | pretty"
         return 0
     }
     (( $# )) || { echo "jcq: need a command to run (e.g. jcq lsblk)" >&2; return 1 }
+    # jc parser metadata (argument, name, magic commands), cached per session
+    if [[ -z "${_NU_JC_PARSERS-}" ]]; then
+        typeset -g _NU_JC_PARSERS
+        _NU_JC_PARSERS=$(jc -a | jq -c '[.parsers[] | {argument, name, magic: (.magic_commands // [])}]') || return 1
+    fi
+    local parser
+    parser=$(jq -rn --argjson ps "$_NU_JC_PARSERS" --args '
+        $ARGS.positional as $a |
+        ([$a[0] | split("/")[-1]] + $a[1:]) as $cmd |
+        # longest registered magic command matching the start of the line
+        (([$ps[] | .argument as $arg | .magic[] | split(" ") as $w
+           | select($cmd[0:($w | length)] == $w) | {arg: $arg, n: ($w | length)}]
+          | max_by(.n) | .arg)
+         // first($ps[] | select(.name == ($cmd[0] | gsub("-"; "_"))) | .argument)
+         // "")' -- "$@") || return 1
+    [[ -n "$parser" ]] || {
+        echo "jcq: jc has no parser for '$1' ('jc --help' lists the supported commands)" >&2
+        return 1
+    }
     setopt localoptions pipefail
-    LC_ALL=C jc "$@" | jq 'if type == "array" then . else [.] end'
+    LC_ALL=C command "$@" | jc "$parser" | jq 'if type == "array" then . else [.] end'
 }
 
 # Complete jcq's arguments like a fresh command line (as for nohup/sudo).

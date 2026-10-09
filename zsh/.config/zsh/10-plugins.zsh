@@ -31,34 +31,55 @@ done
 typeset deja_bin="$HOME/.local/bin/deja"
 typeset deja_init="$HOME/.local/share/deja/init.zsh"
 
-if [[ ! -x "$deja_bin" ]] && command -v curl >/dev/null 2>&1; then
+if [[ ! -x "$deja_bin" ]]; then
     print "" # Separate the installation message from the shell prompt.
     print -n "Installing Deja autosuggestions... "
+    # Minimal Debian installs ship wget but not curl, so accept either.
+    # _deja_fetch <url> [<file>]: download to <file>, or to stdout if omitted.
+    if command -v curl >/dev/null 2>&1; then
+        _deja_fetch() { curl -fsSL -o "${2:--}" -- "$1"; }
+    elif command -v wget >/dev/null 2>&1; then
+        _deja_fetch() { wget -q -O "${2:--}" -- "$1"; }
+    fi
     case "$(uname -m)" in
         x86_64|amd64)  typeset deja_arch="amd64" ;;
         arm64|aarch64) typeset deja_arch="arm64" ;;
     esac
     typeset deja_tmp="$(mktemp -d 2>/dev/null || mktemp -d -t deja)"
-    typeset deja_tag="$(curl -fsSL https://api.github.com/repos/Giammarco-Ferranti/deja/releases/latest \
-        | command grep '"tag_name":' | command sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
-    typeset deja_asset="deja_${deja_tag#v}_linux_${deja_arch}.tar.gz"
-    typeset deja_base="https://github.com/Giammarco-Ferranti/deja/releases/download/$deja_tag"
-    if [[ -n "$deja_arch" && -n "$deja_tag" ]] \
-        && curl -fsSL -o "$deja_tmp/$deja_asset" "$deja_base/$deja_asset" \
-        && curl -fsSL -o "$deja_tmp/checksums.txt" "$deja_base/checksums.txt" \
-        && (cd "$deja_tmp" && command grep -F "$deja_asset" checksums.txt | sha256sum -c - >/dev/null 2>&1) \
-        && command tar -xzf "$deja_tmp/$deja_asset" -C "$deja_tmp"; then
-        typeset deja_file="$(command find "$deja_tmp" -type f -name deja -print -quit)"
-        if mkdir -p "$HOME/.local/bin" && mv "$deja_file" "$deja_bin" && chmod +x "$deja_bin"; then
-            print "Done!"
-        else
-            print "Failed! (see https://github.com/Giammarco-Ferranti/deja)"
-        fi
+    typeset deja_base="https://github.com/Giammarco-Ferranti/deja/releases"
+    typeset deja_err=""
+    if (( ! $+functions[_deja_fetch] )); then
+        deja_err="curl or wget is required"
+    elif [[ -z "$deja_arch" ]]; then
+        deja_err="unsupported architecture $(uname -m)"
     else
-        print "Failed! (see https://github.com/Giammarco-Ferranti/deja)"
+        typeset deja_tag="$(_deja_fetch https://api.github.com/repos/Giammarco-Ferranti/deja/releases/latest \
+            | command grep '"tag_name":' | command sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')"
+        typeset deja_asset="deja_${deja_tag#v}_linux_${deja_arch}.tar.gz"
+        if [[ -z "$deja_tag" ]]; then
+            deja_err="could not query the latest release"
+        elif ! _deja_fetch "$deja_base/download/$deja_tag/$deja_asset" "$deja_tmp/$deja_asset" \
+            || ! _deja_fetch "$deja_base/download/$deja_tag/checksums.txt" "$deja_tmp/checksums.txt"; then
+            deja_err="download failed"
+        elif ! (cd "$deja_tmp" && command grep -F "$deja_asset" checksums.txt | sha256sum -c - >/dev/null 2>&1); then
+            deja_err="checksum mismatch"
+        elif ! command tar -xzf "$deja_tmp/$deja_asset" -C "$deja_tmp"; then
+            deja_err="could not extract $deja_asset"
+        else
+            typeset deja_file="$(command find "$deja_tmp" -type f -name deja -print -quit)"
+            if ! { mkdir -p "$HOME/.local/bin" && mv "$deja_file" "$deja_bin" && chmod +x "$deja_bin"; }; then
+                deja_err="could not install to $deja_bin"
+            fi
+        fi
+    fi
+    if [[ -z "$deja_err" ]]; then
+        print "Done!"
+    else
+        print "Failed! ($deja_err; see https://github.com/Giammarco-Ferranti/deja)"
     fi
     command rm -rf "$deja_tmp"
-    unset deja_arch deja_tmp deja_tag deja_asset deja_base deja_file
+    unfunction _deja_fetch 2>/dev/null
+    unset deja_arch deja_tmp deja_tag deja_asset deja_base deja_file deja_err
 fi
 
 if [[ -x "$deja_bin" ]]; then
