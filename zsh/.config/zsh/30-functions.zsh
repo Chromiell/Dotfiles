@@ -1,5 +1,21 @@
 # Reusable shell functions and pager detection.
 
+# Register the local site-functions directory with the completion system and
+# generate the jc completion there on first launch. Zsh-autocomplete triggers
+# compinit lazily at the first prompt, so any code sourced from .zshrc (like
+# this file) is picked up by that scan.
+ZSH_SITE_FUNCTIONS_DIR="$HOME/.local/share/zsh/site-functions"
+if (( $+commands[jc] )); then
+    if [[ ! -d "$ZSH_SITE_FUNCTIONS_DIR" ]]; then
+        mkdir -p "$ZSH_SITE_FUNCTIONS_DIR"
+    fi
+    if [[ -w "$ZSH_SITE_FUNCTIONS_DIR" && ! -r "$ZSH_SITE_FUNCTIONS_DIR/_jc" ]]; then
+        jc -Z > "$ZSH_SITE_FUNCTIONS_DIR/_jc" 2>/dev/null
+    fi
+    fpath=( "$ZSH_SITE_FUNCTIONS_DIR" $fpath )
+fi
+unset ZSH_SITE_FUNCTIONS_DIR
+
 # Wrap "znap pull" to also check whether the Deja binary has a newer release.
 # The original znap function is captured here (after Znap is sourced in
 # 10-plugins.zsh) and re-exposed as a private function that the wrapper calls.
@@ -103,7 +119,7 @@ fi
 extract() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: extract <archive> [archive ...]"
-        echo "       extract -h | --help"
+        echo "       extract --help"
         echo ""
         echo "Extract one or more supported archive files."
         echo "Supports: tar.bz2, tar.gz, tar.xz, bz2, rar, gz, tar, tbz2, tgz, zip, Z, and 7z."
@@ -137,7 +153,7 @@ extract() {
 compress() {
     if [[ "$1" == "-h" || "$1" == "--help" || $# -lt 2 ]]; then
         echo "Usage: compress <archive_name> <file_or_dir> [file_or_dir ...]"
-        echo "       compress -h | --help"
+        echo "       compress --help"
         echo ""
         echo "Compress target file(s) or directory(ies) into an archive."
         echo "Supports: .tar.gz, .tgz, .tar.bz2, .tbz2, .tar.xz, .tar, .zip, .7z, .rar, .gz, .bz2"
@@ -188,7 +204,7 @@ compress() {
 ftext() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: ftext [options] <pattern> [file_or_dir]"
-        echo "       ftext -h | --help"
+        echo "       ftext --help"
         echo ""
         echo "Search files in the current directory or specified path for a text pattern."
         echo "Options:"
@@ -269,7 +285,7 @@ ftext() {
 frtext() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: frtext [options] <pattern> [directory]"
-        echo "       frtext -h | --help"
+        echo "       frtext --help"
         echo ""
         echo "Search recursively from the current directory or specified path for a text pattern."
         echo "Options:"
@@ -324,7 +340,7 @@ frtext() {
 ffile() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: ffile [options] <name-pattern> [directory]"
-        echo "       ffile -h | --help"
+        echo "       ffile --help"
         echo ""
         echo "Find a filename in the current directory or specified directory."
         echo "Options:"
@@ -405,7 +421,7 @@ ffile() {
 frfile() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: frfile [options] <name-pattern> [directory]"
-        echo "       frfile -h | --help"
+        echo "       frfile --help"
         echo ""
         echo "Find a filename recursively below the current directory or specified directory."
         echo "Options:"
@@ -486,7 +502,7 @@ frfile() {
 cpp() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: cpp <source> <destination>"
-        echo "       cpp -h | --help"
+        echo "       cpp --help"
         echo ""
         echo "Copy a file or directory while showing rsync progress."
         return 0
@@ -499,7 +515,7 @@ cpp() {
 ld() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: ld [directory ...]"
-        echo "       ld -h | --help"
+        echo "       ld --help"
         echo ""
         echo "List directories with icons. With no arguments, list directories in the current directory."
         return 0
@@ -512,7 +528,7 @@ ld() {
 lad() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: lad [directory ...]"
-        echo "       lad -h | --help"
+        echo "       lad --help"
         echo ""
         echo "List all directories, including hidden ones, with icons."
         return 0
@@ -525,7 +541,7 @@ lad() {
 lld() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: lld [directory ...]"
-        echo "       lld -h | --help"
+        echo "       lld --help"
         echo ""
         echo "Show detailed directory listings with icons."
         return 0
@@ -538,7 +554,7 @@ lld() {
 lltd() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: lltd [directory ...]"
-        echo "       lltd -h | --help"
+        echo "       lltd --help"
         echo ""
         echo "Show detailed recursive directory listings with icons."
         return 0
@@ -551,7 +567,7 @@ lltd() {
 llld() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: llld [directory ...]"
-        echo "       llld -h | --help"
+        echo "       llld --help"
         echo ""
         echo "Show detailed directory listings with total sizes and icons."
         return 0
@@ -564,7 +580,7 @@ llld() {
 llltd() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: llltd [directory ...]"
-        echo "       llltd -h | --help"
+        echo "       llltd --help"
         echo ""
         echo "Show recursive directory listings with total sizes and icons."
         return 0
@@ -577,7 +593,7 @@ llltd() {
 man() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: man <page> [section]"
-        echo "       man -h | --help"
+        echo "       man --help"
         echo ""
         echo "Display a manual page through the configured pager."
         return 0
@@ -594,7 +610,7 @@ man() {
 mktext() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: mktext [-f] [-r] [-s] [-p] <size> [filename]"
-        echo "       mktext -h | --help"
+        echo "       mktext --help"
         echo ""
         echo "Create a file or stream of random data with the requested size."
         echo "Options:"
@@ -697,7 +713,7 @@ mktext() {
 t() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: t"
-        echo "       t -h | --help"
+        echo "       t --help"
         echo ""
         echo "Create a tmux session with a randomly generated unused name and attach to it."
         return 0
@@ -739,7 +755,7 @@ t() {
 taa() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: taa [session-name]"
-        echo "       taa -h | --help"
+        echo "       taa --help"
         echo ""
         echo "Attach to a named tmux session, creating it when necessary."
         echo "Defaults to the session name 'main'."
@@ -755,7 +771,7 @@ taa() {
 tbg() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: tbg <session-name> <command> [argument ...]"
-        echo "       tbg -h | --help"
+        echo "       tbg --help"
         echo ""
         echo "Run a command in a detached tmux session and append its output to ~/tmux-logs/<session-name>.log."
         return 0
@@ -773,7 +789,7 @@ tbg() {
 tsp() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: tsp"
-        echo "       tsp -h | --help"
+        echo "       tsp --help"
         echo ""
         echo "Choose a tmux session with fzf and attach to it."
         return 0
@@ -788,7 +804,7 @@ tsp() {
 tlast() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: tlast"
-        echo "       tlast -h | --help"
+        echo "       tlast --help"
         echo ""
         echo "Switch to the most recently used tmux session, or attach to the newest session."
         return 0
@@ -803,7 +819,7 @@ tlast() {
 tnl() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: tnl <session-name>"
-        echo "       tnl -h | --help"
+        echo "       tnl --help"
         echo ""
         echo "Create a tmux session and log output from all panes to ~/tmux-logs/<session-name>.log."
         return 0
@@ -825,7 +841,7 @@ tnl() {
 _tp_sessions() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: _tp_sessions"
-        echo "       _tp_sessions -h | --help"
+        echo "       _tp_sessions --help"
         echo ""
         echo "Provide tmux session names for shell completion."
         return 0
@@ -840,7 +856,7 @@ _tp_sessions() {
 tp() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: tp <num-lines> <session-name>"
-        echo "       tp -h | --help"
+        echo "       tp --help"
         echo ""
         echo "Print the requested number of lines from a tmux pane."
         return 0
@@ -858,7 +874,7 @@ tp() {
 function y() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: y [yazi-options ...]"
-        echo "       y -h | --help"
+        echo "       y --help"
         echo ""
         echo "Launch Yazi and change the current shell directory after navigation."
         return 0
@@ -903,7 +919,7 @@ vardump() {
     # Print usage information when requested.
     if [[ $_vd_show_help == true ]]; then
         echo "Usage: vardump [-v] [-C when] <variable_name>"
-        echo "       vardump -h | --help"
+        echo "       vardump --help"
         echo
         echo "Inspect and format the contents and attributes of a Zsh variable."
         echo
@@ -1056,7 +1072,7 @@ portinfo() {
     # Help flag check
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: portinfo [port]"
-        echo "       portinfo -h | --help"
+        echo "       portinfo --help"
         echo ""
         echo "Displays process, working directory, parent hierarchy, and container details for a port."
         echo "If run without arguments, interactively prompts for the port number."
@@ -1178,7 +1194,7 @@ processinfo() {
     # Help flag check
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         echo "Usage: processinfo [PID] [> output.txt]"
-        echo "       processinfo -h | --help"
+        echo "       processinfo --help"
         echo ""
         echo "Displays process details, working directory, parent hierarchy, active network ports (for main process and children), and container info (Docker/Podman)."
         echo "If run without arguments, launches an interactive process search."
@@ -1365,3 +1381,637 @@ processinfo() {
 
 # Complete the line count and tmux session arguments for tp.
 compdef '_arguments "1: : " "2:tmux session:_tp_sessions"' tp
+
+# ─── Nushell-style structured data (jc + jq) ──────────────────────────────
+# Producers turn ordinary command output into JSON arrays of records via jc;
+# verbs transform a JSON array that arrives on stdin, so they chain freely:
+#   psq | where mem_percent '>' 1 | sel pid mem_percent command |
+#     sort-by mem_percent desc | first 5 | pretty
+# Every producer and verb supports --help (only; no -h, so lsq can use -h
+# for human-readable sizes). Notes on the verb names:
+#   - "sort-by" is the real Nushell verb (bare "sort" would shadow
+#     /usr/bin/sort), and "sel" replaces "select" because select is a Zsh
+#     reserved word that cannot be used as a function name.
+#   - "where" shadows the Zsh builtin where (command lookup, like which).
+
+help_check() {
+    [[ "$1" == "--help" ]]
+}
+
+# Running processes as JSON records (pid, user, cpu_percent, mem_percent, command, ...).
+psq() {
+    help_check "$1" && {
+        echo "Usage: psq | psq --help"
+        echo ""
+        echo "Running processes as JSON records via 'ps aux | jc --ps'."
+        echo "Fields: pid, user, cpu_percent, mem_percent, rss, vsz, tty, stat, start, time, command, ..."
+        return 0
+    }
+    ps aux | jc --ps
+}
+
+# Current directory listing as JSON records (filename, flags, size, owner, date, ...).
+# -h makes sizes human-readable (K/M/G) instead of raw bytes.
+lsq() {
+    if [[ "$1" == "-h" ]]; then
+        # jc --ls cannot parse humanReadable sizes reliably ("4.0K" -> 4),
+        # so keep byte sizes from `ls -la` and humanize them here.
+        ls -la | jc --ls | jq '
+            def human:
+                if type != "number" then .
+                elif . >= 1073741824 then ((. / 1073741824 * 100) | round / 100 | tostring) + "G"
+                elif . >= 1048576 then ((. / 1048576 * 100) | round / 100 | tostring) + "M"
+                elif . >= 1024 then ((. / 1024 * 100) | round / 100 | tostring) + "K"
+                else tostring end;
+            map(if .size | type == "number" then .size = (.size | human) else . end)'
+        return 0
+    fi
+    help_check "$1" && {
+        echo "Usage: lsq [-h]"
+        echo "       lsq --help"
+        echo ""
+        echo "Current directory listing as JSON records via 'ls -la | jc --ls'."
+        echo "Fields: filename, flags, mode, owner, group, size, USER, GROUP, date, ..."
+        echo "With -h, sizes are humanized to K/M/G from the raw byte sizes."
+        return 0
+    }
+    ls -la | jc --ls
+}
+
+# Mounted filesystems as JSON records (filesystem, size, used, use_percent, ...).
+dfq() {
+    help_check "$1" && {
+        echo "Usage: dfq | dfq --help"
+        echo ""
+        echo "Mounted filesystems as JSON records via 'df -h | jc --df'."
+        echo "Fields: filesystem, total, used, free, use_percent, free_percent, capacity, path"
+        return 0
+    }
+    df -h | jc --df
+}
+
+# Directory tree sizes as JSON records (path, size).
+duq() {
+    help_check "$1" && {
+        echo "Usage: duq [path]"
+        echo "       duq --help"
+        echo ""
+        echo "Directory tree sizes as JSON records via 'du -ab <path> | jc --du'."
+        echo "Fields: path, size (bytes). Defaults to the current directory."
+        return 0
+    }
+    du -ab "${1:-.}" | jc --du
+}
+
+# Memory usage as JSON records (total, free, available, ...).
+freeq() {
+    help_check "$1" && {
+        echo "Usage: freeq | freeq --help"
+        echo ""
+        echo "Memory usage as JSON records via 'free -b | jc --free'."
+        echo "Fields: type, total, used, free, available, shared, buffers, cached"
+        return 0
+    }
+    free -b | jc --free
+}
+
+# Active and listening sockets as JSON records (netid, state, local_address, ...).
+ssq() {
+    help_check "$1" && {
+        echo "Usage: ssq | ssq --help"
+        echo ""
+        echo "Active and listening sockets as JSON records via 'ss -a | jc --ss'."
+        echo "Fields: netid, state, recvq, sendq, local_address, local_port, peer_address, peer_port, process"
+        return 0
+    }
+    ss -a | jc --ss
+}
+
+# Current boot journal (or custom journalctl args) as JSON records.
+# Use -s/--sudo as the FIRST argument when the journal needs root access.
+journalq() {
+    help_check "$1" && {
+        echo "Usage: journalq [--sudo] [journalctl args...]"
+        echo "       journalq --help"
+        echo ""
+        echo "Journal entries as JSON records via 'journalctl --no-pager -q -o json | jq -s'."
+        echo ""
+        echo "With no args, defaults to the current boot (-b). Extra args are passed to"
+        echo "journalctl verbatim, e.g.:"
+        echo "    journalq -r                 # reverse order"
+        echo "    journalq -u nginx.service   # one unit, all boots"
+        echo "    journalq --since -1h        # last hour"
+        echo "    journalq --sudo -b -1       # previous boot (needs root)"
+        echo "Prefix the call with -s/--sudo (as the first argument) to run under sudo."
+        echo ""
+        echo "Fields: ts (ISO 8601; empty timestamps fall back to epoch), prio (0-7, missing falls back to 6), id, unit, pid, msg"
+        echo "Usage:  journalq | where prio '<=' 4 | sort-by ts desc | first 10 | pretty"
+        echo "        journalq -u ssh | where id contains \"sshd\" | pretty"
+        echo "        journalq | get id | sort | uniq -c | sort -rn | head"
+        return 0
+    }
+    local use_sudo=0
+    if [[ "$1" == "-s" || "$1" == "--sudo" ]]; then
+        use_sudo=1
+        shift
+    fi
+    local -a jargs
+    if (($# > 0)); then
+        jargs=("$@")                 # verbatim journalctl pass-through
+    else
+        jargs=(-b)
+    fi
+    local -a cmd
+    if (($use_sudo)); then
+        cmd=(sudo journalctl)
+    else
+        cmd=(journalctl)
+    fi
+    "${cmd[@]}" --no-pager -q -o json "${jargs[@]}" | jq -s '
+        def strv:
+            if type == "array" then (try implode catch "?")
+            elif type == "null" then ""
+            else . end;
+        map({
+            # empty/missing numeric fields would explode bare tonumber;
+            # ts falls back to epoch 1970 (sorts last on desc), prio to 6 (info)
+            ts:   (."__REALTIME_TIMESTAMP" | strv | (tonumber? // 0) / 1000000 | todateiso8601),
+            prio: (.PRIORITY | strv | tonumber? // 6),
+            id:   ((._COMM // .SYSLOG_IDENTIFIER // "?") | strv | ascii_downcase),
+            unit: ((._SYSTEMD_UNIT // "") | strv),
+            pid:  ((._PID // "") | strv | tonumber? // ""),
+            msg:  ((.MESSAGE | strv) | gsub("\n"; " "))
+        })'
+}
+
+# Split stdin lines into JSON records with a custom separator.
+# The separator accepts printf %b escapes, including hex bytes (\t = \x09);
+# find raw separators with e.g. 'xxd somelog | head' and pass '\xHH' here.
+sep() {
+    help_check "$1" && {
+        echo "Usage: sep [sep] <field>... | sep --help"
+        echo ""
+        echo "Split each stdin line by <sep> and build JSON records with the given"
+        echo "field names in order (extra/missing columns become null/absent)."
+        echo "With a single argument (no separator), each whole line becomes the"
+        echo "value of that one field. Numeric-looking values are auto-converted"
+        echo "to numbers. ANSI color escapes in the data are stripped first (so"
+        echo "'where' on numbers works with colored output). Blank lines are skipped."
+        echo ""
+        printf '%s\n' \
+            "Separator forms (quote them so the shell passes them raw):" \
+            "  ','      comma" \
+            "  '\t'     tab (printf escape)" \
+            "  '\x1f'   hex byte (pair with 'xxd file | head' to find one)" \
+            "  ' -- '   literal substring"
+        printf '%s\n' \
+            "Field-name prefixes:" \
+            "  '^path'     right-anchored split: all following fields are counted" \
+            "              from the END of the line, and the first field gets the" \
+            "              whole remainder (rg-style path:line:snippet where the" \
+            "              path itself may contain the separator)." \
+            "  '*snippet'  last field = remainder of the line, no matter how many" \
+            "              separators it contains (trailing chunks are re-joined)." \
+            "Prefixes cannot be combined, and are only allowed on the first (^)" \
+            "or last (*) field. Caveat: '^' counts all following fields from" \
+            "the END of the line, so those fields themselves must not contain" \
+            "the separator; if the LAST field may contain it, use '*field'" \
+            "instead (then the earlier fields must not contain it)." \
+            "Tip: to keep a whole line as one field (e.g. paths with spaces" \
+            "under sep ' '), use a separator that never occurs," \
+            "e.g. sep '\x01' path."
+        echo "Usage: sep ':' '^path line snippet' < rg-output.txt | where line '>=' 190 | pretty"
+        echo "       sep ':' file line '*snippet' < rg-output.txt | pretty"
+        echo "       sep '\x1f' ts level msg < /var/log/custom.log | where level eq 'err' | pretty"
+        return 0
+    }
+    local esep
+    if (( $# == 1 )); then
+        # No separator: each whole line is the value of the single field.
+        esep=$'\001'
+    else
+        (($# >= 2)) || { echo "sep: need a separator and at least one field name" >&2; return 1 }
+        [[ "$1" != *$'\n'* ]] || { echo "sep: separator may not contain a newline (records are split on lines first)" >&2; return 1 }
+        esep=$(printf '%b' "$1") || { echo "sep: bad separator spec: $1" >&2; return 1 }
+        [[ -n "$esep" ]] || { echo "sep: separator expands to empty" >&2; return 1 }
+    fi
+
+    # Field list with optional ^/* prefixes (only first/^ or last/*).
+    local -a fields
+    fields=("${@}")
+    (( $# >= 2 )) && fields=("${@:2}")
+    local -i nf=$(( $# - 1 ))
+    local mode="left"
+    if [[ "${fields[1]}" == '^'* ]]; then
+        mode="right"
+        fields[1]="${fields[1]#'^'}"
+        [[ "${fields[-1]}" == '*'* ]] || [[ "${fields[-1]}" == '^'* ]] && {
+            echo "sep: '^' and '*' prefixes are mutually exclusive" >&2; return 1 }
+    elif [[ "${fields[-1]}" == '*'* ]]; then
+        mode="rest"
+        fields[-1]="${fields[-1]#'*'}"
+    fi
+    local j f
+    for (( j = 1; j <= nf; ++j )); do
+        f="${fields[$j]}"
+        [[ "$f" == '^'* || "$f" == '*'* ]] && {
+            echo "sep: '$f': prefixes are only allowed on the first (^) or last (*) field" >&2
+            return 1
+        }
+        [[ "$f" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || { echo "sep: '$f' is not a valid field name" >&2; return 1 }
+    done
+
+    local jqprog='def clean:
+        if type == "string" then gsub("\u001b\\[[0-9;]*[a-zA-Z]"; "") else . end;
+    def an:
+        (clean
+        | if (type == "string" and (test("^[+-]?[0-9]+([.][0-9]+)?$"))) then tonumber else . end);
+    '
+    if [[ "$mode" == "right" ]]; then
+        jqprog+='def splitr($s; $k):
+        { tail: [], rest: ., need: $k }
+        | until ((.need <= 0) or ((.rest | rindex($s)) == null);
+            (.rest | rindex($s)) as $i
+            | { tail: ([.rest[($i + ($s | length)):]] + .tail),
+                rest: .rest[0:$i],
+                need: (.need - 1) })
+        | { head: .rest,
+            tail: (reduce range(0; .need) as $j (.tail; . + [null])) };
+    (rtrimstr("\n") | split("\n") | map(select(length > 0)))
+    | map(splitr($esep; '"$(( nf - 1 ))"') as $v | {'
+        local -i i=0
+        for f in "${fields[@]}"; do
+            if (( i == 0 )); then
+                jqprog+="\"$f\": (\$v.head | an)"
+            else
+                jqprog+="\"$f\": (\$v.tail[$(( i - 1 ))] | an)"
+            fi
+            (( ++i < nf )) && jqprog+=", "
+        done
+    else
+        jqprog+='def splitsep($s):
+        { parts: [], rest: . }
+        | until ((.rest | index($s)) == null;
+            (.rest | index($s)) as $i
+            | { parts: (.parts + [.rest[0:$i]]),
+                rest:  .rest[($i + ($s | length)):] })
+        | .parts + [.rest];
+    (rtrimstr("\n") | split("\n") | map(select(length > 0)))
+    | map(splitsep($esep) as $v | {'
+        local -i i=0 rem=-1
+        [[ "$mode" == rest ]] && rem=$(( nf - 1 ))
+        for f in "${fields[@]}"; do
+            if (( i == rem )); then
+                jqprog+="\"$f\": (\$v[$i:] | join(\$esep) | an)"
+            else
+                jqprog+="\"$f\": (\$v[$i] | an)"
+            fi
+            (( ++i < nf )) && jqprog+=", "
+        done
+    fi
+    jqprog+=" })"
+    jq -Rs --arg esep "$esep" "$jqprog"
+}
+
+# Filter a JSON array from stdin by field, operator, and value.
+# Multiple field/operator/value triples are AND-combined by default;
+# pass --or to keep records matching ANY triple instead.
+where() {
+    help_check "$1" && {
+        echo "Usage: <...> | where [--or] <field> <operator> <value> [<field> <operator> <value> ...]"
+        echo "       where --help"
+        echo ""
+        echo "Keep only the records of a JSON array (from stdin) that match."
+        echo "Numeric operators: >, >=, <, <=, ==, != (values are compared as numbers)"
+        echo "String operators:  eq, ne, contains (case-insensitive), matches (regex)"
+        echo "Multiple triples are combined with AND by default; --or keeps"
+        echo "records matching ANY triple."
+        echo ""
+        echo "Example: psq | where mem_percent '>' 1"
+        echo "         psq | where --or mem_percent '>' 1 cpu_percent '>' 0"
+        echo "         journalq | where --or prio '<=' 4 id eq nginx"
+        return 0
+    }
+    local -a triple_args=("$@")
+    local mode="and"
+    if [[ "${triple_args[1]}" == "-o" || "${triple_args[1]}" == "--or" ]]; then
+        mode="or"
+        triple_args=("${triple_args[@]:1}")
+    elif [[ "${triple_args[1]}" == "-a" || "${triple_args[1]}" == "--and" ]]; then
+        triple_args=("${triple_args[@]:1}")
+    fi
+    (( (${#triple_args} % 3) == 0 )) || {
+        echo "where: arguments must come in <field> <operator> <value> triples (got ${#triple_args})" >&2
+        return 1
+    }
+    local conds_json
+    conds_json=$(jq -n --args \
+        '$ARGS.positional as $a |
+         [ range(0; (($a | length) / 3) | floor) as $i |
+           $a[($i * 3):(($i * 3) + 3)] ]' \
+        -- "${triple_args[@]}") || return 1
+    jq --argjson conds "$conds_json" --arg mode "$mode" '
+        def cmp($r; $cond):
+            $cond as [$f, $op, $v] |
+            if ($op == ">" or $op == ">=" or $op == "<" or $op == "<=" or $op == "==" or $op == "!=")
+            then
+                ($r[$f] | tonumber?) as $x |
+                ($v | tonumber?) as $n |
+                if $x == null or $n == null then false
+                elif $op == ">" then $x > $n
+                elif $op == ">=" then $x >= $n
+                elif $op == "<" then $x < $n
+                elif $op == "<=" then $x <= $n
+                elif $op == "==" then $x == $n
+                else $x != $n end
+            elif $op == "eq" then ($r[$f] | tostring) == $v
+            elif $op == "ne" then ($r[$f] | tostring) != $v
+            elif $op == "contains" then ($r[$f] | tostring | ascii_downcase) | contains($v | ascii_downcase)
+            elif $op == "matches" then ($r[$f] | tostring) | test($v)
+            else false end;
+        map(select(
+            . as $r |
+            if $mode == "or"
+            then any($conds[]; cmp($r; .))
+            else all($conds[]; cmp($r; .))
+            end))'
+}
+
+# Sort a JSON array from stdin by a field.
+sort-by() {
+    help_check "$1" && {
+        echo "Usage: <...> | sort-by <field> [asc|desc]"
+        echo "       sort-by --help"
+        echo ""
+        echo "Sort the records of a JSON array (from stdin) by a field."
+        echo "Bare 'sort' is not used so it cannot shadow /usr/bin/sort."
+        echo ""
+        echo "Example: psq | sort-by mem_percent desc"
+        return 0
+    }
+    local field="$1" dir="${2:-asc}"
+    jq --arg f "$field" --arg d "$dir" '
+        if $d == "desc" then sort_by(.[$f]) | reverse else sort_by(.[$f]) end'
+}
+
+# Keep only the named fields from every record in a JSON array from stdin.
+# Bare 'select' is a reserved Zsh word, so the verb is named sel.
+sel() {
+    help_check "$1" && {
+        echo "Usage: <...> | sel <field> [field ...]"
+        echo "       sel --help"
+        echo ""
+        echo "Keep only the named fields from every record of a JSON array (from stdin)."
+        echo "Named 'sel' because 'select' is a reserved Zsh word and cannot be defined."
+        echo ""
+        echo "Example: psq | sel pid mem_percent command"
+        return 0
+    }
+    # Rebuild rows in argument order (record key order from jc is arbitrary).
+    jq --args 'map(. as $row |
+        reduce $ARGS.positional[] as $f ({}; . + {($f): ($row[$f] // null)}))' "$@"
+}
+
+# Keep only the first n records of a JSON array from stdin.
+first() {
+    help_check "$1" && {
+        echo "Usage: <...> | first [n]"
+        echo "       first --help"
+        echo ""
+        echo "Keep only the first n records of a JSON array (from stdin)."
+        echo "Defaults to n = 10 when no argument is given."
+        return 0
+    }
+    jq --argjson n "${1:-10}" '.[:$n]'
+}
+
+# Keep only the last n records of a JSON array from stdin (companion to first).
+last() {
+    help_check "$1" && {
+        echo "Usage: <...> | last [n]"
+        echo "       last --help"
+        echo ""
+        echo "Keep only the last n records of a JSON array (from stdin)."
+        echo "Defaults to n = 10 when no argument is given."
+        return 0
+    }
+    local n="${1:-10}"
+    if [[ ! "$n" =~ '^[0-9]+$' ]]; then
+        echo "last: '$n' is not a non-negative number." >&2
+        return 1
+    fi
+    if ((n == 0)); then
+        # jq's [-0:] would return the whole array; force an empty slice
+        jq '[]'
+        return 0
+    fi
+    jq --argjson n "$n" '.[(0 - $n):]'
+}
+
+# Pick specific records of a JSON array from stdin by row number, range, or list.
+# One-based (row 1 = first record); negative indices count from the end.
+row() {
+    help_check "$1" && {
+        echo "Usage: <...> | row <n> | row <start>:<end> | row <n> <n> ..."
+        echo "       row --help"
+        echo ""
+        echo "Select records from a JSON array (from stdin) by position:"
+        echo "    row 5        single record (one-based: 5 = fifth record)"
+        echo "    row 5:10     inclusive range, records 5 through 10"
+        echo "    row 5 10 15  list of records, in the order given"
+        echo "    row -1       negative indices count from the end (-1 = last)"
+        echo "Out-of-range indices are silently dropped."
+        return 0
+    }
+    if (($# == 0)); then
+        echo "row: at least one row index required (e.g. row 5, row 5:10, row 5 10 15)." >&2
+        return 1
+    fi
+    local -a idxs
+    local spec a b i
+    for spec in "$@"; do
+        if [[ "$spec" =~ '^[+-]?[0-9]+$' ]]; then
+            if ((spec == 0)); then
+                echo "row: 0 is not a valid row (row numbering is one-based; use row -1 for the last row)." >&2
+                return 1
+            fi
+            # shift positive indices down by one for jq; negatives already
+            # count from the end in jq (row -1 == jq .[-1])
+            if ((spec > 0)); then
+                idxs+=($((spec - 1)))
+            else
+                idxs+=("$spec")
+            fi
+        elif [[ "$spec" =~ '^([+-]?[0-9]+):([+-]?[0-9]+)$' ]]; then
+            a="${match[1]}"
+            b="${match[2]}"
+            if ((a <= b)); then
+                if ((a <= 0 && b >= 0)); then
+                    echo "row: 0 is not a valid row (row numbering is one-based; use row -1 for the last row)." >&2
+                    return 1
+                fi
+                for ((i = a; i <= b; i++)); do
+                    if ((i > 0)); then
+                        idxs+=($((i - 1)))
+                    else
+                        idxs+=("$i")
+                    fi
+                done
+            else
+                echo "row: invalid range '$spec' (start must be <= end)." >&2
+                return 1
+            fi
+        else
+            echo "row: '$spec' is neither a row number nor a range (examples: 5, 5:10, -1)." >&2
+            return 1
+        fi
+    done
+    jq --argjson idxs "[${(j:,:)idxs}]" '[.[$idxs[]] | select(. != null)]'
+}
+
+# Count the records in a JSON array from stdin.
+count() {
+    help_check "$1" && {
+        echo "Usage: <...> | count"
+        echo "       count --help"
+        echo ""
+        echo "Count the records of a JSON array (from stdin)."
+        return 0
+    }
+    jq 'length'
+}
+
+# Print one raw value per line for a field of every record in a JSON array from stdin.
+get() {
+    help_check "$1" && {
+        echo "Usage: <...> | get <field>"
+        echo "       get --help"
+        echo ""
+        echo "Print one raw value per line for <field> of every record of a JSON array (from stdin)."
+        echo "Nested objects and arrays are printed as JSON."
+        return 0
+    }
+    jq --arg f "$1" -r '.[] | .[$f] | if type == "object" or type == "array" then tojson else tostring end'
+}
+
+# Render a JSON array of objects from stdin as a Nushell-style table:
+# rounded borders, right-aligned numeric columns, and cells truncated
+# with "..." so the table fits the terminal width. Non-object rows are
+# wrapped into a "value" column; empty results print nothing.
+pretty() {
+    help_check "$1" && {
+        echo "Usage: <...> | pretty"
+        echo "       pretty --help"
+        echo ""
+        echo "Render a JSON array of objects from stdin as a Nushell-style table:"
+        echo "rounded borders (bold-cyan header, magenta numbers), right-aligned"
+        echo "numeric columns, and cells truncated with '...' so the table fits"
+        echo "the terminal width."
+        echo "With --full, cells are never truncated: columns keep their natural"
+        echo "width and lines may extend past the terminal edge."
+        return 0
+    }
+    local maxw="${COLUMNS:-110}"
+    if [[ "$*" == *--full* ]]; then
+        maxw=1000000
+    fi
+    jq -r '
+        def _rows:
+            if type == "object" then [.]                       # single object
+            elif type == "array" then map(
+                if type == "object" then . else {"value": .} end)
+            else [{"value": .}] end;
+        def _cell:
+            if type == "object" or type == "array" then tojson
+            elif type == "null" then ""
+            # strip raw ANSI color codes: they occupy bytes but zero display
+            # width, which would break the awk column arithmetic
+            else (tostring | gsub("\u001b\\[[0-9;]*[a-zA-Z]"; "")) end;
+
+        (_rows) as $rows |
+        (reduce ($rows[] | keys_unsorted[]) as $key (
+            [];
+            . as $acc |
+            if ($acc | any(. == $key)) then $acc else $acc + [$key] end
+        )) as $cols |
+        ($cols | @tsv), ($rows[] | [.[$cols[]] | _cell] | @tsv)
+    ' | awk -F '\t' -v maxw="$maxw" '
+        # ANSI colors: bold cyan for the header, magenta for numeric cells,
+        # strings keep the default color. The escape code is built with
+        # sprintf("%c", 27) so the script stays POSIX-awk compatible.
+        function rep(c, k,    s, i) { s = ""; for (i = 0; i < k; i++) s = s c; return s }
+        function border(l, m, r,    out, i) {
+            out = l rep("─", w[1] + 2)
+            for (i = 2; i <= n; i++) out = out m rep("─", w[i] + 2)
+            return out r
+        }
+        function cell(s, i, hdr,    t, pad, clr, rst) {
+            t = (cut[i] && length(s) > w[i]) ? substr(s, 1, w[i] - 3) "..." : s
+            pad = num[i] ? sprintf("%*s", w[i], t) : t rep(" ", w[i] - length(t))
+            # color after padding so ANSI bytes never affect column widths
+            if (hdr) {
+                clr = sprintf("%c[", 27) "1;36m"      # bold cyan
+            } else if (t ~ /^[+-]?[0-9]+([.][0-9]+)?$/) {
+                clr = sprintf("%c[", 27) "0;35m"      # magenta for numbers
+            }
+            if (clr != "") {
+                rst = sprintf("%c[", 27) "0m"
+            }
+            return " " clr pad rst " "
+        }
+        BEGIN { n = 0 }
+        n == 0 {
+            n = NF
+            for (i = 1; i <= n; i++) h[i] = $i
+            next
+        }
+        {
+            rows++
+            for (i = 1; i <= n; i++) v[rows, i] = (i <= NF ? $i : "")
+        }
+        END {
+            if (n == 0) exit
+
+            # column widths: header or widest cell
+            for (i = 1; i <= n; i++) {
+                w[i] = length(h[i])
+                for (r = 1; r <= rows; r++)
+                    if (length(v[r, i]) > w[i]) w[i] = length(v[r, i])
+            }
+
+            # numeric columns are right-aligned like Nushell
+            for (i = 1; i <= n; i++) {
+                num[i] = 1
+                for (r = 1; r <= rows; r++)
+                    if (v[r, i] != "" && v[r, i] !~ /^[+-]?[0-9]+([.][0-9]+)?$/)
+                        { num[i] = 0; break }
+            }
+
+            # shrink the widest column(s) until the table fits the terminal
+            tw = 1 + n
+            for (i = 1; i <= n; i++) tw = tw + w[i] + 2
+            while (tw > maxw) {
+                big = 1
+                for (i = 2; i <= n; i++) if (w[i] > w[big]) big = i
+                if (w[big] <= 12) break       # give up, table stays oversized
+                w[big]--; cut[big] = 1; tw--
+            }
+
+            print border("╭", "┬", "╮")
+            out = "│"
+            for (i = 1; i <= n; i++) out = out cell(h[i], i, 1) "│"
+            print out
+            print border("├", "┼", "┤")
+            for (r = 1; r <= rows; r++) {
+                out = "│"
+                for (i = 1; i <= n; i++) out = out cell(v[r, i], i, 0) "│"
+                print out
+            }
+            print border("├", "┼", "┤")
+            out = "│"
+            for (i = 1; i <= n; i++) out = out cell(h[i], i, 1) "│"
+            print out
+            print border("╰", "┴", "╯")
+        }
+    '
+}
