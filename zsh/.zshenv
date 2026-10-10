@@ -37,9 +37,6 @@ export CARGO_HOME="$XDG_DATA_HOME"/cargo
 # Rustup
 export RUSTUP_HOME="$XDG_DATA_HOME"/rustup
 
-# Rustup toolchains
-export CARGO_HOME="$XDG_DATA_HOME"/cargo
-
 # Docker
 export DOCKER_CONFIG="$XDG_CONFIG_HOME"/docker
 

@@ -29,7 +29,10 @@ fi
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # Add Cargo's tools to the environment when Rust is installed.
-[[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
+# Prefer CARGO_HOME (set in .zshenv), falling back to the default location.
+_cargo_home="${CARGO_HOME:-$HOME/.cargo}"
+[[ -f "$_cargo_home/env" ]] && . "$_cargo_home/env"
+unset _cargo_home
 
 # Load optional machine-specific overrides without changing this module.
 [[ ! -f ~/.zshadditions ]] || source ~/.zshadditions
