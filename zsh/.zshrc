@@ -6,6 +6,7 @@ for zsh_config_file in \
     10-plugins.zsh \
     20-settings.zsh \
     30-functions.zsh \
+    35-nushell.zsh \
     40-aliases.zsh \
     50-integrations.zsh; do
     [[ -r "$zsh_config_root/$zsh_config_file" ]] && source "$zsh_config_root/$zsh_config_file"

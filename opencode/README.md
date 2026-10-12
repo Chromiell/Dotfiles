@@ -77,7 +77,6 @@ recreated automatically.
 ├── oh-my-opencode-slim.json  # Tracked: multi-agent presets (opencode-go active)
 ├── skills/                   # Tracked: plugin skills + custom skills (playwright-cli, browser-use, desktop-use)
 ├── .oh-my-opencode-slim/     # Runtime state (git-ignored): skill reconciliation manifest
-├── agent/                    # Local custom agents (currently only Ask agent is added)
 └── service.json              # Local service password (git-ignored)
 ```
 
@@ -237,7 +236,7 @@ implementer with that plan — never with a vague "make it work".
   orchestrator, but it only does so when `default_agent` is unset or points at a
   subagent, so the explicit value wins and a fresh session is plain single-model
   OpenCode. Switch to the team per session with `shift+tab` (cycles
-  `build` → `plan` → `orchestrator` → `ask`).
+  `build` → `plan` → `orchestrator`).
 - The **orchestrator** delegates automatically once selected.
 - Delegate explicitly with `@explorer`, `@fixer`, `@oracle`, `@librarian`,
   `@designer`, `@council`, or `@observer`.

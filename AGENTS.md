@@ -62,7 +62,7 @@ directories.
 
 | Module | Category | Responsibility |
 | :--- | :--- | :--- |
-| `zsh/` | Shell | Zsh config split into numbered `00-startup` … `50-integrations` files, Znap plugin manager, Powerlevel10k prompt, aliases, functions. |
+| `zsh/` | Shell | Zsh config split into numbered `00-startup` … `50-integrations` files (functions in `30-functions`, Nushell-style `jc`/`jq` verbs in `35-nushell`), Znap plugin manager, Powerlevel10k prompt, aliases. |
 | `tmux/` | Multiplexer | Catppuccin Mocha tmux config, prefix-less navigation, status bar resource modules. |
 | `neovim/` | Editor / IDE | LazyVim setup (run via an Arch Distrobox container), plus Yazi and Lazygit configs. Graphical file icons via `real-icons.nvim` (Flow Icons pack, installed by `lua/plugins/icons.lua` + `scripts/install-flow-icons.sh`). |
 | `vim/` | Editor | Portable standalone `.vimrc` (pure Vimscript, zero plugins) mirroring LazyVim keybinds/theme; deployed via `stow vim` or `scp` to remote servers. |
