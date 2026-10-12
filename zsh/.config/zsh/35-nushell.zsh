@@ -465,7 +465,7 @@ compdef _precommand fromq
 # find raw separators with e.g. 'xxd somelog | head' and pass '\xHH' here.
 sep() {
     _nu_help "$1" && {
-        echo "Usage: sep [sep] <field>... | sep --help"
+        echo "Usage: sep [-r|--regex] [sep] <field>... | sep --help"
         echo ""
         echo "Split each stdin line by <sep> and build JSON records with the given"
         echo "field names in order. Splitting STOPS once every field has a value:"
@@ -483,7 +483,11 @@ sep() {
             "  ','      comma" \
             "  '\t'     tab (printf escape)" \
             "  '\x1f'   hex byte (pair with 'xxd file | head' to find one)" \
-            "  ' -- '   literal substring"
+            "  ' -- '   literal substring" \
+            "  -r '\\s+'  with -r/--regex the separator is a regex (jq/Oniguruma" \
+            "           syntax, e.g. '\\s+', ' *, *', '[:|]'); a run of spaces" \
+            "           becomes ONE separator. Zero-length matches are ignored." \
+            "           Escapes like \\t are the regex's own, not printf's."
         printf '%s\n' \
             "Field-name prefixes:" \
             "  '^path'     right-anchored split: all following fields are counted" \
@@ -501,11 +505,18 @@ sep() {
             "Tip: to keep a whole line as one field (e.g. paths with spaces" \
             "under sep ' '), use a separator that never occurs," \
             "e.g. sep '\x01' path."
-        echo "Usage: sep ':' '^path line snippet' < rg-output.txt | where line '>=' 190 | pretty"
+        echo "Usage: eza -alhg --time-style=long-iso --icons=never --color=never | tail -n +2 \\"
+        echo "         | sep -r ' +' perms size user group date time '*name' | pretty"
+        echo "       sep ':' '^path line snippet' < rg-output.txt | where line '>=' 190 | pretty"
         echo "       sep ':' file line '*snippet' < rg-output.txt | pretty"
         echo "       sep '\x1f' ts level msg < /var/log/custom.log | where level eq 'err' | pretty"
         return 0
     }
+    local rx=false
+    if [[ "$1" == -r || "$1" == --regex ]]; then
+        rx=true
+        shift
+    fi
     local esep
     if (( $# == 1 )); then
         # No separator: each whole line is the value of the single field.
@@ -513,7 +524,11 @@ sep() {
     else
         (($# >= 2)) || { echo "sep: need a separator and at least one field name" >&2; return 1 }
         [[ "$1" != *$'\n'* ]] || { echo "sep: separator may not contain a newline (records are split on lines first)" >&2; return 1 }
-        esep=$(printf '%b' "$1") || { echo "sep: bad separator spec: $1" >&2; return 1 }
+        if [[ "$rx" == true ]]; then
+            esep="$1"
+        else
+            esep=$(printf '%b' "$1") || { echo "sep: bad separator spec: $1" >&2; return 1 }
+        fi
         [[ -n "$esep" ]] || { echo "sep: separator expands to empty" >&2; return 1 }
     fi
 
@@ -543,7 +558,18 @@ sep() {
     done
 
     # Leading-zero values (0755, 007) stay strings, matching csvq.
-    local jqprog='def clean:
+    # Separator matcher: first/last non-empty occurrence as {i, n} (offset, length),
+    # a regex under -r, else a literal substring.
+    local jqprog='def nth_sep($s; $fromend):
+        if $rx then
+            [match($s; "g") | select(.length > 0)]
+            | (if $fromend then last else first end) // null
+            | if . == null then null else {i: .offset, n: .length} end
+        else
+            (if $fromend then rindex($s) else index($s) end) as $i
+            | if $i == null then null else {i: $i, n: ($s | length)} end
+        end;
+    def clean:
         if type == "string" then gsub("\u001b\\[[0-9;]*[a-zA-Z]"; "") else . end;
     def an:
         (clean
@@ -553,10 +579,10 @@ sep() {
     if [[ "$mode" == "right" ]]; then
         jqprog+='def splitr($s; $k):
         { tail: [], rest: ., need: $k }
-        | until ((.need <= 0) or ((.rest | rindex($s)) == null);
-            (.rest | rindex($s)) as $i
-            | { tail: ([.rest[($i + ($s | length)):]] + .tail),
-                rest: .rest[0:$i],
+        | until ((.need <= 0) or ((.rest | nth_sep($s; true)) == null);
+            (.rest | nth_sep($s; true)) as $m
+            | { tail: ([.rest[($m.i + $m.n):]] + .tail),
+                rest: .rest[0:$m.i],
                 need: (.need - 1) })
         | { head: .rest,
             tail: (reduce range(0; .need) as $j (.tail; . + [null])) };
@@ -574,10 +600,10 @@ sep() {
     else
         jqprog+='def splitsep($s; $k):
         { parts: [], rest: . }
-        | until ((.parts | length) >= $k or (.rest | index($s)) == null;
-            (.rest | index($s)) as $i
-            | { parts: (.parts + [.rest[0:$i]]),
-                rest:  .rest[($i + ($s | length)):] })
+        | until ((.parts | length) >= $k or (.rest | nth_sep($s; false)) == null;
+            (.rest | nth_sep($s; false)) as $m
+            | { parts: (.parts + [.rest[0:$m.i]]),
+                rest:  .rest[($m.i + $m.n):] })
         | .parts + [.rest];
     (rtrimstr("\n") | split("\n") | map(rtrimstr("\r") | select(length > 0)))
     | map(splitsep($esep; '"$(( nf - 1 ))"') as $v | {'
@@ -592,7 +618,7 @@ sep() {
         done
     fi
     jqprog+=" })"
-    jq -Rs --arg esep "$esep" "$jqprog"
+    jq -Rs --arg esep "$esep" --argjson rx "$rx" "$jqprog"
 }
 
 # Read CSV from a file or stdin into JSON records (RFC 4180 via python3 csv).
@@ -986,12 +1012,13 @@ reverse() {
 # One-based (row 1 = first record); negative indices count from the end.
 row() {
     _nu_help "$1" && {
-        echo "Usage: <...> | row <n> | row <start>:<end> | row <n> <n> ..."
+        echo "Usage: <...> | row <n> | row <start>:<end|*> | row <n> <n> ..."
         echo "       row --help"
         echo ""
         echo "Select records from a JSON array (from stdin) by position:"
         echo "    row 5        single record (one-based: 5 = fifth record)"
         echo "    row 5:10     inclusive range, records 5 through 10"
+        echo "    row 2:*      open range, record 2 through the last one"
         echo "    row 5 10 15  list of records, in the order given"
         echo "    row -1       negative indices count from the end (-1 = last)"
         echo "Out-of-range indices are silently dropped."
@@ -1018,6 +1045,14 @@ row() {
             else
                 idxs+=("$spec")
             fi
+        elif [[ "$spec" =~ '^([+-]?[0-9]+):\*$' ]]; then
+            a="${match[1]}"
+            if ((a == 0)); then
+                echo "row: 0 is not a valid row (row numbering is one-based; use row -1 for the last row)." >&2
+                return 1
+            fi
+            # open range: resolved against the record count inside jq
+            idxs+=("{\"from\":$(( a > 0 ? a - 1 : a ))}")
         elif [[ "$spec" =~ '^([+-]?[0-9]+):([+-]?[0-9]+)$' ]]; then
             a="${match[1]}"
             b="${match[2]}"
@@ -1038,11 +1073,16 @@ row() {
                 return 1
             fi
         else
-            echo "row: '$spec' is neither a row number nor a range (examples: 5, 5:10, -1)." >&2
+            echo "row: '$spec' is neither a row number nor a range (examples: 5, 5:10, 2:*, -1)." >&2
             return 1
         fi
     done
-    jq --argjson idxs "[${(j:,:)idxs}]" "$_NU_JQLIB"'_rows | [.[$idxs[]] | select(. != null)]'
+    jq --argjson idxs "[${(j:,:)idxs}]" "$_NU_JQLIB"'_rows | . as $r | length as $n
+        | [$idxs[] | if type == "object"
+              then (if .from < 0 then $n + .from else .from end | if . < 0 then 0 else . end) as $s
+                   | range($s; $n)
+              else . end | $r[.]]
+        | map(select(. != null))'
 }
 
 # Drop duplicate records (or records with duplicate field values) from stdin.
