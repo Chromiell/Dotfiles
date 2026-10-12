@@ -81,7 +81,8 @@ plain version strings plus checksums, not actions). To bump one:
 A `notify` job reports the outcome of **every completed run** — pass or fail — to a
 Discord or Slack incoming webhook. It gates on `if: !cancelled()`, so runs superseded
 by a newer push stay silent, but otherwise both successful and failed runs are
-announced. The message lists the result of every job and links to the run.
+announced. The message lists every job with a status icon — ✅ pass, ❌ fail, plus
+marks for other states — and links to the run.
 
 **Setup**
 
@@ -94,8 +95,7 @@ announced. The message lists the result of every job and links to the run.
    uses the Discord payload format.
 
 The webhook is optional: with no secret set (for example, on pull requests from forks,
-which never receive secrets) the step is skipped, so CI still runs untouched. The
-message lists each job's result and links to the run.
+which never receive secrets) the step is skipped, so CI still runs untouched.
 
 ### Testing a failure
 

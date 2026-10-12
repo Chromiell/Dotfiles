@@ -187,7 +187,17 @@ jobs:
           else
             mood="❌"; verdict="failed — ${failures} check(s)"
           fi
-          details="$(jq -r 'to_entries | map("• \(.key): \(.value.result)") | join("\n")' <<< "$NEEDS_JSON")"
+          details="$(jq -r '
+            def icon:
+              if   . == "success"   then "✅"
+              elif . == "failure"   then "❌"
+              elif . == "cancelled" then "🚫"
+              elif . == "skipped"   then "➖"
+              else "❔" end;
+            to_entries
+            | map("\(.value.result | icon) \(.key): \(.value.result)")
+            | join("\n")
+          ' <<< "$NEEDS_JSON")"
           message="$(printf '%s CI %s on %s (%s) — triggered by %s\n%s\n%s' \
             "$mood" "$verdict" "$REPO" "$REF" "$ACTOR" "$details" "$RUN_URL")"
           # Discord expects {"content": ...}; Slack expects {"text": ...}.
