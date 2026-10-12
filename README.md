@@ -202,4 +202,4 @@ For dedicated setup guides, keybindings, and configuration walkthroughs, refer t
 - [OpenCode Configuration](./opencode/README.md)
 - [Wallpapers & Images](./images/README.md)
 - [Mouse Cursor Settings](./mouseCursorDefault/README.md)
-- [Continuous Integration](./.github/README.md)
+- [Continuous Integration](./.github/CI.md)

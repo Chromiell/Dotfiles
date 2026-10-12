@@ -3,6 +3,12 @@
 GitHub Actions workflows that lint and sanity-check this repository on every push
 to `main` and on every pull request.
 
+> [!NOTE]
+> This file is intentionally **not** named `README.md`. GitHub prefers
+> `.github/README.md` over the root `README.md` when choosing what to render on the
+> repository home page, which would hide the main project README. Keeping the
+> filename `CI.md` avoids that override.
+
 ---
 
 ## 📦 Required Tools

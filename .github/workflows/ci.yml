@@ -16,7 +16,7 @@ permissions:
 
 # Tool versions are pinned and their downloads verified by SHA-256 so CI is
 # reproducible and supply-chain checked. To bump one, update the version and
-# the matching checksum below (see .github/README.md for details).
+# the matching checksum below (see .github/CI.md for details).
 env:
   STYLUA_VERSION: "2.6.0"
   STYLUA_SHA256: "a485f72bbfa22e4642e77a84b5edc2611a5cab7477b34e2e709dd8f78e919895"
