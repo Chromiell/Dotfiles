@@ -1,7 +1,7 @@
 # Continuous Integration
 
 GitHub Actions workflows that lint and sanity-check this repository on every push
-to `main` and on every pull request.
+to `main`, on every pull request, and on demand via **Run workflow**.
 
 > [!NOTE]
 > This file is intentionally **not** named `README.md`. GitHub prefers
@@ -96,6 +96,14 @@ announced. The message lists the result of every job and links to the run.
 The webhook is optional: with no secret set (for example, on pull requests from forks,
 which never receive secrets) the step is skipped, so CI still runs untouched. The
 message lists each job's result and links to the run.
+
+### Testing a failure
+
+The workflow also has a manual **Run workflow** trigger (Actions → *CI* →
+**Run workflow**) with a **simulate_failure** checkbox. Tick it to make the
+`shellcheck` job fail on purpose and confirm the failure notification arrives; run
+again unticked to see the pass message. The forced failure only applies to manual
+runs — normal pushes and pull requests are unaffected.
 
 ---
 

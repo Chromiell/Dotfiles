@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: "Force the ShellCheck job to fail (tests failure notifications)"
+        type: boolean
+        default: false
 
 # Cancel superseded runs on the same ref to avoid wasted CI time.
 concurrency:
@@ -35,6 +41,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Simulate failure (manual runs only)
+        if: ${{ inputs.simulate_failure }}
+        run: |
+          echo "::error::Simulated failure requested via workflow_dispatch (simulate_failure=true)"
+          exit 1
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Lint shell scripts
@@ -148,7 +159,7 @@ jobs:
           exit "$missing"
 
   notify:
-    name: Notify on failure
+    name: Notify (run status)
     runs-on: ubuntu-latest
     needs: [shellcheck, secrets, spelling, links, lua, python, stow]
     # Report every completed run (pass or fail). `!cancelled()` keeps the job
