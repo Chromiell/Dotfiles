@@ -1,4 +1,4 @@
-# Documents
+# Guides
 
 Personal technical documentation, reference notes, and how-to guides stowed under `~/Documents/Guides`.
 
@@ -28,7 +28,7 @@ Personal technical documentation, reference notes, and how-to guides stowed unde
 ```bash
 mkdir -p ~/Documents
 cd ~/.dotfiles
-stow documents
+stow guides
 ```
 
 `~/Documents/Guides` then becomes a symlink to this module, while `~/Documents`

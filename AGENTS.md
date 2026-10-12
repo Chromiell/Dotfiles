@@ -50,7 +50,7 @@ mkdir -p ~/.local/bin ~/Documents
 | Directory | Stow packages | Layout after stowing | Also written at runtime by |
 | :--- | :--- | :--- | :--- |
 | `~/.local/bin` | `scripts` | real dir, files symlinked | Deja, znap, distrobox, `uv` |
-| `~/Documents` | `scripts`, `documents` | real dir; `Scripts/`, `ScriptsData/` and `Guides/` are symlinks | — |
+| `~/Documents` | `scripts`, `guides` | real dir; `Scripts/`, `ScriptsData/` and `Guides/` are symlinks | — |
 
 Because `~/Documents` itself already exists, Stow folds its subdirectories
 (`Scripts`, `ScriptsData`, `Guides`) into symlinks rather than real
@@ -68,7 +68,7 @@ directories.
 | `vim/` | Editor | Portable standalone `.vimrc` (pure Vimscript, zero plugins) mirroring LazyVim keybinds/theme; deployed via `stow vim` or `scp` to remote servers. |
 | `git/` | Version Control | `.gitconfig` include chain, global ignore, and `_template` files copied to real secret files. |
 | `scripts/` | Automation | Admin, DB backup/sync, Certbot/HAProxy, deployment, and desktop utility scripts, stowed into `~/Documents/Scripts`, `~/Documents/ScriptsData` and `~/.local/bin`. Sensitive values live in gitignored `Documents/ScriptsData/config.env`. |
-| `documents/` | Documentation | Personal technical guides, how-to notes, and reference documents stowed into `~/Documents/Guides`. |
+| `guides/` | Documentation | Personal technical guides, how-to notes, and reference documents stowed into `~/Documents/Guides`. |
 | `alacritty/` | Terminal | GPU-accelerated terminal emulator config (TOML + legacy YAML). |
 | `kitty/` | Terminal | Kitty config and startup session profiles. |
 | `niri/` | Window Manager | Modular KDL config for the scrollable-tiling Wayland compositor (DMS sub-configs). |

@@ -18,7 +18,7 @@ This repository is structured into modular configuration packages designed to be
 | [`vim`](./vim) | Editor | Portable standalone `.vimrc` mirroring the local LazyVim environment for remote servers and machines without Neovim |
 | [`git`](./git) | Version Control | Optimized `.gitconfig` with linear rebase workflows, global ignore, and productivity shortcuts |
 | [`scripts`](./scripts) | Automation | Administrative, database backup/sync, Let's Encrypt / HAProxy, and desktop utility scripts |
-| [`documents`](./documents) | Documentation | Personal technical guides and reference notes stowed under `~/Documents/Guides` |
+| [`guides`](./guides) | Documentation | Personal technical guides and reference notes stowed under `~/Documents/Guides` |
 | [`alacritty`](./alacritty) | Terminal | Fast, GPU-accelerated terminal emulator configuration with custom themes |
 | [`kitty`](./kitty) | Terminal | GPU-based terminal emulator configuration with session startup profiles |
 | [`niri`](./niri) | Window Manager | Modular KDL configuration for the scrollable-tiling Wayland compositor |
@@ -81,7 +81,7 @@ mkdir -p ~/.local/bin ~/Documents
 | Directory | Why it must exist first |
 | :--- | :--- |
 | `~/.local/bin` | `scripts` links its binaries here; Deja, znap, distrobox and `uv` write here at runtime |
-| `~/Documents` | `scripts` and `documents` both stow into it; this keeps it a real directory |
+| `~/Documents` | `scripts` and `guides` both stow into it; this keeps it a real directory |
 
 ### 3. Install Fonts
 
@@ -120,7 +120,7 @@ stow fzf
 ```
 
 > ⚠️ **Create the shared directories first.** `scripts` (→ `~/.local/bin`,
-> `~/Documents`) and `documents` (→ `~/Documents`) rely on those directories
+> `~/Documents`) and `guides` (→ `~/Documents`) rely on those directories
 > already existing. If a directory is missing, Stow folds it into a single
 > symlink into the repository and runtime tools will write into your dotfiles.
 > See [Create the Shared Directories](#2-create-the-shared-directories).
@@ -185,7 +185,7 @@ For dedicated setup guides, keybindings, and configuration walkthroughs, refer t
 - [Portable Vim Configuration](./vim/README.md)
 - [Git Profiles & Productivity Aliases](./git/README.md)
 - [System & Maintenance Scripts Catalog](./scripts/README.md)
-- [Personal Documents & Technical Guides](./documents/README.md)
+- [Personal Documents & Technical Guides](./guides/README.md)
 - [Alacritty Terminal Configuration](./alacritty/README.md)
 - [Kitty Terminal Configuration](./kitty/README.md)
 - [Niri Wayland Compositor Configuration](./niri/README.md)

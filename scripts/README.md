@@ -22,7 +22,7 @@ sudo apt install rsync curl expect msmtp certbot cifs-utils mariadb-client \
 | Module | Dependency Type | Description |
 | :--- | :--- | :--- |
 | [`niri`](../niri) | Consumer / Keybinding | `grab_text.sh` is bound to the `Mod+Shift+E` shortcut in `niri` for desktop OCR capture. |
-| [`documents`](../documents) | Shared Directory | Both modules stow into `~/Documents`; `documents` adds standalone technical guides alongside the `Scripts/` and `ScriptsData/` trees. |
+| [`guides`](../guides) | Shared Directory | Both modules stow into `~/Documents`; `guides` adds standalone technical guides alongside the `Scripts/` and `ScriptsData/` trees. |
 
 ---
 
@@ -30,7 +30,7 @@ sudo apt install rsync curl expect msmtp certbot cifs-utils mariadb-client \
 
 > ⚠️ **Create the shared directories first.** The module stows into
 > `~/.local/bin` (also used by Deja, znap, distrobox and `uv`) and into
-> `~/Documents`, which is shared with the [`documents`](../documents) module.
+> `~/Documents`, which is shared with the [`guides`](../guides) module.
 > If those directories do not exist, Stow folds them into symlinks pointing
 > into the repository instead of linking files into them.
 
