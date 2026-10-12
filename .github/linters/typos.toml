@@ -1,0 +1,12 @@
+# Configuration for the `typos` spell checker (https://github.com/crate-ci/typos).
+# Kept under .github/linters/ rather than the repository root so tooling config
+# does not clutter the top level.
+# Run locally with: typos --config .github/linters/typos.toml
+#
+# "Zink" is the name of the Mesa OpenGL-on-Vulkan driver, not a misspelling of
+# "Zinc". The allow-list below prevents false positives in the NVIDIA/Zink guide.
+
+[default.extend-words]
+Zink = "Zink"
+zink = "zink"
+ZINK = "ZINK"

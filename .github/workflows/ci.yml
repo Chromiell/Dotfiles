@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref to avoid wasted CI time.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: every job only needs to read the repository.
+permissions:
+  contents: read
+
+# Tool versions are pinned and their downloads verified by SHA-256 so CI is
+# reproducible and supply-chain checked. To bump one, update the version and
+# the matching checksum below (see .github/README.md for details).
+env:
+  STYLUA_VERSION: "2.6.0"
+  STYLUA_SHA256: "a485f72bbfa22e4642e77a84b5edc2611a5cab7477b34e2e709dd8f78e919895"
+  TYPOS_VERSION: "1.51.1"
+  TYPOS_SHA256: "93c301fd4120ff076e2cc2a6d6a61cab4a4bdb81899287c0938b452e56d1f454"
+  GITLEAKS_VERSION: "8.30.1"
+  GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+  LYCHEE_VERSION: "0.24.2"
+  LYCHEE_SHA256: "1f4e0ef7f6554a6ed33dd7ac144fb2e1bbed98598e7af973042fc5cd43951c9a"
+  RUFF_VERSION: "0.17.0"
+  RUFF_SHA256: "c94fc1dc71f054d06d9f1149442dcb471516aa2b7d4b7e8124e05d082d4c91d3"
+
+jobs:
+  shellcheck:
+    name: Shell scripts (ShellCheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Lint shell scripts
+        run: |
+          # Lint every tracked file whose shebang is a POSIX shell. This picks up
+          # the extensionless scripts under scripts/.local/bin and skips the
+          # Expect script that ShellCheck cannot parse.
+          mapfile -t files < <(git grep -lI -E '^#!.*(bash|/sh)\b')
+          echo "Checking ${#files[@]} script(s)"
+          shellcheck --severity=warning --format=gcc "${files[@]}"
+
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install gitleaks
+        run: |
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tar.gz" | sha256sum --check --strict
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+      - name: Scan for committed secrets
+        run: gitleaks dir . --no-banner --redact --verbose
+
+  spelling:
+    name: Spelling (typos)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install typos
+        run: |
+          curl -fsSL "https://github.com/crate-ci/typos/releases/download/v${TYPOS_VERSION}/typos-v${TYPOS_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/typos.tar.gz
+          echo "${TYPOS_SHA256}  /tmp/typos.tar.gz" | sha256sum --check --strict
+          tar -xzf /tmp/typos.tar.gz -C /tmp ./typos
+          sudo install -m 0755 /tmp/typos /usr/local/bin/typos
+      - name: Check spelling
+        run: typos --config .github/linters/typos.toml
+
+  links:
+    name: Markdown links (lychee)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install lychee
+        run: |
+          curl -fsSL "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/lychee-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/lychee.tar.gz
+          echo "${LYCHEE_SHA256}  /tmp/lychee.tar.gz" | sha256sum --check --strict
+          tar -xzf /tmp/lychee.tar.gz -C /tmp
+          sudo install -m 0755 /tmp/lychee-x86_64-unknown-linux-gnu/lychee /usr/local/bin/lychee
+      # --offline validates local (relative) links and anchors only. This keeps
+      # the job deterministic and immune to third-party sites being slow or down.
+      - name: Check links
+        run: lychee --offline --no-progress --include-fragments '**/*.md'
+
+  lua:
+    name: Lua formatting (StyLua)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install StyLua
+        run: |
+          curl -fsSL "https://github.com/JohnnyMorganz/StyLua/releases/download/v${STYLUA_VERSION}/stylua-linux-x86_64.zip" -o /tmp/stylua.zip
+          echo "${STYLUA_SHA256}  /tmp/stylua.zip" | sha256sum --check --strict
+          unzip -q -o /tmp/stylua.zip -d /tmp/stylua
+          sudo install -m 0755 /tmp/stylua/stylua /usr/local/bin/stylua
+      - name: Check formatting
+        run: stylua --check neovim/.config/nvim/lua
+
+  python:
+    name: Python (Ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install Ruff
+        run: |
+          curl -fsSL "https://github.com/astral-sh/ruff/releases/download/${RUFF_VERSION}/ruff-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/ruff.tar.gz
+          echo "${RUFF_SHA256}  /tmp/ruff.tar.gz" | sha256sum --check --strict
+          tar -xzf /tmp/ruff.tar.gz -C /tmp
+          sudo install -m 0755 /tmp/ruff-x86_64-unknown-linux-gnu/ruff /usr/local/bin/ruff
+      - name: Lint Python
+        run: ruff check --config .github/linters/ruff.toml .
+
+  stow:
+    name: Stow layout
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install GNU Stow
+        run: sudo apt-get update && sudo apt-get install -y stow
+      - name: Stow every package into a clean HOME
+        run: |
+          fake_home="${RUNNER_TEMP}/fakehome"
+          # The shared directories must exist first, otherwise Stow folds them
+          # into a single symlink pointing back into the repository.
+          mkdir -p "$fake_home/.local/bin" "$fake_home/Documents"
+          # `shopt -u dotglob` keeps dot-directories (such as .github) out of the
+          # package list, mirroring the documented `stow */` invocation.
+          bash -c "shopt -u dotglob; stow -v -t '$fake_home' */"
+      - name: Verify expected paths resolve into the repository
+        run: |
+          fake_home="${RUNNER_TEMP}/fakehome"
+          missing=0
+          for entry in .zshrc .config/nvim/init.lua .local/bin/install-adwaita-nerd-font Documents/Scripts; do
+            resolved="$(readlink -f "$fake_home/$entry" 2>/dev/null || true)"
+            case "$resolved" in
+              "$GITHUB_WORKSPACE"/*) echo "OK   $entry -> $resolved" ;;
+              *) echo "::error::$entry does not resolve into the dotfiles checkout"; missing=1 ;;
+            esac
+          done
+          exit "$missing"

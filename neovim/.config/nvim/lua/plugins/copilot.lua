@@ -1,5 +1,7 @@
 -- This is a sample configuration for integrating GitHub Copilot into LazyVim.
-if true then return {} end
+if true then
+    return {}
+end
 
 return {
     -- 1. Disable Copilot in the completion menu (to use ghost text instead)

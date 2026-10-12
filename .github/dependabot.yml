@@ -1,0 +1,13 @@
+version: 2
+
+updates:
+  # Keep the GitHub Actions used by the workflows up to date.
+  #
+  # The lint tools themselves are pinned by version + SHA-256 in
+  # .github/workflows/ci.yml and are bumped manually; see .github/README.md.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"

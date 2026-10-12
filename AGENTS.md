@@ -24,6 +24,10 @@ Every **top-level directory is a Stow package**. Inside each package, the direct
 ~/.dotfiles/<package>/.local/bin/...      ->   ~/.local/bin/...
 ```
 
+The hidden `.github/` directory is the one top-level directory that is **not** a
+Stow package: it holds CI configuration and is never stowed (`stow */` skips
+dot-directories because of `shopt -u dotglob`).
+
 Stow is invoked from the repository root:
 
 ```bash
@@ -82,6 +86,7 @@ directories.
 | `opencode/` | AI / Development | Token-optimized OpenCode CLI config plus the `oh-my-opencode-slim` orchestrator and `opencode-tps-meter` plugins. |
 | `images/` | Assets | Shared wallpapers and media assets. |
 | `mouseCursorDefault/` | Desktop | Default XDG cursor theme definitions. |
+| `.github/` | CI | GitHub Actions workflows — ShellCheck, gitleaks secret scan, typos, lychee, StyLua, Ruff, and a Stow-layout check — plus Dependabot config. Not a Stow package; never stowed. |
 
 Each module also has its own `README.md` with package requirements, module dependencies, structure, and setup steps. Read the relevant module README before changing that module.
 

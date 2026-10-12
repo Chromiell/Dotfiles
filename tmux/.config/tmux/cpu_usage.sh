@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Read the first CPU sample directly from the kernel
-read -r cpu user nice system idle iowait irq softirq steal _ < /proc/stat
+read -r _ user nice system idle iowait irq softirq steal _ < /proc/stat
 idle1=$idle
 total1=$((user + nice + system + idle + iowait + irq + softirq + steal))
 
@@ -9,7 +9,7 @@ total1=$((user + nice + system + idle + iowait + irq + softirq + steal))
 sleep 1
 
 # Read the second CPU sample
-read -r cpu user nice system idle iowait irq softirq steal _ < /proc/stat
+read -r _ user nice system idle iowait irq softirq steal _ < /proc/stat
 idle2=$idle
 total2=$((user + nice + system + idle + iowait + irq + softirq + steal))
 

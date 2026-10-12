@@ -23,7 +23,7 @@ TARGET_4="${DEPLOY_TARGET_4:-}"
 TARGET_5="${DEPLOY_TARGET_5:-}"
 
 if [[ -n "$TARGET_1" && -d "${DEPLOY_ROOT}/${TARGET_1}" ]]; then
-    cd "${DEPLOY_ROOT}/${TARGET_1}"
+    cd "${DEPLOY_ROOT}/${TARGET_1}" || exit 1
     git pull > /dev/null 2>&1
     npm run prod > /dev/null 2>&1
     npm run prod-el > /dev/null 2>&1
@@ -33,27 +33,27 @@ if [[ -n "$TARGET_1" && -d "${DEPLOY_ROOT}/${TARGET_1}" ]]; then
 fi
 
 if [[ -n "$TARGET_2" && -d "${DEPLOY_ROOT}/${TARGET_2}" ]]; then
-    cd "${DEPLOY_ROOT}/${TARGET_2}"
+    cd "${DEPLOY_ROOT}/${TARGET_2}" || exit 1
     git pull > /dev/null 2>&1
     npm run prod-file target.scss
     chgrp -R www-data "${DEPLOY_ROOT}/${TARGET_2}" > /dev/null 2>&1
 fi
 
 if [[ -n "$TARGET_3" && -d "${DEPLOY_ROOT}/${TARGET_3}" ]]; then
-    cd "${DEPLOY_ROOT}/${TARGET_3}"
+    cd "${DEPLOY_ROOT}/${TARGET_3}" || exit 1
     git pull > /dev/null 2>&1
     #npm run build > /dev/null 2>&1
     chgrp -R www-data "${DEPLOY_ROOT}/${TARGET_3}" > /dev/null 2>&1
 fi
 
 if [[ -n "$TARGET_4" && -d "${DEPLOY_ROOT}/${TARGET_4}" ]]; then
-    cd "${DEPLOY_ROOT}/${TARGET_4}"
+    cd "${DEPLOY_ROOT}/${TARGET_4}" || exit 1
     git pull > /dev/null 2>&1
     chgrp -R www-data "${DEPLOY_ROOT}/${TARGET_4}" > /dev/null 2>&1
 fi
 
 if [[ -n "$TARGET_5" && -d "${DEPLOY_ROOT}/${TARGET_5}" ]]; then
-    cd "${DEPLOY_ROOT}/${TARGET_5}"
+    cd "${DEPLOY_ROOT}/${TARGET_5}" || exit 1
     git pull > /dev/null 2>&1
     npm run build > /dev/null 2>&1
     chgrp -R www-data "${DEPLOY_ROOT}/${TARGET_5}" > /dev/null 2>&1

@@ -1,5 +1,7 @@
 -- This file is for configuring the Copilot Chat plugin for Neovim.
-if true then return {} end
+if true then
+    return {}
+end
 
 return {
     {
