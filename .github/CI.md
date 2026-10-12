@@ -44,7 +44,7 @@ versions live in the `env:` block of [`workflows/ci.yml`](./workflows/ci.yml).
 ## 📂 Structure
 
 - `workflows/ci.yml`: the CI workflow. Jobs: `shellcheck`, `secrets`, `spelling`,
-  `links`, `lua`, `python`, `stow`.
+  `links`, `lua`, `python`, `stow`, and `notify` (run-status alerts).
 - `dependabot.yml`: weekly Dependabot updates for the GitHub Actions themselves.
 - `linters/`: tool configuration consumed by the workflow — `linters/typos.toml`
   (spell-check allow-list) and `linters/ruff.toml` (Python lint rules). These live
@@ -73,6 +73,29 @@ plain version strings plus checksums, not actions). To bump one:
    curl -fsSL <release-url> | sha256sum
    ```
 3. Open a pull request — the workflow re-verifies the checksum on the next run.
+
+---
+
+## 🔔 Notifications
+
+A `notify` job reports the outcome of **every completed run** — pass or fail — to a
+Discord or Slack incoming webhook. It gates on `if: !cancelled()`, so runs superseded
+by a newer push stay silent, but otherwise both successful and failed runs are
+announced. The message lists the result of every job and links to the run.
+
+**Setup**
+
+1. Create an incoming webhook — Discord: *Server Settings → Integrations → Webhooks*;
+   Slack: *Apps → Incoming Webhooks*.
+2. Add its URL as a repository secret named **`CI_WEBHOOK_URL`**
+   (*Settings → Secrets and variables → Actions → New repository secret*). The URL is
+   never stored in the repository.
+3. Nothing else to configure — the job detects Slack (`hooks.slack.com`) and otherwise
+   uses the Discord payload format.
+
+The webhook is optional: with no secret set (for example, on pull requests from forks,
+which never receive secrets) the step is skipped, so CI still runs untouched. The
+message lists each job's result and links to the run.
 
 ---
 

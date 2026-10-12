@@ -146,3 +146,43 @@ jobs:
             esac
           done
           exit "$missing"
+
+  notify:
+    name: Notify on failure
+    runs-on: ubuntu-latest
+    needs: [shellcheck, secrets, spelling, links, lua, python, stow]
+    # Report every completed run (pass or fail). `!cancelled()` keeps the job
+    # running even when other jobs fail, but skips runs superseded by a newer push.
+    if: ${{ !cancelled() }}
+    env:
+      # Mapped to an env var because the `secrets` context is not available in
+      # step-level `if` expressions.
+      WEBHOOK_URL: ${{ secrets.CI_WEBHOOK_URL }}
+    steps:
+      - name: Send webhook notification
+        # Skip when no webhook is configured — e.g. pull requests from forks,
+        # which never receive repository secrets.
+        if: ${{ env.WEBHOOK_URL != '' }}
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          failures="$(jq -r '[to_entries[] | select(.value.result != "success")] | length' <<< "$NEEDS_JSON")"
+          if [[ "$failures" == "0" ]]; then
+            mood="✅"; verdict="passed"
+          else
+            mood="❌"; verdict="failed — ${failures} check(s)"
+          fi
+          details="$(jq -r 'to_entries | map("• \(.key): \(.value.result)") | join("\n")' <<< "$NEEDS_JSON")"
+          message="$(printf '%s CI %s on %s (%s) — triggered by %s\n%s\n%s' \
+            "$mood" "$verdict" "$REPO" "$REF" "$ACTOR" "$details" "$RUN_URL")"
+          # Discord expects {"content": ...}; Slack expects {"text": ...}.
+          if [[ "$WEBHOOK_URL" == *"hooks.slack.com"* ]]; then
+            body="$(jq -n --arg text "$message" '{text: $text}')"
+          else
+            body="$(jq -n --arg content "$message" '{content: $content}')"
+          fi
+          curl -fsS --retry 3 -H 'Content-Type: application/json' -d "$body" "$WEBHOOK_URL"
