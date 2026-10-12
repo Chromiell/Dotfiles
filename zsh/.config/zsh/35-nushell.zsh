@@ -186,7 +186,7 @@ ssq() {
     LC_ALL=C command ss "${opts[@]}" 2>/dev/null | jc --ss
 }
 
-# Current boot journal (or custom journalctl args) as JSON records.
+# Whole journal (all boots; or custom journalctl args) as JSON records.
 # Use -s/--sudo as the FIRST argument when the journal needs root access.
 journalq() {
     _nu_help "$1" && {
@@ -195,8 +195,9 @@ journalq() {
         echo ""
         echo "Journal entries as JSON records via 'journalctl --no-pager -q -o json | jq -s'."
         echo ""
-        echo "With no args, defaults to the current boot (-b). Extra args are passed to"
+        echo "With no args, reads the whole journal (all boots). Extra args are passed to"
         echo "journalctl verbatim, e.g.:"
+        echo "    journalq -b                 # current boot only"
         echo "    journalq -r                 # reverse order"
         echo "    journalq -u nginx.service   # one unit, all boots"
         echo "    journalq --since -1h        # last hour"
@@ -216,12 +217,7 @@ journalq() {
         use_sudo=1
         shift
     fi
-    local -a jargs
-    if (($# > 0)); then
-        jargs=("$@")                 # verbatim journalctl pass-through
-    else
-        jargs=(-b)
-    fi
+    local -a jargs=("$@")            # verbatim journalctl pass-through (no -b: whole journal)
     local -a cmd
     if (($use_sudo)); then
         cmd=(sudo journalctl)
