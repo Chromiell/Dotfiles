@@ -48,17 +48,18 @@ one symlink pointing into the repository, and runtime writers would write into
 the repo:
 
 ```bash
-mkdir -p ~/.local/bin ~/Documents
+mkdir -p ~/.local/bin ~/Documents ~/Project
 ```
 
 | Directory | Stow packages | Layout after stowing | Also written at runtime by |
 | :--- | :--- | :--- | :--- |
 | `~/.local/bin` | `scripts` | real dir, files symlinked | Deja, znap, distrobox, `uv` |
 | `~/Documents` | `scripts`, `guides` | real dir; `Scripts/`, `ScriptsData/` and `Guides/` are symlinks | — |
+| `~/Project` | `pythonScripts` | real dir; `PythonScripts/` is a symlink | — |
 
 Because `~/Documents` itself already exists, Stow folds its subdirectories
 (`Scripts`, `ScriptsData`, `Guides`) into symlinks rather than real
-directories.
+directories; likewise `pythonScripts` folds into `~/Project/PythonScripts`.
 
 ---
 
@@ -80,7 +81,7 @@ directories.
 | `fastfetch/` | CLI Tool | System information display config. |
 | `fzf/` | CLI Tool | Fuzzy finder config and preview helper scripts. |
 | `dockerFiles/` | Containers | Docker Compose stacks: Bugsink, Docmost, Gitea, Mailpit, Watchtower. |
-| `controllerMacros/` | Input / Gaming | Python controller button-swap and macro scripts. |
+| `pythonScripts/` | Input / Gaming | Python controller button-swap and macro scripts, stowed into `~/Project/PythonScripts`. |
 | `composer/` | Development | Global PHP Composer settings. |
 | `php-cs-fixer/` | Development | PHP coding-standards / PSR fixer config. |
 | `opencode/` | AI / Development | Token-optimized OpenCode CLI config plus the `oh-my-opencode-slim` orchestrator and `opencode-tps-meter` plugins. |
@@ -105,7 +106,7 @@ Each module also has its own `README.md` with package requirements, module depen
 5. **Dependencies are cross-module.** Many modules depend on the Adwaita Mono Nerd Font installed by `scripts/.local/bin/install-adwaita-nerd-font`, and on `zsh/` for aliases. When adding a dependency, document it in both modules' READMEs (see existing "Dotfiles Module Dependencies" tables).
 6. **No destructive operations.** Do not delete user configuration, remove Stow packages, or rewrite live `$HOME` files unless explicitly asked.
 7. **Match existing style.** Config files, scripts, and READMEs follow consistent formatting and section conventions — mirror them.
-8. **Shared directories must exist before stowing.** `~/.local/bin` and `~/Documents` are written to by multiple packages and/or runtime tools. Create them first (see **Shared Directories**) so Stow links files into them instead of folding them into repo symlinks.
+8. **Shared directories must exist before stowing.** `~/.local/bin`, `~/Documents` and `~/Project` are written to by multiple packages and/or runtime tools. Create them first (see **Shared Directories**) so Stow links files into them instead of folding them into repo symlinks.
 
 ---
 

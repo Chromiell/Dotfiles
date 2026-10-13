@@ -3,8 +3,8 @@ version: 2
 updates:
   # Keep the GitHub Actions used by the workflows up to date.
   #
-  # The lint tools themselves are pinned by version + SHA-256 in
-  # .github/workflows/ci.yml and are bumped manually; see .github/CI.md.
+  # Every linter in .github/workflows/ci.yml is a marketplace action pinned to a
+  # commit SHA, so Dependabot bumps the tools by opening PRs here; see .github/CI.md.
   - package-ecosystem: github-actions
     directory: /
     schedule:

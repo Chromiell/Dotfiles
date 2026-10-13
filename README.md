@@ -28,7 +28,7 @@ This repository is structured into modular configuration packages designed to be
 | [`fastfetch`](./fastfetch) | CLI Tool | System information display formatting and layout config |
 | [`fzf`](./fzf) | CLI Tool | Fuzzy finder configuration and rich file preview scripts |
 | [`dockerFiles`](./dockerFiles) | Containers | Docker Compose stacks for Bugsink, Docmost, Gitea, Mailpit, and Watchtower |
-| [`controllerMacros`](./controllerMacros) | Input / Gaming | Python input swap and macro scripts for game controllers |
+| [`pythonScripts`](./pythonScripts) | Input / Gaming | Python controller button-swap and macro scripts |
 | [`composer`](./composer) | Development | Global PHP Composer settings and configurations |
 | [`php-cs-fixer`](./php-cs-fixer) | Development | PHP coding standards and PSR fixer configurations |
 | [`opencode`](./opencode) | AI / Development | Token-optimized global OpenCode CLI config with free-model titles, indexing ignores, and env-based MCP secrets |
@@ -78,13 +78,14 @@ whole directory with a single symlink into the repository (and runtime tools
 would then write into your dotfiles repository):
 
 ```bash
-mkdir -p ~/.local/bin ~/Documents
+mkdir -p ~/.local/bin ~/Documents ~/Project
 ```
 
 | Directory | Why it must exist first |
 | :--- | :--- |
 | `~/.local/bin` | `scripts` links its binaries here; Deja, znap, distrobox and `uv` write here at runtime |
 | `~/Documents` | `scripts` and `guides` both stow into it; this keeps it a real directory |
+| `~/Project` | `pythonScripts` stows into it; this keeps it a real directory |
 
 ### 3. Install Fonts
 
@@ -123,9 +124,10 @@ stow fzf
 ```
 
 > ⚠️ **Create the shared directories first.** `scripts` (→ `~/.local/bin`,
-> `~/Documents`) and `guides` (→ `~/Documents`) rely on those directories
-> already existing. If a directory is missing, Stow folds it into a single
-> symlink into the repository and runtime tools will write into your dotfiles.
+> `~/Documents`), `guides` (→ `~/Documents`) and `pythonScripts` (→ `~/Project`)
+> rely on those directories already existing. If a directory is missing, Stow
+> folds it into a single symlink into the repository and runtime tools will write
+> into your dotfiles.
 > See [Create the Shared Directories](#2-create-the-shared-directories).
 
 ### Symlink All Modules
@@ -135,7 +137,7 @@ stow every module at once:
 
 ```bash
 cd ~/.dotfiles
-mkdir -p ~/.local/bin ~/Documents
+mkdir -p ~/.local/bin ~/Documents ~/Project
 bash -c 'shopt -u dotglob; stow */'
 ```
 
@@ -196,7 +198,7 @@ For dedicated setup guides, keybindings, and configuration walkthroughs, refer t
 - [Fastfetch Configuration](./fastfetch/README.md)
 - [FZF Preview Configuration](./fzf/README.md)
 - [Docker Compose Services](./dockerFiles/README.md)
-- [Controller Macros](./controllerMacros/README.md)
+- [Python Scripts](./pythonScripts/README.md)
 - [Composer Global Settings](./composer/README.md)
 - [PHP-CS-Fixer Settings](./php-cs-fixer/README.md)
 - [OpenCode Configuration](./opencode/README.md)

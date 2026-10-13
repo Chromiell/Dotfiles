@@ -14,9 +14,9 @@ to `main`, on every pull request, and on demand via **Run workflow**.
 ## 📦 Required Tools
 
 Nothing needs to be installed on the runner beyond the stock `ubuntu-latest`
-image. Each job downloads its linter as a pinned release binary and verifies it
-against a pinned SHA-256; GNU Stow and ShellCheck come from `apt`. The pinned
-versions live in the `env:` block of [`workflows/ci.yml`](./workflows/ci.yml).
+image. Each linter runs through its official marketplace action, pinned to a full
+commit SHA; GNU Stow and ShellCheck come from `apt`. Dependabot keeps the action
+pins current (see [`dependabot.yml`](./dependabot.yml)).
 
 | Tool | Job | Purpose |
 | :--- | :--- | :--- |
@@ -36,7 +36,7 @@ versions live in the `env:` block of [`workflows/ci.yml`](./workflows/ci.yml).
 | :--- | :--- | :--- |
 | [`scripts`](../scripts) | Linting target | Shell scripts are checked by ShellCheck. |
 | [`neovim`](../neovim) | Linting target | Lua files are checked by StyLua. |
-| [`controllerMacros`](../controllerMacros) | Linting target | Python files are checked by Ruff. |
+| [`pythonScripts`](../pythonScripts) | Linting target | Python files are checked by Ruff. |
 | all modules | Layout check | The `stow` job stows every package into a temporary `$HOME` and asserts the resulting symlinks resolve back into the checkout. |
 
 ---
@@ -45,7 +45,8 @@ versions live in the `env:` block of [`workflows/ci.yml`](./workflows/ci.yml).
 
 - `workflows/ci.yml`: the CI workflow. Jobs: `shellcheck`, `secrets`, `spelling`,
   `links`, `lua`, `python`, `stow`, and `notify` (run-status alerts).
-- `dependabot.yml`: weekly Dependabot updates for the GitHub Actions themselves.
+- `dependabot.yml`: weekly Dependabot updates for the GitHub Actions used by
+  `ci.yml` (each pinned by commit SHA).
 - `linters/`: tool configuration consumed by the workflow — `linters/typos.toml`
   (spell-check allow-list) and `linters/ruff.toml` (Python lint rules). These live
   here rather than at the repository root to keep the top level uncluttered, and
@@ -57,22 +58,20 @@ versions live in the `env:` block of [`workflows/ci.yml`](./workflows/ci.yml).
 
 - The repository is checked out with [`actions/checkout`](https://github.com/actions/checkout)
   pinned to a commit SHA, not a floating tag.
-- Linter binaries are downloaded from their official GitHub releases and verified
-  against a pinned **SHA-256** before installation, so a substituted release
-  cannot run.
-- The workflow only requests `contents: read`.
+- Every linter action (`gitleaks-action`, `crate-ci/typos`, `lychee-action`,
+  `stylua-action`, `ruff-action`) is likewise pinned to a full commit SHA, so a
+  moved or deleted tag cannot change what runs.
+- [Dependabot](./dependabot.yml) opens a weekly PR whenever one of those pinned
+  SHAs moves — that is how the tools are kept up to date.
+- The workflow only requests `contents: read`. The `secrets` job additionally
+  requests `pull-requests: read`, which `gitleaks-action` uses.
 
-### Bumping a tool
+### Updating a tool
 
-The linter versions are intentionally **not** managed by Dependabot (they are
-plain version strings plus checksums, not actions). To bump one:
-
-1. Update the matching `*_VERSION` and `*_SHA256` values in `workflows/ci.yml`.
-2. Compute the checksum of the new release archive, for example:
-   ```bash
-   curl -fsSL <release-url> | sha256sum
-   ```
-3. Open a pull request — the workflow re-verifies the checksum on the next run.
+Merge the corresponding Dependabot PR. The tool version follows the action:
+`lychee-action` bundles its own lychee release, and `stylua-action` is configured
+with `version: latest` so StyLua tracks its latest release while Dependabot tracks
+the action itself. ShellCheck tracks the runner image through `apt`.
 
 ---
 
@@ -123,7 +122,7 @@ ruff check --config .github/linters/ruff.toml .
 
 # Stow layout sanity check
 fake_home="$(mktemp -d)"
-mkdir -p "$fake_home/.local/bin" "$fake_home/Documents"
+mkdir -p "$fake_home/.local/bin" "$fake_home/Documents" "$fake_home/Project"
 bash -c "shopt -u dotglob; stow -t '$fake_home' */"
 ```
 
