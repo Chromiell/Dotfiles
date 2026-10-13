@@ -20,17 +20,19 @@ concurrency:
 permissions:
   contents: read
 
-# The linters come from the official marketplace actions below, each pinned to a
-# full commit SHA. Dependabot keeps those pins current (see dependabot.yml), so a
-# tool is updated by merging a Dependabot PR rather than editing this file.
-# ShellCheck is the exception: it ships via apt and tracks the runner image.
+# Marketplace actions are pinned to a full commit SHA and kept current by
+# Dependabot (see dependabot.yml), so those tools are updated by merging a
+# Dependabot PR rather than editing this file. The remaining tools are installed
+# in run steps: ShellCheck and zsh come from apt (they track the runner image),
+# while shfmt, actionlint, yamllint and markdownlint-cli2 are installed at pinned
+# versions — bump those here and in .github/CI.md when updating.
 
 jobs:
   shellcheck:
     name: Shell scripts (ShellCheck)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Simulate failure (manual runs only)
         if: ${{ inputs.simulate_failure }}
         run: |
@@ -54,11 +56,11 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           # gitleaks-action walks the pushed commit range, so it needs full history.
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e  # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -66,8 +68,8 @@ jobs:
     name: Spelling (typos)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: crate-ci/typos@7f9d0819ca1c008ade73f4b41fa9d258d48f605b # v1.51.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: crate-ci/typos@7f9d0819ca1c008ade73f4b41fa9d258d48f605b  # v1.51.1
         with:
           config: .github/linters/typos.toml
 
@@ -75,10 +77,10 @@ jobs:
     name: Markdown links (lychee)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       # --offline validates local (relative) links and anchors only. This keeps
       # the job deterministic and immune to third-party sites being slow or down.
-      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8  # v2
         with:
           args: --offline --no-progress --include-fragments './**/*.md'
           fail: true
@@ -87,8 +89,8 @@ jobs:
     name: Lua formatting (StyLua)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: JohnnyMorganz/stylua-action@76fd70c03e6340ceaf673366712db9b20560b402 # v5.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: JohnnyMorganz/stylua-action@76fd70c03e6340ceaf673366712db9b20560b402  # v5.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           # `latest` follows the current StyLua release; Dependabot tracks the action.
@@ -99,8 +101,8 @@ jobs:
     name: Python (Ruff)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 # v4.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89  # v4.1.0
         with:
           args: check --config .github/linters/ruff.toml
 
@@ -108,7 +110,7 @@ jobs:
     name: Stow layout
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Install GNU Stow
         run: sudo apt-get update && sudo apt-get install -y stow
       - name: Stow every package into a clean HOME
@@ -133,10 +135,88 @@ jobs:
           done
           exit "$missing"
 
+  actionlint:
+    name: Workflows (actionlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Install actionlint
+        run: |
+          # actionlint has no official setup action, so install a pinned release
+          # for reproducibility. Bump the version here (and in .github/CI.md).
+          version=1.7.12
+          curl -fsSL -o actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${version}/actionlint_${version}_linux_amd64.tar.gz"
+          tar -xzf actionlint.tar.gz actionlint
+      - name: Lint workflow files
+        run: ./actionlint -color
+
+  zsh:
+    name: Zsh syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Install zsh
+        run: sudo apt-get update && sudo apt-get install -y zsh
+      - name: Check zsh syntax
+        run: |
+          # `zsh -n` parses without executing; the patterns match every zsh file,
+          # including the dotted zsh/.zshenv and zsh/.zshrc entry points.
+          mapfile -t files < <(git ls-files '*.zsh' '*.zshenv' '*.zshrc' '*.zprofile')
+          echo "Checking ${#files[@]} file(s)"
+          zsh -n "${files[@]}"
+
+  shfmt:
+    name: Shell formatting (shfmt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Install shfmt
+        run: |
+          # No official setup action; install a pinned release binary.
+          version=3.14.1
+          sudo curl -fsSL -o /usr/local/bin/shfmt \
+            "https://github.com/mvdan/sh/releases/download/v${version}/shfmt_v${version}_linux_amd64"
+          sudo chmod +x /usr/local/bin/shfmt
+      - name: Check shell formatting
+        run: |
+          # Same discovery as the ShellCheck job: every tracked bash/POSIX-sh
+          # script. Formatting is 4-space (`-i 4`) to match the majority of files.
+          mapfile -t files < <(git grep -lI -E '^#!.*(bash|/sh)\b')
+          echo "Checking ${#files[@]} script(s)"
+          shfmt -d -i 4 "${files[@]}"
+
+  yaml:
+    name: YAML (yamllint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Lint YAML
+        run: |
+          # Install yamllint into a throwaway venv so the version stays pinned and
+          # the runner's system Python is left untouched.
+          python3 -m venv "$RUNNER_TEMP/yamllint-venv"
+          "$RUNNER_TEMP/yamllint-venv/bin/pip" install -q "yamllint==1.38.0"
+          mapfile -t files < <(git ls-files '*.yml' '*.yaml')
+          echo "Checking ${#files[@]} file(s)"
+          "$RUNNER_TEMP/yamllint-venv/bin/yamllint" --config-file .github/linters/yamllint.yml "${files[@]}"
+
+  markdown:
+    name: Markdown (markdownlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Lint Markdown
+        run: |
+          # `npx` runs a pinned markdownlint-cli2 without a global install.
+          mapfile -t files < <(git ls-files '*.md')
+          echo "Checking ${#files[@]} file(s)"
+          npx --yes "markdownlint-cli2@0.23.3" --config .github/linters/.markdownlint-cli2.yaml "${files[@]}"
+
   notify:
     name: Notify (run status)
     runs-on: ubuntu-latest
-    needs: [shellcheck, secrets, spelling, links, lua, python, stow]
+    needs: [shellcheck, actionlint, zsh, shfmt, secrets, spelling, links, markdown, lua, python, yaml, stow]
     # Report every completed run (pass or fail). `!cancelled()` keeps the job
     # running even when other jobs fail, but skips runs superseded by a newer push.
     if: ${{ !cancelled() }}

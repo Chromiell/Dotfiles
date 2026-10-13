@@ -21,7 +21,6 @@ sudo apt install composer
 | :--- | :--- | :--- |
 | [`php-cs-fixer`](../php-cs-fixer) | Global Package | `composer.json` installs `friendsofphp/php-cs-fixer` globally, providing the formatter binary for `php-cs-fixer` and `neovim`. |
 
-
 ---
 
 ## 📂 Structure

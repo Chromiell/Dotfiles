@@ -55,8 +55,8 @@ cd "$DUMP_DIR"
 # Keep only the 2 most recent files
 mapfile -t files < <(ls -1t "$DUMP_DIR")
 
-if (( ${#files[@]} > 2 )); then
-    for ((i=2; i<${#files[@]}; i++)); do
+if ((${#files[@]} > 2)); then
+    for ((i = 2; i < ${#files[@]}; i++)); do
         f="${files[$i]}"
         if [[ -f "$f" ]]; then
             rm -- "$f"
@@ -75,7 +75,7 @@ ssh "${REMOTE_SSH_USER}@${REMOTE_SSH_HOST}" \
     '${REMOTE_DB_NAME}' \
     ${TABLES} \
     | gzip" \
-    > "$OUTFILE"
+    >"$OUTFILE"
 
 # Import into local DB
 gunzip -c "$OUTFILE" | mariadb -u "${LOCAL_DB_USER}" -p"${LOCAL_DB_PASSWORD}" "${LOCAL_DB_NAME}"

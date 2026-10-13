@@ -1,0 +1,30 @@
+---
+# yamllint configuration for this dotfiles repository.
+#
+# Consumed by .github/workflows/ci.yml (`yamllint --config-file <this>`). It
+# starts from yamllint's defaults and relaxes only the rules that are
+# impractical to satisfy in hand-written configuration files or are required by
+# GitHub Actions. Everything else stays enforced.
+
+extends: default
+
+rules:
+  # GitHub Actions workflows must use the bare `on:` key, which yamllint's
+  # default truthy check mistakes for a boolean. Keep value checking, ignore
+  # keys.
+  truthy:
+    allowed-values: ["true", "false"]
+    check-keys: false
+
+  # Configuration files legitimately contain long lines: generated comments in
+  # the Gitea sample, colour values and URLs in Alacritty/Eza themes, and long
+  # `run:` blocks in the CI workflow.
+  line-length: disable
+
+  # Comment blocks in these hand-written configs are not consistently indented
+  # relative to the code below them.
+  comments-indentation: disable
+
+  # Most of these files are fragments (compose stacks, themes) and deliberately
+  # omit the leading `---` document marker.
+  document-start: disable

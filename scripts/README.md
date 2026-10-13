@@ -73,6 +73,7 @@ All sensitive environment variables, passwords, network addresses, and private c
 ### 1. SSL & HAProxy Management
 
 #### `certbotAddDomain.sh`
+
 - **Location:** `Documents/Scripts/certbotAddDomain.sh`
 - **Description:** Automates Let's Encrypt SSL certificate issuance via Certbot, constructs HAProxy-compatible PEM bundles, configures automated post-renewal hooks, and syncs certificate files to a secondary HAProxy node.
 - **Data Dependencies:** Reads `REMOTE_HAPROXY_HOST` from `Documents/ScriptsData/config.env`.
@@ -83,11 +84,13 @@ All sensitive environment variables, passwords, network addresses, and private c
   4. Generates an executable post-renewal hook script under `/etc/letsencrypt/renewal-hooks/post/haproxy-<domain>.sh`.
   5. Uses `rsync` to synchronize `/etc/haproxy/ssl/` with the secondary HAProxy node (`REMOTE_HAPROXY_HOST`).
 - **Usage:**
+
   ```bash
   ./certbotAddDomain.sh <domain>
   ```
 
 #### `certbotDeleteDomain.sh`
+
 - **Location:** `Documents/Scripts/certbotDeleteDomain.sh`
 - **Description:** Safely de-provisions and cleans up all Let's Encrypt SSL certificates, renewal hooks, and HAProxy PEM files for a specified domain across both local and remote nodes.
 - **Data Dependencies:** Reads `REMOTE_HAPROXY_HOST` from `Documents/ScriptsData/config.env`.
@@ -99,6 +102,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   5. Removes local HAProxy PEM (`/etc/haproxy/ssl/<domain>.pem`).
   6. Executes an SSH command to delete the corresponding remote PEM file on `REMOTE_HAPROXY_HOST`.
 - **Usage:**
+
   ```bash
   ./certbotDeleteDomain.sh <domain>
   ```
@@ -108,6 +112,7 @@ All sensitive environment variables, passwords, network addresses, and private c
 ### 2. Database Backup, Migration & Sync
 
 #### `dumpMantisDB.sh`
+
 - **Location:** `Documents/Scripts/dumpMantisDB.sh`
 - **Description:** Creates a compressed backup of the local Mantis bug tracker database directly onto a CIFS/SMB network backup share while keeping a rolling retention history.
 - **Data Dependencies:**
@@ -121,6 +126,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   5. Automatically unmounts the network share and removes the mount folder on exit via `trap`.
 
 #### `nightlyProdDump.sh`
+
 - **Location:** `Documents/Scripts/nightlyProdDump.sh`
 - **Description:** Fetches selected database tables from a remote production MariaDB database over SSH, compresses the dump locally, imports it into a local MariaDB instance, and executes post-import database modifications.
 - **Data Dependencies:**
@@ -135,6 +141,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   5. Executes `postImportDBAlter.sh` to apply post-import schema/data alterations.
 
 #### `moveDBDump.sh`
+
 - **Location:** `Documents/Scripts/moveDBDump.sh`
 - **Description:** Synchronizes today's local production dump file to a remote CIFS/SMB network backup share and maintains a 2-backup retention policy on the share.
 - **Data Dependencies:** Reads CIFS share and credential paths from `Documents/ScriptsData/config.env`.
@@ -146,6 +153,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   5. Safely unmounts and cleans up the mount point on script exit.
 
 #### `postImportDBAlter.sh`
+
 - **Location:** `Documents/Scripts/postImportDBAlter.sh`
 - **Description:** Iterates over PHP database migration or setup scripts inside the configured directory and triggers them via silent HTTP requests.
 - **Data Dependencies:** Reads `POST_IMPORT_BASE_DIR` and `POST_IMPORT_URL_BASE` from `Documents/ScriptsData/config.env`.
@@ -155,6 +163,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   3. Executes `curl` silently against `${POST_IMPORT_URL_BASE}/<filename>` with a 1-second timeout per script.
 
 #### `sftpGrab.sh`
+
 - **Location:** `Documents/Scripts/sftpGrab.sh`
 - **Description:** Automated `expect` script for interactive SFTP downloading of database dumps from a development host.
 - **Dependencies:** `expect` package.
@@ -170,6 +179,7 @@ All sensitive environment variables, passwords, network addresses, and private c
 ### 3. Web Application Deployment & Maintenance
 
 #### `gitpull.sh`
+
 - **Location:** `Documents/Scripts/gitpull.sh`
 - **Description:** Continuous deployment script that pulls the latest changes from Git and executes build pipelines across multiple applications hosted under `DEPLOY_ROOT`.
 - **Data Dependencies:** Reads `DEPLOY_ROOT` and target directory names from `Documents/ScriptsData/config.env`.
@@ -182,6 +192,7 @@ All sensitive environment variables, passwords, network addresses, and private c
 - **Permissions:** Sets group ownership recursively to `www-data` for all updated project folders.
 
 #### `gitpullPostScript.sh`
+
 - **Location:** `Documents/Scripts/gitpullPostScript.sh`
 - **Description:** Restores proper directory and file ownership for the backend application storage directory.
 - **Data Dependencies:** Reads `DEPLOY_STORAGE_DIR` from `Documents/ScriptsData/config.env`.
@@ -193,6 +204,7 @@ All sensitive environment variables, passwords, network addresses, and private c
 ### 4. System Administration, Hardware & Desktop Utilities
 
 #### `install-adwaita-nerd-font`
+
 - **Location:** `.local/bin/install-adwaita-nerd-font`
 - **Description:** Resolves the latest Adwaita Mono Nerd Font release (or a pinned tag), downloads the official archive, and installs the `*.ttf` files into `~/.local/share/fonts`, then refreshes the font cache. Keeps the font binaries out of the Git repository.
 - **Dependencies:** `curl`, `unzip`, `fontconfig` (`fc-cache`).
@@ -206,6 +218,7 @@ All sensitive environment variables, passwords, network addresses, and private c
 - **Notes:** Set `GITHUB_TOKEN` to raise the GitHub API rate limit for the latest-release lookup.
 
 #### `toggle-nvidia-pm`
+
 - **Location:** `.local/bin/toggle-nvidia-pm`
 - **Description:** System management script that toggles NVIDIA GPU Dynamic Power Management in modprobe configuration, rebuilds initramfs, and handles system reboot prompts.
 - **Key Operations:**
@@ -216,6 +229,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   5. Prompts the user to immediately reboot the system.
 
 #### `toggle_paperwm.sh`
+
 - **Location:** `Documents/Scripts/toggle_paperwm.sh`
 - **Description:** Toggles state of the PaperWM GNOME Shell Extension (`paperwm@paperwm.github.com`) between ACTIVE and INACTIVE.
 - **Key Operations:**
@@ -224,18 +238,21 @@ All sensitive environment variables, passwords, network addresses, and private c
   3. Displays status notifications via `notify-send`.
 
 #### `swap.sh`
+
 - **Location:** `Documents/Scripts/swap.sh`
 - **Description:** Simulates virtual key press sequences using `ydotool` to automate UI interactions.
 - **Dependencies:** `ydotool` daemon.
 - **Key Operations:** Issues automated key-down/key-up events with precise sleep intervals.
 
 #### `checkUpdates.sh`
+
 - **Location:** `Documents/Scripts/checkUpdates.sh`
 - **Description:** Scheduled maintenance utility that checks APT for available software package upgrades and dispatches an email notification if updates are pending.
 - **Data Dependencies:**
   - Email sender, recipient, subject, body, and SMTP password: `Documents/ScriptsData/config.env`
 
 #### `enable-freesync.sh`
+
 - **Location:** `Documents/Scripts/enable-freesync.sh`
 - **Description:** Startup utility to enable tearing prevention on X11 display sessions.
 - **Key Operations:**
@@ -244,6 +261,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   3. Runs `xrandr --output eDP --set "TearFree" on`.
 
 #### `grab_text.sh`
+
 - **Location:** `Documents/Scripts/grab_text.sh`
 - **Description:** Screen capture OCR tool that allows selecting any region on the screen, extracting text using Tesseract (English + Italian), and copying the text to the clipboard.
 - **Dependencies:** `flameshot`, `imagemagick` (`mogrify`), `tesseract-ocr` (`tesseract-ocr-eng`, `tesseract-ocr-ita`), `wl-clipboard` (`wl-copy`), `libnotify-bin` (`notify-send`).

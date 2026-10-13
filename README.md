@@ -1,6 +1,6 @@
-![Preview screenshot](./Preview.png)
-
 # Dotfiles & System Configurations (Debian-based)
+
+![Preview screenshot](./Preview.png)
 
 [![CI](https://github.com/Chromiell/Dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/Chromiell/Dotfiles/actions/workflows/ci.yml)
 

@@ -108,6 +108,6 @@ Then reload the window: `Ctrl+Shift+P` → **Developer: Reload Window**.
 
 Nothing to do manually. `neovim/.config/nvim/scripts/install-flow-icons.sh` applies an equivalent Python post-process after every pack install/upgrade (see the `DEFAULT_KEYS` block in the script). Trigger a re-check anytime with:
 
-```
+```vim
 :RealIcons packs
 ```

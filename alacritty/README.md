@@ -21,7 +21,6 @@ sudo apt install alacritty
 | :--- | :--- | :--- |
 | [`scripts`](../scripts) | Assets / Typography | `install-adwaita-nerd-font` provides the Adwaita Mono Nerd Font used to render Nerd Font icons and glyphs across CLI tools, prompt themes (P10k), and Tmux. |
 
-
 ---
 
 ## 📂 Structure

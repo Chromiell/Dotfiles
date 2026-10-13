@@ -15,7 +15,7 @@ notices in place.
 - **Path:** `neovim/.config/nvim/**`
 - **License:** Apache License 2.0
 - **License file:** `neovim/.config/nvim/LICENSE`
-- **Upstream:** https://github.com/LazyVim/LazyVim
+- **Upstream:** <https://github.com/LazyVim/LazyVim>
 
 The Neovim configuration is based on the LazyVim starter template. The Apache
 License 2.0 permits use, modification, and redistribution provided that the
@@ -34,7 +34,7 @@ Apache-2.0.
 - **Path:** `opencode/.config/opencode/skills/simplify/**`
 - **License:** MIT License
 - **Copyright:** Copyright (c) 2025 Addy Osmani
-- **Upstream:** https://github.com/addyosmani/agent-skills (`skills/code-simplification`)
+- **Upstream:** <https://github.com/addyosmani/agent-skills> (`skills/code-simplification`)
 
 The `simplify` skill is adapted from Addy Osmani's `code-simplification` skill.
 The MIT License requires that the original copyright notice and permission

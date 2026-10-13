@@ -42,31 +42,31 @@ usage() {
 
 while (($#)); do
     case "$1" in
-        --version)
-            VERSION="${2:?--version requires a value}"
-            shift 2
-            ;;
-        --version=*)
-            VERSION="${1#*=}"
-            shift
-            ;;
-        --force|-f)
-            FORCE=1
-            shift
-            ;;
-        --no-cache)
-            RUN_FC_CACHE=0
-            shift
-            ;;
-        -h|--help)
-            usage
-            exit 0
-            ;;
-        *)
-            echo "error: unknown option: $1" >&2
-            usage >&2
-            exit 2
-            ;;
+    --version)
+        VERSION="${2:?--version requires a value}"
+        shift 2
+        ;;
+    --version=*)
+        VERSION="${1#*=}"
+        shift
+        ;;
+    --force | -f)
+        FORCE=1
+        shift
+        ;;
+    --no-cache)
+        RUN_FC_CACHE=0
+        shift
+        ;;
+    -h | --help)
+        usage
+        exit 0
+        ;;
+    *)
+        echo "error: unknown option: $1" >&2
+        usage >&2
+        exit 2
+        ;;
     esac
 done
 
@@ -85,9 +85,9 @@ resolve_latest_tag() {
     tag="$(curl -fsSL --proto '=https' --tlsv1.2 \
         "${auth[@]}" \
         -H 'Accept: application/vnd.github+json' \
-        "$RELEASES_API/latest" \
-        | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-        | head -n1)"
+        "$RELEASES_API/latest" |
+        sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' |
+        head -n1)"
 
     if [[ -z "$tag" ]]; then
         echo "error: could not determine the latest Nerd Fonts release" >&2
@@ -117,9 +117,9 @@ refresh_cache() {
     fi
 }
 
-if [[ "$FORCE" -eq 0 && -f "$MARKER_FILE" ]] \
-    && [[ "$(cat "$MARKER_FILE")" == "$VERSION" ]] \
-    && compgen -G "$FONT_DIR/${FONT_FAMILY}NerdFont*.ttf" >/dev/null; then
+if [[ "$FORCE" -eq 0 && -f "$MARKER_FILE" ]] &&
+    [[ "$(cat "$MARKER_FILE")" == "$VERSION" ]] &&
+    compgen -G "$FONT_DIR/${FONT_FAMILY}NerdFont*.ttf" >/dev/null; then
     echo "${FONT_FAMILY} Nerd Font ${VERSION} is already installed in $FONT_DIR"
     echo "Use --force to reinstall."
     exit 0

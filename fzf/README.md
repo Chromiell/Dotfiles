@@ -23,7 +23,6 @@ sudo apt install fzf bat eza
 | [`eza`](../eza) | Preview Helper | Utilized for structured, icon-enhanced directory previews. |
 | [`zsh`](../zsh) | Complementary Shell | Integrates interactive fuzzy completion bindings and the rich `ff` preview alias. |
 
-
 ---
 
 ## 📂 Structure

@@ -30,7 +30,7 @@ services:
       CREATE_SUPERUSER: ${SUPERUSER_USERNAME}:${SUPERUSER_PASSWORD}
       PORT: 8000
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
-      BEHIND_HTTPS_PROXY: "false" # Change this for setups behind a proxy w/ ssl enabled
+      BEHIND_HTTPS_PROXY: "false"  # Change this for setups behind a proxy w/ ssl enabled
       BASE_URL: ${BASE_URL}
       EMAIL_HOST: ${EMAIL_HOST}
       EMAIL_HOST_USER: ${EMAIL_HOST_USER}

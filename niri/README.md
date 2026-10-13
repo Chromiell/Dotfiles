@@ -17,7 +17,6 @@ To use Niri and associated Wayland desktop tools on Debian-based systems refer t
 | [`kitty`](../kitty) | Default Terminal | Launched via the `Mod+T` keybinding in `dms/binds.kdl`. |
 | [`scripts`](../scripts) | Script Execution | The OCR screen text grabber shortcut (`Mod+Shift+E` in `dms/binds.kdl`) executes `~/Documents/Scripts/grab_text.sh`. |
 
-
 ---
 
 ## 📂 Structure

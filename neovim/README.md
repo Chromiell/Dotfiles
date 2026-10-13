@@ -1,7 +1,9 @@
 # Neovim Setup Guide
+
 This guide assumes you are using Debian as your base distribution. If you are using a different distribution, the package manager commands may differ.
 
 ## 1. Install Distrobox
+
 Distrobox allows you to create and manage containerized environments. To install Distrobox, run the following command:
 
 ```bash
@@ -9,6 +11,7 @@ sudo apt install distrobox
 ```
 
 ## 2. Create a Distrobox Container
+
 You can create a Distrobox container using the following command. We use Arch Linux Toolbox because it ships directly with the latest version of Neovim.
 
 ```bash
@@ -16,6 +19,7 @@ distrobox create -n arch -i quay.io/toolbx/arch-toolbox:latest
 ```
 
 ## 3. Enter the Distrobox Container
+
 To enter the Distrobox container, use the following command:
 
 ```bash
@@ -34,6 +38,7 @@ makepkg -si
 ```
 
 ## 5. Install Neovim and Dependencies
+
 Once you are inside the Distrobox container, you can install Neovim using the package manager. For Arch Linux, use the following command:
 
 ```bash
@@ -74,6 +79,7 @@ Everything else should be taken care by Mason automatically.
 ---
 
 ## 6. Install LazyVim & Dotfiles
+
 To deploy the configurations, run GNU Stow from the dotfiles directory:
 
 ```bash
@@ -119,4 +125,4 @@ File and folder icons are rendered as **real terminal images** through the Kitty
 - **`gx` on WSL (`vim.ui.open` in Distrobox):** Neovim resolves `gx` via `vim.ui.open`, whose Linux handler is `xdg-open`. Inside the Distrobox container that is Distrobox's own host-delegating wrapper and the spawned host process gets a PATH without the `/mnt/c` Windows interop directories, so on WSL xdg-open cannot detect `explorer.exe`, fails to classify the session as WSL, and exits **3** ("no method available") — surfaced as `vim.ui.open: command failed (3): { "xdg-open", ... }`. On the host itself the WSL branch is detected and rundll32 opens the Windows browser, and on native Debian the desktop's MIME handlers are found regardless of the sanitized PATH. `lua/config/functions.lua` (section 6) therefore replaces `vim.ui.open` **only when Neovim runs in a container on a WSL kernel with Windows interop binaries present** (`/mnt/c/Windows/System32/rundll32.exe` + `/mnt/c/Windows/explorer.exe`), routing URIs and paths through `rundll32 url.dll,FileProtocolHandler` by absolute path (paths are translated: `/mnt/<drive>/...` → `<DRIVE>:/...`, everything else → `\\wsl.localhost\<distro>\...` UNC; `explorer.exe` is deliberately avoided because it exits 1 on success). `vim.ui.open(path, { cmd = ... })` overrides pass through to the stock implementation. Native Linux and the WSL host keep the stock handler unchanged.
 
 > [!NOTE]
-> Flow Icons' upstream README markets the extension as a premium theme ("demo icons only" without a license). The published `2.0.9` VSIX verified here ships the complete icon set per its own manifests — verify your license terms at https://flow-icons.pages.dev before reuse outside this setup.
+> Flow Icons' upstream README markets the extension as a premium theme ("demo icons only" without a license). The published `2.0.9` VSIX verified here ships the complete icon set per its own manifests — verify your license terms at <https://flow-icons.pages.dev> before reuse outside this setup.

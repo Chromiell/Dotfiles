@@ -33,7 +33,6 @@ sudo apt install tmux
 | [`zsh`](../zsh) | Complementary Shell | Provides custom Zsh functions (`t`, `taa`, `tbg`, `tsp`, `tlast`, `tnl`, `tp`) and shortcuts for managing tmux sessions. |
 | [`neovim`](../neovim) | Terminal Pass-through | `set -g allow-passthrough on` in this tmux config lets `real-icons.nvim` render graphical file icons in Neovim sessions running inside tmux. |
 
-
 ---
 
 ## 🛠️ Installation
@@ -61,34 +60,34 @@ Every major navigation, structural layout change, or operational shortcut has be
 
 ### 🪟 Pane Management
 
-| Shortcut              | Configuration Mapping   | Action                                                                  |
+| Shortcut | Configuration Mapping | Action |
 | :-------------------- | :---------------------- | :---------------------------------------------------------------------- |
-| `Alt` + `←`           | `bind -n M-Left`        | Focus the pane to the **Left**                                 |
-| `Alt` + `→`           | `bind -n M-Right`       | Focus the pane to the **Right**                                |
-| `Alt` + `↑`           | `bind -n M-Up`          | Focus the pane **Above**                                       |
-| `Alt` + `↓`           | `bind -n M-Down`        | Focus the pane **Below**                                       |
-| `Alt` + `Shift` + `←` | `bind -n M-S-Left`      | Swap current pane with its **Left** neighbor and follow focus  |
-| `Alt` + `Shift` + `→` | `bind -n M-S-Right`     | Swap current pane with its **Right** neighbor and follow focus |
-| `Alt` + `Shift` + `↑` | `bind -n M-S-Up`        | Swap current pane with its **Upper** neighbor and follow focus |
-| `Alt` + `Shift` + `↓` | `bind -n M-S-Down`      | Swap current pane with its **Lower** neighbor and follow focus |
-| `Ctrl` + `Alt` + `←`  | `bind-key -n C-M-Left`  | Expand/Resize current pane **Leftward**                        |
-| `Ctrl` + `Alt` + `→`  | `bind-key -n C-M-Right` | Expand/Resize current pane **Rightward**                       |
-| `Ctrl` + `Alt` + `↑`  | `bind-key -n C-M-Up`    | Expand/Resize current pane **Upward**                          |
-| `Ctrl` + `Alt` + `↓`  | `bind-key -n C-M-Down`  | Expand/Resize current pane **Downward**                        |
-| `Alt` + `\|`           | `bind -n M-v`           | Split current window **Vertically** [side-by-side panes]       |
-| `Alt` + `-`           | `bind -n M-h`           | Split current window **Horizontally** [top-and-bottom panes]   |
+| `Alt` + `←` | `bind -n M-Left` | Focus the pane to the **Left** |
+| `Alt` + `→` | `bind -n M-Right` | Focus the pane to the **Right** |
+| `Alt` + `↑` | `bind -n M-Up` | Focus the pane **Above** |
+| `Alt` + `↓` | `bind -n M-Down` | Focus the pane **Below** |
+| `Alt` + `Shift` + `←` | `bind -n M-S-Left` | Swap current pane with its **Left** neighbor and follow focus |
+| `Alt` + `Shift` + `→` | `bind -n M-S-Right` | Swap current pane with its **Right** neighbor and follow focus |
+| `Alt` + `Shift` + `↑` | `bind -n M-S-Up` | Swap current pane with its **Upper** neighbor and follow focus |
+| `Alt` + `Shift` + `↓` | `bind -n M-S-Down` | Swap current pane with its **Lower** neighbor and follow focus |
+| `Ctrl` + `Alt` + `←` | `bind-key -n C-M-Left` | Expand/Resize current pane **Leftward** |
+| `Ctrl` + `Alt` + `→` | `bind-key -n C-M-Right` | Expand/Resize current pane **Rightward** |
+| `Ctrl` + `Alt` + `↑` | `bind-key -n C-M-Up` | Expand/Resize current pane **Upward** |
+| `Ctrl` + `Alt` + `↓` | `bind-key -n C-M-Down` | Expand/Resize current pane **Downward** |
+| `Alt` + `\|` | `bind -n M-v` | Split current window **Vertically** [side-by-side panes] |
+| `Alt` + `-` | `bind -n M-h` | Split current window **Horizontally** [top-and-bottom panes] |
 
 ### 🗔 Window & Session Control
 
-| Shortcut               | Configuration Mapping | Action                                                       |
+| Shortcut | Configuration Mapping | Action |
 | :--------------------- | :-------------------- | :----------------------------------------------------------- |
-| `Ctrl` + `Shift` + `↑` | `bind -n C-S-Up`      | Jump to the **Previous** window                     |
-| `Ctrl` + `Shift` + `↓` | `bind -n C-S-Down`    | Jump to the **Next** window                         |
-| `Alt` + `1`            | `bind -n M-1`         | Jump directly to **Window 1**                       |
-| `Alt` + `2`            | `bind -n M-2`         | Jump directly to **Window 2**                       |
-| `Alt` + `3`            | `bind -n M-3`         | Jump directly to **Window 3**                       |
-| `Alt` + `4`            | `bind -n M-4`         | Jump directly to **Window 4**                       |
-| `Alt` + `d`            | `bind -n M-d`         | **Detach** instantly from the current session      |
+| `Ctrl` + `Shift` + `↑` | `bind -n C-S-Up` | Jump to the **Previous** window |
+| `Ctrl` + `Shift` + `↓` | `bind -n C-S-Down` | Jump to the **Next** window |
+| `Alt` + `1` | `bind -n M-1` | Jump directly to **Window 1** |
+| `Alt` + `2` | `bind -n M-2` | Jump directly to **Window 2** |
+| `Alt` + `3` | `bind -n M-3` | Jump directly to **Window 3** |
+| `Alt` + `4` | `bind -n M-4` | Jump directly to **Window 4** |
+| `Alt` + `d` | `bind -n M-d` | **Detach** instantly from the current session |
 
 ---
 

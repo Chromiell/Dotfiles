@@ -1,0 +1,27 @@
+# markdownlint-cli2 configuration for this dotfiles repository.
+#
+# Consumed by .github/workflows/ci.yml. Scope is limited to first-party
+# documentation: vendored/third-party trees (the LazyVim Neovim config and the
+# runtime-downloaded Zsh/Tmux plugins and Composer vendor directory, which are
+# gitignored and absent in CI) are ignored.
+
+config:
+  # Line length is not enforced: these docs intentionally contain long tables,
+  # badge/URL lines and command examples where wrapping hurts readability.
+  MD013: false
+
+  # Tables use the compact "| cell |" style with a single space around pipes;
+  # column alignment is not required.
+  MD060:
+    style: compact
+
+  # GitHub alert blocks (`> [!NOTE]`, `> [!WARNING]`, …) must be separated by a
+  # blank line to render as distinct alerts, which this rule reports as a blank
+  # line inside a blockquote.
+  MD028: false
+
+ignores:
+  - "neovim/.config/nvim/**"
+  - "zsh/.config/**"
+  - "tmux/.config/tmux/plugins/**"
+  - "composer/.config/composer/vendor/**"

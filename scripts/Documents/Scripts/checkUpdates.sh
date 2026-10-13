@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Refresh the package list
-sudo apt update > /dev/null 2>&1
+sudo apt update >/dev/null 2>&1
 
 # Check for available upgrades
 UPDATES=$(apt list --upgradable 2>/dev/null | grep -v "Listing..." | wc -l)
@@ -39,8 +39,9 @@ fi
 # If updates are available, send an email
 if [ "$UPDATES" -gt 0 ]; then
     printf "From: %s\nTo: %s\nSubject: %s\n\n%s\n" \
-        "$EMAIL_FROM" "$EMAIL_TO" "$EMAIL_SUBJECT" "$EMAIL_BODY" \
-        | msmtp --read-envelope-from --read-recipients -C <(cat <<EOF
+        "$EMAIL_FROM" "$EMAIL_TO" "$EMAIL_SUBJECT" "$EMAIL_BODY" |
+        msmtp --read-envelope-from --read-recipients -C <(
+            cat <<EOF
 defaults
 auth on
 tls on
@@ -55,5 +56,5 @@ password ${GMAIL_APP_PASSWORD}
 
 account default : ${GMAIL_ACCOUNT}
 EOF
-)
+        )
 fi

@@ -7,7 +7,7 @@ s=$((now - created))
 
 # Calculate hours, minutes, seconds
 h=$((s / 3600))
-m=$(( (s % 3600) / 60 ))
+m=$(((s % 3600) / 60))
 s=$((s % 60))
 
 out=""

@@ -10,13 +10,13 @@
 
 Originally used this Steam launch option:
 
-```
+```text
 mangohud __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=mesa MESA_LOADER_DRIVER_OVERRIDE=zink %command%
 ```
 
 The game opened, but rendered on the **Intel iGPU**. Running the same variables against a native app worked:
 
-```
+```bash
 __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=mesa MESA_LOADER_DRIVER_OVERRIDE=zink glxgears
 ```
 
@@ -95,7 +95,7 @@ DRI_PRIME=10de:25a0!         # force, expose only this GPU
 
 ### 3. Working Steam launch options
 
-```
+```text
 __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=mesa MESA_LOADER_DRIVER_OVERRIDE=zink DRI_PRIME=10de:25a0 __VK_LAYER_NV_optimus=NVIDIA_only mangohud %command%
 ```
 
@@ -132,10 +132,12 @@ MangoHud should also report the NVIDIA GPU name and `OpenGL` as the API.
 
 - **Set the variables on Steam itself** — launch Steam from a terminal with them exported, or use the desktop's *"Run with dedicated GPU" / "Launch using Discrete Graphics Card"* action on Steam. This applies them to the whole session, including the container.
 - **Hide the Intel Vulkan ICD (nuclear).** Because the container symlinks host ICD files, renaming the Intel Vulkan ICD removes it inside the container too:
+
   ```bash
   sudo mv /usr/share/vulkan/icd.d/intel_icd.x86_64.json /usr/share/vulkan/icd.d/intel_icd.x86_64.json.disabled
   sudo mv /usr/share/vulkan/icd.d/intel_icd.i686.json   /usr/share/vulkan/icd.d/intel_icd.i686.json.disabled
   ```
+
   Effective but global — restore it afterwards.
 - **If the game is actually DirectX (not OpenGL).** Then `MESA_LOADER_DRIVER_OVERRIDE=zink` does nothing and DXVK/VKD3D drives Vulkan directly. The same `DRI_PRIME` / `MESA_VK_DEVICE_SELECT` fix applies at the Vulkan level, or use `DXVK_FILTER_DEVICE_NAME="<NVIDIA model>"` (name from `vulkaninfo`).
 
@@ -151,8 +153,8 @@ MangoHud should also report the NVIDIA GPU name and `OpenGL` as the API.
 
 ## References
 
-- NVIDIA — *PRIME Render Offload* — https://download.nvidia.com/XFree86/Linux-x86_64/550.54.14/README/primerenderoffload.html
-- Mesa — *Environment Variables* (`DRI_PRIME`, `MESA_VK_DEVICE_SELECT`) — https://docs.mesa3d.org/envvars.html
-- ValveSoftware — *Steam Linux Runtime known issues: Multiple-GPU systems* — https://github.com/ValveSoftware/steam-runtime/blob/master/doc/steamlinuxruntime-known-issues.md
-- Frank Zhao — *Steam NVIDIA GPU Selection on Dual-GPU Linux* — https://frankzhao.net/homelab/steam-nvidia-gpu-selection-on-dual-gpu-linux
-- ArchWiki — *PRIME* — https://wiki.archlinux.org/title/PRIME
+- NVIDIA — *PRIME Render Offload* — <https://download.nvidia.com/XFree86/Linux-x86_64/550.54.14/README/primerenderoffload.html>
+- Mesa — *Environment Variables* (`DRI_PRIME`, `MESA_VK_DEVICE_SELECT`) — <https://docs.mesa3d.org/envvars.html>
+- ValveSoftware — *Steam Linux Runtime known issues: Multiple-GPU systems* — <https://github.com/ValveSoftware/steam-runtime/blob/master/doc/steamlinuxruntime-known-issues.md>
+- Frank Zhao — *Steam NVIDIA GPU Selection on Dual-GPU Linux* — <https://frankzhao.net/homelab/steam-nvidia-gpu-selection-on-dual-gpu-linux>
+- ArchWiki — *PRIME* — <https://wiki.archlinux.org/title/PRIME>

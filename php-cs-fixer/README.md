@@ -24,7 +24,6 @@ composer global require friendsofphp/php-cs-fixer
 | [`composer`](../composer) | Binary Provider | Provides the global `composer.json` defining `friendsofphp/php-cs-fixer`. |
 | [`neovim`](../neovim) | Consumer / Editor | Neovim's PHP formatter (`lua/plugins/php-cs-fixer.lua`) directly consumes `~/.config/php-cs-fixer/.php-cs-fixer.php`. |
 
-
 ---
 
 ## 📂 Structure

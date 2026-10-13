@@ -14,18 +14,25 @@ to `main`, on every pull request, and on demand via **Run workflow**.
 ## 📦 Required Tools
 
 Nothing needs to be installed on the runner beyond the stock `ubuntu-latest`
-image. Each linter runs through its official marketplace action, pinned to a full
-commit SHA; GNU Stow and ShellCheck come from `apt`. Dependabot keeps the action
-pins current (see [`dependabot.yml`](./dependabot.yml)).
+image. Most linters run through their official marketplace action, pinned to a
+full commit SHA, and Dependabot keeps those pins current (see
+[`dependabot.yml`](./dependabot.yml)). GNU Stow, ShellCheck and zsh come from
+`apt`; `shfmt`, `actionlint`, `yamllint` and `markdownlint-cli2` are installed in
+run steps at pinned versions (see **Supply-chain & Version Pinning** below).
 
 | Tool | Job | Purpose |
 | :--- | :--- | :--- |
 | [ShellCheck](https://www.shellcheck.net/) | `shellcheck` | Lint every tracked shell script (shebang-based discovery). |
+| [shfmt](https://github.com/mvdan/sh) | `shfmt` | Enforce 4-space formatting of every tracked shell script. |
+| [actionlint](https://github.com/rhysd/actionlint) | `actionlint` | Statically check the workflow files (syntax, expressions, inline shell). |
+| [zsh](https://www.zsh.org/) | `zsh` | Parse every zsh config with `zsh -n` (syntax only). |
 | [gitleaks](https://github.com/gitleaks/gitleaks) | `secrets` | Fail if a secret is committed. |
 | [typos](https://github.com/crate-ci/typos) | `spelling` | Spell-check documentation and comments (config: `linters/typos.toml`). |
 | [lychee](https://github.com/lycheeverse/lychee) | `links` | Validate relative Markdown links and anchors (offline). |
+| [markdownlint](https://github.com/DavidAnson/markdownlint-cli2) | `markdown` | Check Markdown style (config: `linters/.markdownlint-cli2.yaml`). |
 | [StyLua](https://github.com/JohnnyMorganz/StyLua) | `lua` | Check Lua formatting (config: `neovim/.config/nvim/stylua.toml`). |
 | [Ruff](https://docs.astral.sh/ruff/) | `python` | Lint the Python controller macro (config: `linters/ruff.toml`). |
+| [yamllint](https://github.com/adrienverge/yamllint) | `yaml` | Check YAML style (config: `linters/yamllint.yml`). |
 | [GNU Stow](https://www.gnu.org/software/stow/) | `stow` | Stow every package into a throwaway `$HOME` and verify the layout. |
 
 ---
@@ -34,23 +41,28 @@ pins current (see [`dependabot.yml`](./dependabot.yml)).
 
 | Module | Dependency Type | Description |
 | :--- | :--- | :--- |
-| [`scripts`](../scripts) | Linting target | Shell scripts are checked by ShellCheck. |
+| [`scripts`](../scripts) | Linting target | Shell scripts are checked by ShellCheck and shfmt. |
+| [`zsh`](../zsh) | Linting target | Every zsh file is parsed by `zsh -n`. |
 | [`neovim`](../neovim) | Linting target | Lua files are checked by StyLua. |
 | [`pythonScripts`](../pythonScripts) | Linting target | Python files are checked by Ruff. |
+| [`.github`](./workflows) | Linting target | Workflow files are validated by actionlint. |
+| all modules | Linting target | Tracked YAML is checked by yamllint and tracked Markdown by markdownlint. |
 | all modules | Layout check | The `stow` job stows every package into a temporary `$HOME` and asserts the resulting symlinks resolve back into the checkout. |
 
 ---
 
 ## 📂 Structure
 
-- `workflows/ci.yml`: the CI workflow. Jobs: `shellcheck`, `secrets`, `spelling`,
-  `links`, `lua`, `python`, `stow`, and `notify` (run-status alerts).
+- `workflows/ci.yml`: the CI workflow. Jobs: `shellcheck`, `shfmt`, `actionlint`,
+  `zsh`, `secrets`, `spelling`, `links`, `markdown`, `lua`, `python`, `yaml`,
+  `stow`, and `notify` (run-status alerts).
 - `dependabot.yml`: weekly Dependabot updates for the GitHub Actions used by
   `ci.yml` (each pinned by commit SHA).
 - `linters/`: tool configuration consumed by the workflow — `linters/typos.toml`
-  (spell-check allow-list) and `linters/ruff.toml` (Python lint rules). These live
-  here rather than at the repository root to keep the top level uncluttered, and
-  are read explicitly with each tool's `--config` flag.
+  (spell-check allow-list), `linters/ruff.toml` (Python lint rules),
+  `linters/yamllint.yml` (YAML style) and `linters/.markdownlint-cli2.yaml`
+  (Markdown style). These live here rather than at the repository root to keep the
+  top level uncluttered, and are read explicitly with each tool's `--config` flag.
 
 ---
 
@@ -61,6 +73,10 @@ pins current (see [`dependabot.yml`](./dependabot.yml)).
 - Every linter action (`gitleaks-action`, `crate-ci/typos`, `lychee-action`,
   `stylua-action`, `ruff-action`) is likewise pinned to a full commit SHA, so a
   moved or deleted tag cannot change what runs.
+- Tools installed in run steps are pinned to an exact version rather than a
+  floating range or `latest`: `shfmt` 3.14.1, `actionlint` 1.7.12, `yamllint`
+  1.38.0 and `markdownlint-cli2` 0.23.3. ShellCheck and zsh come from `apt` and
+  therefore track the runner image.
 - [Dependabot](./dependabot.yml) opens a weekly PR whenever one of those pinned
   SHAs moves — that is how the tools are kept up to date.
 - The workflow only requests `contents: read`. The `secrets` job additionally
@@ -71,7 +87,9 @@ pins current (see [`dependabot.yml`](./dependabot.yml)).
 Merge the corresponding Dependabot PR. The tool version follows the action:
 `lychee-action` bundles its own lychee release, and `stylua-action` is configured
 with `version: latest` so StyLua tracks its latest release while Dependabot tracks
-the action itself. ShellCheck tracks the runner image through `apt`.
+the action itself. The run-step tools (`shfmt`, `actionlint`, `yamllint`,
+`markdownlint-cli2`) are bumped by editing their pinned version in
+`workflows/ci.yml`; ShellCheck and zsh track the runner image through `apt`.
 
 ---
 
@@ -83,7 +101,7 @@ by a newer push stay silent, but otherwise both successful and failed runs are
 announced. The message lists every job with a status icon — ✅ pass, ❌ fail, plus
 marks for other states — and links to the run.
 
-**Setup**
+### Setup
 
 1. Create an incoming webhook — Discord: *Server Settings → Integrations → Webhooks*;
    Slack: *Apps → Incoming Webhooks*.
@@ -114,9 +132,20 @@ Each check can be reproduced locally; the commands mirror the workflow steps:
 # ShellCheck (shebang-based discovery, identical to CI)
 git grep -lzI -E '^#!.*(bash|/sh)\b' | xargs -0 shellcheck --severity=warning
 
-# Spelling, links, Lua formatting, Python
+# shfmt — shell formatting is 4-space
+git grep -lzI -E '^#!.*(bash|/sh)\b' | xargs -0 shfmt -d -i 4
+
+# actionlint (validates the workflow files)
+actionlint
+
+# zsh syntax
+git ls-files '*.zsh' '*.zshenv' '*.zshrc' '*.zprofile' | xargs -r zsh -n
+
+# Spelling, links, Markdown, YAML, Lua formatting, Python
 typos --config .github/linters/typos.toml
 lychee --offline --no-progress --include-fragments '**/*.md'
+git ls-files '*.md' | xargs -r markdownlint-cli2 --config .github/linters/.markdownlint-cli2.yaml
+git ls-files '*.yml' '*.yaml' | xargs -r yamllint --config-file .github/linters/yamllint.yml
 stylua --check neovim/.config/nvim/lua
 ruff check --config .github/linters/ruff.toml .
 

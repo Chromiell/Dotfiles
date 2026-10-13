@@ -70,7 +70,7 @@ PEM_FILE="$HAPROXY_SSL_DIR/$DOMAIN.pem"
 
 echo ">>> Building HAProxy PEM: $PEM_FILE"
 
-cat "$LIVE_DIR/fullchain.pem" "$LIVE_DIR/privkey.pem" > "$PEM_FILE"
+cat "$LIVE_DIR/fullchain.pem" "$LIVE_DIR/privkey.pem" >"$PEM_FILE"
 
 chmod 644 "$PEM_FILE"
 chown root:root "$PEM_FILE"
@@ -90,7 +90,7 @@ mkdir -p "$RENEW_HOOK_DIR"
 
 HOOK_FILE="$RENEW_HOOK_DIR/haproxy-${DOMAIN}.sh"
 
-cat > "$HOOK_FILE" <<EOF
+cat >"$HOOK_FILE" <<EOF
 #!/bin/bash
 DOMAIN="$DOMAIN"
 HAPROXY_SSL_DIR="/etc/haproxy/ssl"

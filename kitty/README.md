@@ -21,7 +21,6 @@ sudo apt install kitty
 | :--- | :--- | :--- |
 | [`scripts`](../scripts) | Assets / Typography | `kitty.conf` is configured to use the **Adwaita Mono Nerd Font Mono** installed by `install-adwaita-nerd-font` (`font_family family="AdwaitaMono Nerd Font Mono"`). |
 
-
 ---
 
 ## 📂 Structure

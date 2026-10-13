@@ -16,7 +16,6 @@ This directory contains static desktop theme pointer settings and requires no ad
 | :--- | :--- | :--- |
 | [`niri`](../niri) | Desktop Environment | Sets the default XDG fallback cursor theme for Wayland and X11 compositor sessions. |
 
-
 ---
 
 ## 📂 Structure

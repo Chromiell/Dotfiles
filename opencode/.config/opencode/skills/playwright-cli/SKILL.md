@@ -41,25 +41,32 @@ state. `open` starts a browser, `close` ends it, `attach`/`detach` reconnect.
 ## Core workflow
 
 1. **Open / navigate**
+
    ```sh
    playwright-cli -s=verify open https://example.test/page
    # or, on an existing session:
    playwright-cli -s=verify goto https://example.test/page
    ```
+
 2. **Snapshot to get element refs** — `snapshot` returns the page's elements with
    refs; `find` searches that snapshot for text/regexp and returns matching nodes.
+
    ```sh
    playwright-cli -s=verify snapshot
    playwright-cli -s=verify find "Accedi"
    ```
+
 3. **Interact using refs from the snapshot**
+
    ```sh
    playwright-cli -s=verify click <ref>
    playwright-cli -s=verify fill <ref> "value"
    playwright-cli -s=verify select <ref> "option-value"
    playwright-cli -s=verify press Enter
    ```
+
 4. **Verify the result** — snapshot again, or evaluate JS and screenshot.
+
    ```sh
    playwright-cli -s=verify snapshot
    playwright-cli -s=verify eval "() => document.querySelector('#result').textContent"

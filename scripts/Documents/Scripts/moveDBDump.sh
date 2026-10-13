@@ -25,44 +25,44 @@ TODAY_FILE="dump-${TODAY}.sql.gz"
 SOURCE_FILE="${SOURCE_DIR}/${TODAY_FILE}"
 
 cleanup() {
-  if mountpoint -q "$TARGET_DIR"; then
-    umount "$TARGET_DIR" 2>/dev/null || echo "Warning: umount failed"
-  fi
+    if mountpoint -q "$TARGET_DIR"; then
+        umount "$TARGET_DIR" 2>/dev/null || echo "Warning: umount failed"
+    fi
 
-  # Remove mount directory only if empty
-  if [[ -d "$TARGET_DIR" ]]; then
-    rmdir "$TARGET_DIR" 2>/dev/null || echo "Warning: rmdir failed or directory not empty"
-  fi
+    # Remove mount directory only if empty
+    if [[ -d "$TARGET_DIR" ]]; then
+        rmdir "$TARGET_DIR" 2>/dev/null || echo "Warning: rmdir failed or directory not empty"
+    fi
 }
 trap cleanup EXIT
 
 # Validate variables
 if [[ -z "$TARGET_DIR" || -z "$PATTERN" || -z "$CIFS_SHARE" ]]; then
-  echo "Error: TARGET_DIR, PATTERN, or MOVE_DUMP_CIFS_SHARE is empty"
-  exit 1
+    echo "Error: TARGET_DIR, PATTERN, or MOVE_DUMP_CIFS_SHARE is empty"
+    exit 1
 fi
 
 # Validate today's file exists before mounting
 if [[ ! -f "$SOURCE_FILE" ]]; then
-  echo "Error: Expected file not found: $SOURCE_FILE"
-  exit 1
+    echo "Error: Expected file not found: $SOURCE_FILE"
+    exit 1
 fi
 
 mkdir -p "$TARGET_DIR"
 
 mount -t cifs "$CIFS_SHARE" \
-  "$TARGET_DIR" \
-  -o "credentials=$CIFS_CREDENTIALS"
+    "$TARGET_DIR" \
+    -o "credentials=$CIFS_CREDENTIALS"
 
 # Keep only the 2 most recent matching files
 find "$TARGET_DIR" -type f -regextype posix-extended -regex ".*/$PATTERN" \
-  -printf '%T@ %p\n' | \
-  sort -nr | tail -n +3 | cut -d' ' -f2- | \
-  while read -r file; do
-    if [[ -n "$file" ]]; then
-      rm -f "$file"
-    fi
-  done
+    -printf '%T@ %p\n' |
+    sort -nr | tail -n +3 | cut -d' ' -f2- |
+    while read -r file; do
+        if [[ -n "$file" ]]; then
+            rm -f "$file"
+        fi
+    done
 
 # Move today's dump into the network share
 cp --preserve=mode,timestamps "$SOURCE_FILE" "$TARGET_DIR"/
