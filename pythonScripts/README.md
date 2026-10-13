@@ -6,7 +6,8 @@ Standalone Python utilities deployed to `~/Project/PythonScripts`.
 
 ## 📦 Required Packages
 
-These scripts target Debian-based systems:
+These scripts target Debian-based systems and install their dependencies into a
+project-local virtual environment:
 
 ```bash
 sudo apt update
@@ -35,17 +36,37 @@ After stowing, these files live at `~/Project/PythonScripts/DS1WeaponSwap/`.
    stow pythonScripts
    ```
 
-2. Install the Python dependencies:
+2. Create a virtual environment next to the script:
 
    ```bash
-   pip install -r ~/Project/PythonScripts/DS1WeaponSwap/requirements.txt
+   python3 -m venv ~/Project/PythonScripts/DS1WeaponSwap/.venv
    ```
 
-3. Run the script:
+3. Install the Python dependencies into that environment:
 
    ```bash
+   ~/Project/PythonScripts/DS1WeaponSwap/.venv/bin/pip install \
+     -r ~/Project/PythonScripts/DS1WeaponSwap/requirements.txt
+   ```
+
+4. Run the script with the environment's interpreter:
+
+   ```bash
+   ~/Project/PythonScripts/DS1WeaponSwap/.venv/bin/python3 \
+     ~/Project/PythonScripts/DS1WeaponSwap/swapDS1.py
+   ```
+
+   Alternatively, activate the environment first and use plain `python3`:
+
+   ```bash
+   source ~/Project/PythonScripts/DS1WeaponSwap/.venv/bin/activate
    python3 ~/Project/PythonScripts/DS1WeaponSwap/swapDS1.py
    ```
+
+The virtual environment lives at `~/Project/PythonScripts/DS1WeaponSwap/.venv`.
+It is listed in this module's `.gitignore`, so it never dirties the repository —
+it sits inside the stowed directory but stays untracked. To rebuild it from
+scratch, delete that `.venv` directory and repeat steps 2–3.
 
 ---
 
@@ -56,9 +77,14 @@ key events through `/dev/uinput`. Both are root-owned by default, so either run 
 script with `sudo`:
 
 ```bash
-sudo python3 ~/Project/PythonScripts/DS1WeaponSwap/swapDS1.py
+sudo ~/Project/PythonScripts/DS1WeaponSwap/.venv/bin/python3 \
+  ~/Project/PythonScripts/DS1WeaponSwap/swapDS1.py
 ```
 
 or add your user to the `input` group and grant write access to `/dev/uinput` with a
 udev rule. Without one of these, the script starts but cannot create the virtual
 keyboard.
+
+Invoking the environment's interpreter by its absolute path (as above) works fine
+under `sudo`, which otherwise resets the shell environment — so there is no need to
+activate the virtual environment first.
