@@ -78,14 +78,14 @@ whole directory with a single symlink into the repository (and runtime tools
 would then write into your dotfiles repository):
 
 ```bash
-mkdir -p ~/.local/bin ~/Documents ~/Project
+mkdir -p ~/.local/bin ~/Documents ~/Projects
 ```
 
 | Directory | Why it must exist first |
 | :--- | :--- |
 | `~/.local/bin` | `scripts` links its binaries here; Deja, znap, distrobox and `uv` write here at runtime |
 | `~/Documents` | `scripts` and `guides` both stow into it; this keeps it a real directory |
-| `~/Project` | `pythonScripts` stows into it; this keeps it a real directory |
+| `~/Projects` | `pythonScripts` stows into it; this keeps it a real directory |
 
 ### 3. Install Fonts
 
@@ -124,7 +124,7 @@ stow fzf
 ```
 
 > ⚠️ **Create the shared directories first.** `scripts` (→ `~/.local/bin`,
-> `~/Documents`), `guides` (→ `~/Documents`) and `pythonScripts` (→ `~/Project`)
+> `~/Documents`), `guides` (→ `~/Documents`) and `pythonScripts` (→ `~/Projects`)
 > rely on those directories already existing. If a directory is missing, Stow
 > folds it into a single symlink into the repository and runtime tools will write
 > into your dotfiles.
@@ -137,7 +137,7 @@ stow every module at once:
 
 ```bash
 cd ~/.dotfiles
-mkdir -p ~/.local/bin ~/Documents ~/Project
+mkdir -p ~/.local/bin ~/Documents ~/Projects
 bash -c 'shopt -u dotglob; stow */'
 ```
 

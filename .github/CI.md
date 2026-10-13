@@ -151,7 +151,7 @@ ruff check --config .github/linters/ruff.toml .
 
 # Stow layout sanity check
 fake_home="$(mktemp -d)"
-mkdir -p "$fake_home/.local/bin" "$fake_home/Documents" "$fake_home/Project"
+mkdir -p "$fake_home/.local/bin" "$fake_home/Documents" "$fake_home/Projects"
 bash -c "shopt -u dotglob; stow -t '$fake_home' */"
 ```
 

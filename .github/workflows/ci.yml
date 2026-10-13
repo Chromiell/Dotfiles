@@ -118,7 +118,7 @@ jobs:
           fake_home="${RUNNER_TEMP}/fakehome"
           # The shared directories must exist first, otherwise Stow folds them
           # into a single symlink pointing back into the repository.
-          mkdir -p "$fake_home/.local/bin" "$fake_home/Documents" "$fake_home/Project"
+          mkdir -p "$fake_home/.local/bin" "$fake_home/Documents" "$fake_home/Projects"
           # `shopt -u dotglob` keeps dot-directories (such as .github) out of the
           # package list, mirroring the documented `stow */` invocation.
           bash -c "shopt -u dotglob; stow -v -t '$fake_home' */"
@@ -126,7 +126,7 @@ jobs:
         run: |
           fake_home="${RUNNER_TEMP}/fakehome"
           missing=0
-          for entry in .zshrc .config/nvim/init.lua .local/bin/install-adwaita-nerd-font Documents/Scripts Project/PythonScripts/DS1WeaponSwap/swapDS1.py; do
+          for entry in .zshrc .config/nvim/init.lua .local/bin/install-adwaita-nerd-font Documents/Scripts Projects/PythonScripts/DS1WeaponSwap/swapDS1.py; do
             resolved="$(readlink -f "$fake_home/$entry" 2>/dev/null || true)"
             case "$resolved" in
               "$GITHUB_WORKSPACE"/*) echo "OK   $entry -> $resolved" ;;
