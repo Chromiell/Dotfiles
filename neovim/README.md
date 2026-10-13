@@ -126,3 +126,14 @@ File and folder icons are rendered as **real terminal images** through the Kitty
 
 > [!NOTE]
 > Flow Icons' upstream README markets the extension as a premium theme ("demo icons only" without a license). The published `2.0.9` VSIX verified here ships the complete icon set per its own manifests — verify your license terms at <https://flow-icons.pages.dev> before reuse outside this setup.
+
+---
+
+## 9. Laravel support (laravel.nvim)
+
+[laravel.nvim](https://github.com/adalessa/laravel.nvim) turns a Laravel project into a first-class editing experience: pickers, virtual model / route info, a Blade-aware `gf`, tinker, an Artisan Hub, code actions and completion. It is configured in `lua/plugins/laravel.lua`.
+
+- **Lazy loading:** the plugin loads on the `php` / `blade` filetypes, on `BufEnter composer.json`, and on the first `<leader>v*` keypress. Outside a Laravel project it is a no-op.
+- **Keymaps:** bound under a dedicated **`<leader>v`** which-key group (`<leader>l` is already LazyVim's `:Lazy`): `vl` master picker, `va` artisan, `vr` routes, `vm` make, `vc` custom commands, `vo` resources, `vh` docs, `vt` code actions, `vu` Artisan Hub, `vp` Command Center. `<C-g>` opens the view finder and `gf` follows `route()` / `view()` / `config()` / `env()` / `Inertia::render()` strings.
+- **Pickers & completion:** pickers are backed by **snacks.picker** (this config's primary picker); the completion source plugs into **blink.cmp** automatically.
+- **Requirements:** `ripgrep` and `jq` (already installed in section 5), the `php` + `json` Tree-sitter parsers (`php` is added to `ensure_installed` in `lua/plugins/laravel.lua`), `nui.nvim` / `plenary.nvim` / `nvim-nio` (declared as dependencies), and a **writable `vendor/`** in each project — the plugin generates small server-side helper files there. Verify the setup with `:checkhealth laravel`.

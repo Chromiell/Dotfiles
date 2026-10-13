@@ -69,7 +69,7 @@ directories; likewise `pythonScripts` folds into `~/Projects/PythonScripts`.
 | :--- | :--- | :--- |
 | `zsh/` | Shell | Zsh config split into numbered `00-startup` … `50-integrations` files (functions in `30-functions`, Nushell-style `jc`/`jq` verbs in `35-nushell`), Znap plugin manager, Powerlevel10k prompt, aliases. |
 | `tmux/` | Multiplexer | Catppuccin Mocha tmux config, prefix-less navigation, status bar resource modules. |
-| `neovim/` | Editor / IDE | LazyVim setup (run via an Arch Distrobox container), plus Yazi and Lazygit configs. Graphical file icons via `real-icons.nvim` (Flow Icons pack, installed by `lua/plugins/icons.lua` + `scripts/install-flow-icons.sh`). |
+| `neovim/` | Editor / IDE | LazyVim setup (run via an Arch Distrobox container), plus Yazi and Lazygit configs, and Laravel tooling via `laravel.nvim` (keymaps under `<leader>v`). Graphical file icons via `real-icons.nvim` (Flow Icons pack, installed by `lua/plugins/icons.lua` + `scripts/install-flow-icons.sh`). |
 | `vim/` | Editor | Portable standalone `.vimrc` (pure Vimscript, zero plugins) mirroring LazyVim keybinds/theme; deployed via `stow vim` or `scp` to remote servers. |
 | `git/` | Version Control | `.gitconfig` include chain, global ignore, and `_template` files copied to real secret files. |
 | `scripts/` | Automation | Admin, DB backup/sync, Certbot/HAProxy, deployment, and desktop utility scripts, stowed into `~/Documents/Scripts`, `~/Documents/ScriptsData` and `~/.local/bin`. Sensitive values live in gitignored `Documents/ScriptsData/config.env`. |

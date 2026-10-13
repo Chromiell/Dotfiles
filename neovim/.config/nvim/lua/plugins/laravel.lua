@@ -1,3 +1,18 @@
+-- Laravel support: Blade treesitter/filetype, blade-formatter, and laravel.nvim.
+--
+-- laravel.nvim (https://github.com/adalessa/laravel.nvim) adds a first-class
+-- Laravel editing layer on top of LazyVim: pickers (artisan / routes / make /
+-- resources / custom commands), virtual model & route info, Blade-aware `gf`,
+-- tinker, an Artisan Hub, code actions and completion. It is gated on a Laravel
+-- project, so it is a no-op in non-Laravel buffers, and it generates small
+-- server-side helpers into the project's `vendor/` directory (which must be
+-- writable).
+--
+-- Notes for this config:
+--   * Pickers are backed by snacks.picker (the primary picker here); completion
+--     plugs into blink.cmp automatically.
+--   * Keymaps live under `<leader>v` (a dedicated which-key group) because
+--     LazyVim reserves `<leader>l` for `:Lazy` and `<leader>L` for its changelog.
 return {
     -- 1. Setup Treesitter and Filetype Association
     {
@@ -30,6 +45,131 @@ return {
         opts = {
             formatters_by_ft = {
                 blade = { "blade-formatter" },
+            },
+        },
+    },
+
+    -- 4. Register the Which-Key group for the laravel.nvim keymaps below
+    {
+        "folke/which-key.nvim",
+        opts = function(_, opts)
+            opts.spec = opts.spec or {}
+            table.insert(opts.spec, {
+                "<leader>v",
+                group = "Laravel",
+                -- U+E73F = Nerd Font "laravel" devicon
+                icon = { icon = "", color = "red" },
+                mode = { "n" },
+            })
+        end,
+    },
+
+    -- 5. laravel.nvim
+    {
+        "adalessa/laravel.nvim",
+        dependencies = {
+            "MunifTanjim/nui.nvim",
+            "nvim-lua/plenary.nvim",
+            "nvim-neotest/nvim-nio",
+        },
+        ft = { "php", "blade" },
+        event = { "BufEnter composer.json" },
+        keys = {
+            {
+                "<leader>vl",
+                function()
+                    Laravel.pickers.laravel()
+                end,
+                desc = "Laravel: Master Picker",
+            },
+            {
+                "<leader>va",
+                function()
+                    Laravel.pickers.artisan()
+                end,
+                desc = "Laravel: Artisan Picker",
+            },
+            {
+                "<leader>vr",
+                function()
+                    Laravel.pickers.routes()
+                end,
+                desc = "Laravel: Routes Picker",
+            },
+            {
+                "<leader>vm",
+                function()
+                    Laravel.pickers.make()
+                end,
+                desc = "Laravel: Make Picker",
+            },
+            {
+                "<leader>vc",
+                function()
+                    Laravel.pickers.commands()
+                end,
+                desc = "Laravel: Custom Commands",
+            },
+            {
+                "<leader>vo",
+                function()
+                    Laravel.pickers.resources()
+                end,
+                desc = "Laravel: Resources Picker",
+            },
+            {
+                "<leader>vh",
+                function()
+                    Laravel.run("artisan docs")
+                end,
+                desc = "Laravel: Documentation",
+            },
+            {
+                "<leader>vt",
+                function()
+                    Laravel.commands.run("actions")
+                end,
+                desc = "Laravel: Code Actions",
+            },
+            {
+                "<leader>vu",
+                function()
+                    Laravel.commands.run("hub")
+                end,
+                desc = "Laravel: Artisan Hub",
+            },
+            {
+                "<leader>vp",
+                function()
+                    Laravel.commands.run("command_center")
+                end,
+                desc = "Laravel: Command Center",
+            },
+            {
+                "<C-g>",
+                function()
+                    Laravel.commands.run("view:finder")
+                end,
+                desc = "Laravel: View Finder",
+            },
+            {
+                "gf",
+                function()
+                    if Laravel.app("gf").cursorOnResource() then
+                        return "<cmd>lua Laravel.commands.run('gf')<cr>"
+                    end
+                    return "gf"
+                end,
+                expr = true,
+                remap = false,
+                desc = "Laravel: Go to resource",
+            },
+        },
+        opts = {
+            features = {
+                pickers = {
+                    provider = "snacks",
+                },
             },
         },
     },
