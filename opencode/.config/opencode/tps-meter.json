@@ -5,6 +5,7 @@
   "showTotalTokens": true,
   "showElapsed": true,
   "enableColorCoding": true,
+  "showCacheHit": true,
   "slowTpsThreshold": 25,
   "fastTpsThreshold": 100,
   "rollingWindowMs": 1500,
