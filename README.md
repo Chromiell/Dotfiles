@@ -34,7 +34,6 @@ This repository is structured into modular configuration packages designed to be
 | [`opencode`](./opencode) | AI / Development | Token-optimized global OpenCode CLI config with free-model titles, indexing ignores, and env-based MCP secrets |
 | [`images`](./images) | Assets | Shared desktop wallpapers and media assets |
 | [`mouseCursorDefault`](./mouseCursorDefault) | Desktop | Default XDG cursor theme definitions |
-| [`.github`](./.github) | CI | GitHub Actions workflows (ShellCheck, gitleaks secret scan, typos, lychee, StyLua, Ruff, Stow layout check, and run-status notifications) and Dependabot config |
 
 ---
 
@@ -204,4 +203,3 @@ For dedicated setup guides, keybindings, and configuration walkthroughs, refer t
 - [OpenCode Configuration](./opencode/README.md)
 - [Wallpapers & Images](./images/README.md)
 - [Mouse Cursor Settings](./mouseCursorDefault/README.md)
-- [Continuous Integration](./.github/CI.md)
