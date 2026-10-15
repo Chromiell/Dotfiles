@@ -1041,29 +1041,38 @@ function! s:ToggleComment() range abort
 
     if !l:has_content | return | endif
 
-    " Apply comment or uncomment
-    for l:lnum in range(a:firstline, a:lastline)
-        let l:line = getline(l:lnum)
-        if empty(trim(l:line)) | continue | endif
+    " Apply comment or uncomment. On a read-only buffer a change would
+    " abort the function with W10, so allow the in-memory edit and restore
+    " 'readonly' afterwards; SmartSave (<C-s>) can still persist it (sudo
+    " fallback).
+    let l:ro = &l:readonly
+    if l:ro | setlocal noreadonly | endif
+    try
+        for l:lnum in range(a:firstline, a:lastline)
+            let l:line = getline(l:lnum)
+            if empty(trim(l:line)) | continue | endif
 
-        if l:all_commented
-            if !empty(l:right)
-                let l:line = substitute(l:line, '\s*' . l:left_esc . '\s\?', '', '')
-                let l:line = substitute(l:line, '\s\?' . l:right_esc . '$', '', '')
+            if l:all_commented
+                if !empty(l:right)
+                    let l:line = substitute(l:line, '\s*' . l:left_esc . '\s\?', '', '')
+                    let l:line = substitute(l:line, '\s\?' . l:right_esc . '$', '', '')
+                else
+                    let l:line = substitute(l:line, l:left_esc . '\s\?', '', '')
+                endif
             else
-                let l:line = substitute(l:line, l:left_esc . '\s\?', '', '')
+                let l:indent = matchstr(l:line, '^\s*')
+                let l:content = strpart(l:line, len(l:indent))
+                if !empty(l:right)
+                    let l:line = l:indent . l:left . ' ' . l:content . ' ' . l:right
+                else
+                    let l:line = l:indent . l:left . ' ' . l:content
+                endif
             endif
-        else
-            let l:indent = matchstr(l:line, '^\s*')
-            let l:content = strpart(l:line, len(l:indent))
-            if !empty(l:right)
-                let l:line = l:indent . l:left . ' ' . l:content . ' ' . l:right
-            else
-                let l:line = l:indent . l:left . ' ' . l:content
-            endif
-        endif
-        call setline(l:lnum, l:line)
-    endfor
+            call setline(l:lnum, l:line)
+        endfor
+    finally
+        if l:ro | setlocal readonly | endif
+    endtry
 endfunction
 
 " 8.13 Pure Vimscript Multi-Cursor Submode (<leader>mi)
