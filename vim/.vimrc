@@ -2257,7 +2257,14 @@ function! s:WhichKey(mode, ...) abort
             continue
         endif
 
-        " Leaf: execute the stored command exactly like the real mapping
+        " Leaf: execute the stored command exactly like the real mapping.
+        " A <Cmd> mapping keeps Visual mode active, so the '< and '> marks are
+        " not set yet and a Visual command's "'<,'>" range would fail with E20.
+        " Leaving Visual mode first sets the marks, exactly like typing ':' does
+        " for the real mapping.
+        if a:mode ==# 'x'
+            execute "normal! \<Esc>"
+        endif
         execute l:child.exec
         break
     endwhile
