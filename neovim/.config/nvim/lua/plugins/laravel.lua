@@ -13,6 +13,10 @@
 --     plugs into blink.cmp automatically.
 --   * Keymaps live under `<leader>v` (a dedicated which-key group) because
 --     LazyVim reserves `<leader>l` for `:Lazy` and `<leader>L` for its changelog.
+--   * `gf` is extended (lua/config/laravel_middleware.lua) to also jump to the
+--     class behind a middleware alias string, which laravel.nvim does not do.
+local middleware = require("config.laravel_middleware")
+
 return {
     -- 1. Setup Treesitter and Filetype Association
     {
@@ -155,6 +159,14 @@ return {
             {
                 "gf",
                 function()
+                    local alias = middleware.alias_under_cursor()
+                    if alias then
+                        -- Return a <cmd> (instead of "" + a side effect) so the
+                        -- async jump is entered from the main loop, exactly like
+                        -- laravel.nvim's own gf; otherwise the buffer switch can
+                        -- stay unflushed until the next keypress.
+                        return ("<cmd>lua require('config.laravel_middleware').goto_alias(%q)<cr>"):format(alias)
+                    end
                     if Laravel.app("gf").cursorOnResource() then
                         return "<cmd>lua Laravel.commands.run('gf')<cr>"
                     end
