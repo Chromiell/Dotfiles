@@ -1820,6 +1820,11 @@ endfunction
 " every mapping under that prefix, mirroring the which-key plugin of Neovim.
 " The keymap tree is derived at runtime from maplist() (Vim 9+), so popups
 " always mirror the real mappings; g:which_key_names can override names.
+" Only mappings declared by this file populate the menus: the ]/[/g mappings
+" that Vim runtime ftplugins add for the current filetype (]] ][ ]" [[ from
+" ftplugin/vim.vim, gf, ...) would otherwise clutter them with shortcuts that
+" are not part of this config. Set g:which_key_include_foreign = 1 to list
+" every mapping maplist() reports instead.
 "
 "   * <Esc> / Ctrl-C      -> abort, nothing runs
 "   * <Backspace>         -> back up one menu level
@@ -1832,11 +1837,13 @@ endfunction
 " (installed per buffer), so each menu opens after ~which_key_delay ms instead
 " of waiting timeoutlen for prefix disambiguation; built-ins (gg, gv, [m...) are
 " replayed by the interceptor.
-" Options: g:which_key_enabled (default 1) and g:which_key_delay (ms, 250).
+" Options: g:which_key_enabled (default 1), g:which_key_delay (ms, 250) and
+" g:which_key_include_foreign (default 0).
 " ============================================================================
 
 let g:which_key_enabled = get(g:, 'which_key_enabled', 1)
 let g:which_key_delay   = get(g:, 'which_key_delay', 250)
+let g:which_key_include_foreign = get(g:, 'which_key_include_foreign', 0)
 
 " --- TokyoNight palette for the popup ------------------------------------
 function! s:ApplyWhichKeyHighlights() abort
@@ -2006,7 +2013,7 @@ function! s:WKLeafMake(map, root, path, mode) abort
                 return {}
             endif
             let l:keys = s:WKRhsToKeys(l:rhs)
-            let l:exec = "feedkeys('" . substitute(l:keys, "'", "''", 'g')
+            let l:exec = "call feedkeys('" . substitute(l:keys, "'", "''", 'g')
                         \ . "', '" . (l:isx ? 'mx' : 'm') . "')"
         else
             let l:exec = join(l:cmds, ' | ')
@@ -2016,10 +2023,10 @@ function! s:WKLeafMake(map, root, path, mode) abort
         if l:isx && l:rhs ==# '='
             let l:exec = "'<,'>normal! ="
         elseif l:isx
-            let l:exec = "feedkeys('gv', 'mx') | feedkeys('"
+            let l:exec = "call feedkeys('gv', 'mx') | call feedkeys('"
                         \ . substitute(s:WKRhsToKeys(l:rhs), "'", "''", 'g') . "', 'mx')"
         else
-            let l:exec = "feedkeys('" . substitute(s:WKRhsToKeys(l:rhs), "'", "''", 'g') . "', 'm')"
+            let l:exec = "call feedkeys('" . substitute(s:WKRhsToKeys(l:rhs), "'", "''", 'g') . "', 'm')"
         endif
     endif
 
@@ -2071,10 +2078,25 @@ function! s:WhichKeyInit() abort
 
     if !s:wk_can_list | return | endif
 
+    " Only mappings declared by this vimrc populate the menus; runtime
+    " ftplugins and plugins define their own ]- / [- / g- mappings for the
+    " current filetype (]] ][ ]" [[ [] [" and gf come from ftplugin/vim.vim)
+    " which have nothing to do with this config. maplist() reports the ID of
+    " the script that defined each mapping, so keep only our own unless
+    " g:which_key_include_foreign asks for everything.
+    let l:own_sid = str2nr(matchstr(expand('<SID>'), '\d\+'))
+
     for l:M in maplist()
         " Mappings without an executable payload are not menu entries
         if empty(trim(l:M.rhs)) || l:M.rhs =~# '<Plug>'
                     \ || trim(l:M.rhs) ==# '<Nop>'
+            continue
+        endif
+
+        " Skip mappings defined by another script (runtime ftplugins,
+        " plugins, ...). Entries without a 'sid' key are kept, for older Vims.
+        if !g:which_key_include_foreign
+                    \ && get(l:M, 'sid', l:own_sid) != l:own_sid
             continue
         endif
 
