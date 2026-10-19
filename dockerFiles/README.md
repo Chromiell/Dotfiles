@@ -37,7 +37,7 @@ cd DockerFiles/<service-name>
 docker compose up -d
 ```
 
-### Environment files
+### 🔐 Environment files
 
 Services that require passwords, tokens, or other private settings include a tracked `.env.example` file. Before starting one of those services, copy the example to `.env` and replace every placeholder with a value appropriate for your deployment:
 

@@ -2,7 +2,7 @@
 
 This guide assumes you are using Debian as your base distribution. If you are using a different distribution, the package manager commands may differ.
 
-## 1. Install Distrobox
+## 📦 1. Install Distrobox
 
 Distrobox allows you to create and manage containerized environments. To install Distrobox, run the following command:
 
@@ -10,7 +10,7 @@ Distrobox allows you to create and manage containerized environments. To install
 sudo apt install distrobox
 ```
 
-## 2. Create a Distrobox Container
+## 🏗️ 2. Create a Distrobox Container
 
 You can create a Distrobox container using the following command. We use Arch Linux Toolbox because it ships directly with the latest version of Neovim.
 
@@ -18,7 +18,7 @@ You can create a Distrobox container using the following command. We use Arch Li
 distrobox create -n arch -i quay.io/toolbx/arch-toolbox:latest
 ```
 
-## 3. Enter the Distrobox Container
+## 🚪 3. Enter the Distrobox Container
 
 To enter the Distrobox container, use the following command:
 
@@ -26,7 +26,7 @@ To enter the Distrobox container, use the following command:
 distrobox enter arch
 ```
 
-## 4. Install Paru
+## 🧰 4. Install Paru
 
 Paru is an AUR helper that simplifies the process of installing packages from the Arch User Repository (AUR). To install Paru, run the following commands inside the Distrobox container:
 
@@ -37,7 +37,7 @@ cd paru
 makepkg -si
 ```
 
-## 5. Install Neovim and Dependencies
+## 📦 5. Install Neovim and Dependencies
 
 Once you are inside the Distrobox container, you can install Neovim using the package manager. For Arch Linux, use the following command:
 
@@ -78,7 +78,7 @@ Everything else should be taken care by Mason automatically.
 
 ---
 
-## 6. Install LazyVim & Dotfiles
+## 🚀 6. Install LazyVim & Dotfiles
 
 To deploy the configurations, run GNU Stow from the dotfiles directory:
 
@@ -97,7 +97,7 @@ nvim .
 
 This will pull all necessary packages and set up LazyVim for you. You can customize your Neovim configuration by editing the files in the `~/.config/nvim` directory.
 
-## 7. Exporting the nvim, yazi and lazygit binary
+## 🔗 7. Exporting the nvim, yazi and lazygit binary
 
 To use the Neovim, Yazi and Lazygit binaries outside of the Distrobox container, you can create symbolic links to the binaries in a directory that is included in your system's PATH. By default Distrobox exports binaries to `~/.local/bin`. Run the following commands:
 
@@ -109,7 +109,7 @@ distrobox-export --bin /bin/lazygit
 
 ---
 
-## 8. Real File Icons (real-icons.nvim)
+## 🎨 8. Real File Icons (real-icons.nvim)
 
 File and folder icons are rendered as **real terminal images** through the Kitty Graphics Protocol using [real-icons.nvim](https://github.com/Mirsmog/real-icons.nvim), with the icon pack taken from the **Flow Icons** VS Code theme (variant *Flow Deep*).
 
@@ -129,7 +129,7 @@ File and folder icons are rendered as **real terminal images** through the Kitty
 
 ---
 
-## 9. Laravel support (laravel.nvim)
+## 🐘 9. Laravel support (laravel.nvim)
 
 [laravel.nvim](https://github.com/adalessa/laravel.nvim) turns a Laravel project into a first-class editing experience: pickers, virtual model / route info, a Blade-aware `gf`, tinker, an Artisan Hub, code actions and completion. It is configured in `lua/plugins/laravel.lua`.
 

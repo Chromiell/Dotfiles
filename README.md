@@ -59,7 +59,7 @@ sudo apt install zsh eza fzf bat fastfetch pv rsync micro rar gzip tar unzip 7zi
 
 ## 🚀 Getting Started
 
-### 1. Clone Repository
+### 📥 1. Clone Repository
 
 Clone the dotfiles repository into your `$HOME` folder as `~/.dotfiles`:
 
@@ -69,7 +69,7 @@ git clone https://github.com/Chromiell/Dotfiles ~/.dotfiles
 cd ~/.dotfiles
 ```
 
-### 2. Create the Shared Directories
+### 📁 2. Create the Shared Directories
 
 A few packages write into directories that are shared with other packages or
 with runtime tools. Create them **before stowing**, otherwise Stow replaces the
@@ -86,7 +86,7 @@ mkdir -p ~/.local/bin ~/Documents ~/Projects
 | `~/Documents` | `scripts` and `guides` both stow into it; this keeps it a real directory |
 | `~/Projects` | `pythonScripts` stows into it; this keeps it a real directory |
 
-### 3. Install Fonts
+### 🔤 3. Install Fonts
 
 Font binaries are not committed to the repository; they are downloaded on
 demand. Download the Adwaita Mono Nerd Font used for icons and glyphs:
@@ -106,7 +106,7 @@ options.
 
 [GNU Stow](https://www.gnu.org/software/stow/) manages symlinks from each module directory in the repository to your `$HOME` directory.
 
-### Symlink Specific Modules
+### 🔗 Symlink Specific Modules
 
 To symlink configurations for specific components, run `stow <directory-name>` from within `~/.dotfiles`:
 
@@ -129,7 +129,7 @@ stow fzf
 > into your dotfiles.
 > See [Create the Shared Directories](#2-create-the-shared-directories).
 
-### Symlink All Modules
+### 📦 Symlink All Modules
 
 Create the [shared directories](#2-create-the-shared-directories) first, then
 stow every module at once:
@@ -140,7 +140,7 @@ mkdir -p ~/.local/bin ~/Documents ~/Projects
 bash -c 'shopt -u dotglob; stow */'
 ```
 
-### Unstow / Remove Symlinks
+### 🗑️ Unstow / Remove Symlinks
 
 To remove symbolic links created for a specific package without deleting source files:
 
@@ -152,7 +152,7 @@ stow -D <package-name>
 stow -D tmux
 ```
 
-### Restow / Refresh Symlinks
+### 🔄 Restow / Refresh Symlinks
 
 If you add new files to a package or need to refresh broken links, use the `-R` (restow) flag:
 
