@@ -2,6 +2,21 @@
 
 This guide assumes you are using Debian as your base distribution. If you are using a different distribution, the package manager commands may differ.
 
+## 📑 Index
+
+- [📦 1. Install Distrobox](#-1-install-distrobox)
+- [🏗️ 2. Create a Distrobox Container](#️-2-create-a-distrobox-container)
+- [🚪 3. Enter the Distrobox Container](#-3-enter-the-distrobox-container)
+- [🧰 4. Install Paru](#-4-install-paru)
+- [📦 5. Install Neovim and Dependencies](#-5-install-neovim-and-dependencies)
+- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [🚀 6. Install LazyVim & Dotfiles](#-6-install-lazyvim--dotfiles)
+- [🔗 7. Exporting the nvim, yazi and lazygit binary](#-7-exporting-the-nvim-yazi-and-lazygit-binary)
+- [🎨 8. Real File Icons (real-icons.nvim)](#-8-real-file-icons-real-iconsnvim)
+- [🐘 9. Laravel support (laravel.nvim)](#-9-laravel-support-laravelnvim)
+
+---
+
 ## 📦 1. Install Distrobox
 
 Distrobox allows you to create and manage containerized environments. To install Distrobox, run the following command:

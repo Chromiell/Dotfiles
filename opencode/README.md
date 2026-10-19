@@ -13,6 +13,31 @@ live tokens-per-second meter to the TUI ([section 6](#-6-live-throughput-meter-o
 
 ---
 
+## 📑 Index
+
+- [📦 1. Install Node.js & OpenCode](#-1-install-nodejs--opencode)
+- [🔗 2. Deploy Configuration with GNU Stow](#-2-deploy-configuration-with-gnu-stow)
+  - [Fresh-machine checklist](#fresh-machine-checklist)
+- [🧱 3. Configuration Structure](#-3-configuration-structure)
+- [⚡ 4. Token & Usage Optimizations](#-4-token--usage-optimizations)
+- [🧠 5. Multi-Agent Setup (oh-my-opencode-slim)](#-5-multi-agent-setup-oh-my-opencode-slim)
+  - [Active preset (`opencode-go`)](#active-preset-opencode-go)
+    - [Orchestrator: decide and delegate](#orchestrator-decide-and-delegate)
+    - [Oracle: planner and advisor](#oracle-planner-and-advisor)
+  - [Usage](#usage)
+  - [Browser testing with `playwright-cli`](#browser-testing-with-playwright-cli)
+  - [Desktop control with `desktop-use`](#desktop-control-with-desktop-use)
+  - [Background subagents](#background-subagents)
+  - [Using a single model instead](#using-a-single-model-instead)
+  - [Updating](#updating)
+- [📊 6. Live Throughput Meter (opencode-tps-meter)](#-6-live-throughput-meter-opencode-tps-meter)
+- [🔑 7. Secrets & Environment Variables](#-7-secrets--environment-variables)
+- [🧩 8. MCP Servers](#-8-mcp-servers)
+- [🔗 Related Modules](#-related-modules)
+- [🔧 9. Editor Schema Warnings (Neovim)](#-9-editor-schema-warnings-neovim)
+
+---
+
 ## 📦 1. Install Node.js & OpenCode
 
 OpenCode is distributed as an npm package. The recommended way to manage Node.js is

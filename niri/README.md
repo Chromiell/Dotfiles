@@ -4,6 +4,15 @@ Configuration files for [Niri](https://github.com/niri-wm/niri), a scrollable-ti
 
 ---
 
+## 📑 Index
+
+- [📦 Required Packages](#-required-packages)
+- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [📂 Structure](#-structure)
+- [🚀 Usage with GNU Stow](#-usage-with-gnu-stow)
+
+---
+
 ## 📦 Required Packages
 
 To use Niri and associated Wayland desktop tools on Debian-based systems refer to the [DankMaterialShell](https://danklinux.com/) project.

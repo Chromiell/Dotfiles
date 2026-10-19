@@ -4,6 +4,15 @@ Default mouse cursor theme configuration for X11 and Wayland desktop environment
 
 ---
 
+## 📑 Index
+
+- [📦 Required Packages](#-required-packages)
+- [🧩 Dotfiles Module Dependencies & Related Modules](#-dotfiles-module-dependencies--related-modules)
+- [📂 Structure](#-structure)
+- [🚀 Usage with GNU Stow](#-usage-with-gnu-stow)
+
+---
+
 ## 📦 Required Packages
 
 This directory contains static desktop theme pointer settings and requires no additional packages beyond a standard graphical desktop environment (X11 / Wayland).

@@ -4,6 +4,15 @@ A collection of pre-configured [Docker Compose](https://docs.docker.com/compose/
 
 ---
 
+## 📑 Index
+
+- [📦 Required Packages](#-required-packages)
+- [📂 Available Services](#-available-services)
+- [🚀 Usage](#-usage)
+  - [🔐 Environment files](#-environment-files)
+
+---
+
 ## 📦 Required Packages
 
 To run these Docker stacks on Debian-based systems:

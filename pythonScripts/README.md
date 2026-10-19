@@ -4,6 +4,15 @@ Standalone Python utilities deployed to `~/Projects/PythonScripts`.
 
 ---
 
+## 📑 Index
+
+- [📦 Required Packages](#-required-packages)
+- [📂 Structure](#-structure)
+- [🚀 Setup & Execution](#-setup--execution)
+- [🔑 Permissions](#-permissions)
+
+---
+
 ## 📦 Required Packages
 
 These scripts target Debian-based systems and install their dependencies into a

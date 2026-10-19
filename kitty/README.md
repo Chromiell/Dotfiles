@@ -4,6 +4,15 @@ Configuration files for [Kitty](https://sw.kovidgoyal.net/kitty/), a fast, featu
 
 ---
 
+## 📑 Index
+
+- [📦 Required Packages](#-required-packages)
+- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [📂 Structure](#-structure)
+- [🚀 Usage with GNU Stow](#-usage-with-gnu-stow)
+
+---
+
 ## 📦 Required Packages
 
 To install and use Kitty on Debian-based systems:

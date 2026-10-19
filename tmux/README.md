@@ -4,6 +4,22 @@ A clean, modern Tmux setup featuring the **Catppuccin Mocha** theme, transparent
 
 ---
 
+## 📑 Index
+
+- [🚀 Features](#-features)
+- [📦 Required Packages](#-required-packages)
+- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [🛠️ Installation](#️-installation)
+  - [1. Install the configuration with Stow](#1-install-the-configuration-with-stow)
+  - [2. Initialize Plugins](#2-initialize-plugins)
+- [⌨️ Complete Keybindings Reference](#️-complete-keybindings-reference)
+  - [🪟 Pane Management](#-pane-management)
+  - [🗔 Window & Session Control](#-window--session-control)
+- [📊 Status Line Dependencies](#-status-line-dependencies)
+- [🪝 Custom Autostart Hook](#-custom-autostart-hook)
+
+---
+
 ## 🚀 Features
 
 - **Prefix-less Navigation:** Move, resize, and swap panes instantly using `Alt` and `Ctrl` modifiers without hitting the prefix key first.

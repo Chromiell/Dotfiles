@@ -8,6 +8,24 @@ A modular, organized collection of personal dotfiles, development environment se
 
 ---
 
+## 📑 Index
+
+- [📂 Repository Overview](#-repository-overview)
+- [📦 Prerequisites & System Packages](#-prerequisites--system-packages)
+- [🚀 Getting Started](#-getting-started)
+  - [📥 1. Clone Repository](#-1-clone-repository)
+  - [📁 2. Create the Shared Directories](#-2-create-the-shared-directories)
+  - [🔤 3. Install Fonts](#-3-install-fonts)
+- [🛠️ Managing Configurations with GNU Stow](#️-managing-configurations-with-gnu-stow)
+  - [🔗 Symlink Specific Modules](#-symlink-specific-modules)
+  - [📦 Symlink All Modules](#-symlink-all-modules)
+  - [🗑️ Unstow / Remove Symlinks](#️-unstow--remove-symlinks)
+  - [🔄 Restow / Refresh Symlinks](#-restow--refresh-symlinks)
+- [⚖️ License](#️-license)
+- [📖 Component Documentation](#-component-documentation)
+
+---
+
 ## 📂 Repository Overview
 
 This repository is structured into modular configuration packages designed to be symlinked directly to your `$HOME` directory using **GNU Stow**:
@@ -127,11 +145,11 @@ stow fzf
 > rely on those directories already existing. If a directory is missing, Stow
 > folds it into a single symlink into the repository and runtime tools will write
 > into your dotfiles.
-> See [Create the Shared Directories](#2-create-the-shared-directories).
+> See [Create the Shared Directories](#-2-create-the-shared-directories).
 
 ### 📦 Symlink All Modules
 
-Create the [shared directories](#2-create-the-shared-directories) first, then
+Create the [shared directories](#-2-create-the-shared-directories) first, then
 stow every module at once:
 
 ```bash

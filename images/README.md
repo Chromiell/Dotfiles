@@ -4,6 +4,14 @@ Collection of wallpapers, backgrounds, and shared desktop imagery.
 
 ---
 
+## 📑 Index
+
+- [🧩 Dotfiles Module Dependencies & Related Modules](#-dotfiles-module-dependencies--related-modules)
+- [📂 Structure](#-structure)
+- [🚀 Usage with GNU Stow](#-usage-with-gnu-stow)
+
+---
+
 ## 🧩 Dotfiles Module Dependencies & Related Modules
 
 | Module | Relationship | Description |

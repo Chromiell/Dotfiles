@@ -4,6 +4,15 @@ Configuration and theme styling for [eza](https://github.com/eza-community/eza),
 
 ---
 
+## 📑 Index
+
+- [📦 Required Packages](#-required-packages)
+- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [📂 Structure](#-structure)
+- [🚀 Usage with GNU Stow](#-usage-with-gnu-stow)
+
+---
+
 ## 📦 Required Packages
 
 To install `eza` on Debian-based systems:

@@ -4,6 +4,23 @@ A rich, responsive, and modern Zsh configuration optimized for Debian-based syst
 
 ---
 
+## 📑 Index
+
+- [📦 1. Required Packages](#-1-required-packages)
+  - [Required Core Packages](#required-core-packages)
+  - [Recommended CLI Tools & Enhancements](#recommended-cli-tools--enhancements)
+- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+  - [🔑 Secrets & Environment Variables](#-secrets--environment-variables)
+- [🔗 2. Deploy Configuration with GNU Stow](#-2-deploy-configuration-with-gnu-stow)
+- [🧱 3. Configuration Structure](#-3-configuration-structure)
+- [🐚 4. Change Default Shell to Zsh](#-4-change-default-shell-to-zsh)
+  - [Check Available Shells](#check-available-shells)
+  - [Set Zsh as Default Shell](#set-zsh-as-default-shell)
+- [✨ 5. Features & Included Plugins](#-5-features--included-plugins)
+- [🪟 6. Windows Terminal Configuration (Nerd Fonts)](#-6-windows-terminal-configuration-nerd-fonts)
+
+---
+
 ## 📦 1. Required Packages
 
 ### Required Core Packages

@@ -4,6 +4,38 @@ This repository contains operational, deployment, backup, and utility scripts us
 
 ---
 
+## 📑 Index
+
+- [📦 Required Packages](#-required-packages)
+- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [🚀 Installation with GNU Stow](#-installation-with-gnu-stow)
+- [📁 Directory Structure & Data Organization](#-directory-structure--data-organization)
+  - [Sensitive Data & Configuration Files (`Documents/ScriptsData/`)](#sensitive-data--configuration-files-documentsscriptsdata)
+- [🛠️ Script Catalog](#️-script-catalog)
+  - [1. SSL & HAProxy Management](#1-ssl--haproxy-management)
+    - [`certbotAddDomain.sh`](#certbotadddomainsh)
+    - [`certbotDeleteDomain.sh`](#certbotdeletedomainsh)
+  - [2. Database Backup, Migration & Sync](#2-database-backup-migration--sync)
+    - [`dumpMantisDB.sh`](#dumpmantisdbsh)
+    - [`nightlyProdDump.sh`](#nightlyproddumpsh)
+    - [`moveDBDump.sh`](#movedbdumpsh)
+    - [`postImportDBAlter.sh`](#postimportdbaltersh)
+    - [`sftpGrab.sh`](#sftpgrabsh)
+  - [3. Web Application Deployment & Maintenance](#3-web-application-deployment--maintenance)
+    - [`gitpull.sh`](#gitpullsh)
+    - [`gitpullPostScript.sh`](#gitpullpostscriptsh)
+  - [4. System Administration, Hardware & Desktop Utilities](#4-system-administration-hardware--desktop-utilities)
+    - [`install-adwaita-nerd-font`](#install-adwaita-nerd-font)
+    - [`toggle-nvidia-pm`](#toggle-nvidia-pm)
+    - [`toggle_paperwm.sh`](#toggle_paperwmsh)
+    - [`swap.sh`](#swapsh)
+    - [`checkUpdates.sh`](#checkupdatessh)
+    - [`enable-freesync.sh`](#enable-freesyncsh)
+    - [`grab_text.sh`](#grab_textsh)
+- [🔒 Security & Administrative Notes](#-security--administrative-notes)
+
+---
+
 ## 📦 Required Packages
 
 The scripts utilize various utilities depending on the tasks you run. To install all common script dependencies on Debian-based systems:

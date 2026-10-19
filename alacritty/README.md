@@ -4,6 +4,15 @@ Configuration files for [Alacritty](https://github.com/alacritty/alacritty), a f
 
 ---
 
+## 📑 Index
+
+- [📦 Required Packages](#-required-packages)
+- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [📂 Structure](#-structure)
+- [🚀 Usage with GNU Stow](#-usage-with-gnu-stow)
+
+---
+
 ## 📦 Required Packages
 
 To install and use Alacritty on Debian-based systems:

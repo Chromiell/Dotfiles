@@ -4,6 +4,14 @@ Personal technical documentation, reference notes, and how-to guides stowed unde
 
 ---
 
+## 📑 Index
+
+- [🧩 Dotfiles Module Dependencies & Related Modules](#-dotfiles-module-dependencies--related-modules)
+- [📂 Structure](#-structure)
+- [🚀 Usage with GNU Stow](#-usage-with-gnu-stow)
+
+---
+
 ## 🧩 Dotfiles Module Dependencies & Related Modules
 
 | Module | Relationship | Description |
