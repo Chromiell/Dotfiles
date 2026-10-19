@@ -6,12 +6,12 @@ Portable standalone Vim configuration mirroring the local Neovim / LazyVim envir
 
 ## 📑 Index
 
-- [🧩 Dotfiles Module Dependencies & Related Modules](#-dotfiles-module-dependencies--related-modules)
-- [📂 Structure](#-structure)
-- [🚀 Usage with GNU Stow](#-usage-with-gnu-stow)
-  - [🌐 Remote Deployment](#-remote-deployment)
-- [📦 Required Packages](#-required-packages)
-- [✨ Features & Included Utilities](#-features--included-utilities)
+- [Dotfiles Module Dependencies & Related Modules](#-dotfiles-module-dependencies--related-modules)
+- [Structure](#-structure)
+- [Usage with GNU Stow](#-usage-with-gnu-stow)
+  - [Remote Deployment](#-remote-deployment)
+- [Required Packages](#-required-packages)
+- [Features & Included Utilities](#-features--included-utilities)
 
 ---
 

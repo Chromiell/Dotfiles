@@ -6,24 +6,24 @@ This document provides a detailed breakdown of the highly optimized Git configur
 
 ## 📑 Index
 
-- [📦 Required Packages](#-required-packages)
-- [🚀 Installation](#-installation)
-  - [📦 1. Install the configuration with Stow](#-1-install-the-configuration-with-stow)
-  - [🔑 2. Configure the personal files](#-2-configure-the-personal-files)
-- [⚙️ 1. Core Environment Settings (`\[core\]`, `\[color\]`, `\[init\]`, `\[help\]`)](#️-1-core-environment-settings-core-color-init-help)
-  - [📝 Text Editor & Terminal Paging](#-text-editor--terminal-paging)
-  - [🤖 Initialization & Automation](#-initialization--automation)
-  - [🚫 Global File Exclusion](#-global-file-exclusion)
-- [🔒 2. Security, Credentials & Modular Inclusion (`\[include\]`, `\[credential\]`)](#-2-security-credentials--modular-inclusion-include-credential)
-- [🌐 3. Remote Tracking & Conflict Resolution (`\[push\]`, `\[pull\]`, `\[rebase\]`, `\[fetch\]`, `\[merge\]`)](#-3-remote-tracking--conflict-resolution-push-pull-rebase-fetch-merge)
-  - [🤝 Automated Remote Handshakes](#-automated-remote-handshakes)
-  - [🧹 Clean History Strategies](#-clean-history-strategies)
-  - [⚔️ Advanced Conflict Resolution](#️-advanced-conflict-resolution)
-- [⚡ 4. Productivity Aliases (`\[alias\]`)](#-4-productivity-aliases-alias)
-  - [🔑 The Essentials](#-the-essentials)
-  - [🪄 Visual Log Magic](#-visual-log-magic)
-  - [🧱 Staging, Unstaging & Committing Macros](#-staging-unstaging--committing-macros)
-  - [🗑️ Environment Cleanup Automation](#️-environment-cleanup-automation)
+- [Required Packages](#-required-packages)
+- [Installation](#-installation)
+  - [1. Install the configuration with Stow](#-1-install-the-configuration-with-stow)
+  - [2. Configure the personal files](#-2-configure-the-personal-files)
+- [1. Core Environment Settings (`\[core\]`, `\[color\]`, `\[init\]`, `\[help\]`)](#-1-core-environment-settings-core-color-init-help)
+  - [Text Editor & Terminal Paging](#-text-editor--terminal-paging)
+  - [Initialization & Automation](#-initialization--automation)
+  - [Global File Exclusion](#-global-file-exclusion)
+- [2. Security, Credentials & Modular Inclusion (`\[include\]`, `\[credential\]`)](#-2-security-credentials--modular-inclusion-include-credential)
+- [3. Remote Tracking & Conflict Resolution (`\[push\]`, `\[pull\]`, `\[rebase\]`, `\[fetch\]`, `\[merge\]`)](#-3-remote-tracking--conflict-resolution-push-pull-rebase-fetch-merge)
+  - [Automated Remote Handshakes](#-automated-remote-handshakes)
+  - [Clean History Strategies](#-clean-history-strategies)
+  - [Advanced Conflict Resolution](#-advanced-conflict-resolution)
+- [4. Productivity Aliases (`\[alias\]`)](#-4-productivity-aliases-alias)
+  - [The Essentials](#-the-essentials)
+  - [Visual Log Magic](#-visual-log-magic)
+  - [Staging, Unstaging & Committing Macros](#-staging-unstaging--committing-macros)
+  - [Environment Cleanup Automation](#-environment-cleanup-automation)
 
 ---
 
@@ -81,7 +81,7 @@ chmod 600 ~/.config/git/.git_credentials
 
 ---
 
-## ⚙️ 1. Core Environment Settings (`[core]`, `[color]`, `[init]`, `[help]`)
+## ⚙ 1. Core Environment Settings (`[core]`, `[color]`, `[init]`, `[help]`)
 
 These configurations modify Git's fundamental interaction with your operating system, text editor, and terminal output display.
 
@@ -125,7 +125,7 @@ These directives override default Git protocols to prevent messy commit historie
 - **`rebase.autoStash = true`**: A protective companion for rebasing. If you have uncommitted or dirty changes in your working directory when running a rebase operation, Git will automatically run a hidden `git stash`, perform the rebase cleanly, and automatically pop/reapply your local modifications when finished.
 - **`fetch.prune = true`**: Trims obsolete branches. When communicating with the remote server (`git fetch` or `git pull`), Git scans for tracking branches that have been deleted or merged on the server side and deletes their corresponding local stale references (`origin/feature-xyz`).
 
-### ⚔️ Advanced Conflict Resolution
+### ⚔ Advanced Conflict Resolution
 
 - **`conflictstyle = zdiff3`**: Upgrades standard conflict markers to the advanced `zdiff3` layout. While standard Git displays what your branch has vs. what their branch has, `zdiff3` goes a step further by showing a third block: the **common base commit** before both tracks split, while compressing identical matching regions. This provides complete structural context to determine exactly why and how code drifted apart.
 
@@ -175,7 +175,7 @@ These map basic git workflows to immediate 2-letter keystrokes.
 - **`unstage`**: Maps to `restore --staged`. Removes a specific, targeted file away from your staging environment while protecting its literal disk modifications. Use case: `git unstage index.js`.
 - **`unstage-all`**: Maps to `restore --staged .`. Instantly resets your entire staging directory workspace back to an unstaged state in one clear sweep.
 
-### 🗑️ Environment Cleanup Automation
+### 🗑 Environment Cleanup Automation
 
 - **`cleanup`**: A shell-piped scripting sequence designed to keep local environments free of bloat.
   - *Full execution formula:* `!git branch --merged | grep -v '\*' | xargs -n 1 git branch -d`

@@ -6,12 +6,12 @@ This repository contains operational, deployment, backup, and utility scripts us
 
 ## 📑 Index
 
-- [📦 Required Packages](#-required-packages)
-- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
-- [🚀 Installation with GNU Stow](#-installation-with-gnu-stow)
-- [📁 Directory Structure & Data Organization](#-directory-structure--data-organization)
+- [Required Packages](#-required-packages)
+- [Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [Installation with GNU Stow](#-installation-with-gnu-stow)
+- [Directory Structure & Data Organization](#-directory-structure--data-organization)
   - [Sensitive Data & Configuration Files (`Documents/ScriptsData/`)](#sensitive-data--configuration-files-documentsscriptsdata)
-- [🛠️ Script Catalog](#️-script-catalog)
+- [Script Catalog](#-script-catalog)
   - [1. SSL & HAProxy Management](#1-ssl--haproxy-management)
     - [`certbotAddDomain.sh`](#certbotadddomainsh)
     - [`certbotDeleteDomain.sh`](#certbotdeletedomainsh)
@@ -32,7 +32,7 @@ This repository contains operational, deployment, backup, and utility scripts us
     - [`checkUpdates.sh`](#checkupdatessh)
     - [`enable-freesync.sh`](#enable-freesyncsh)
     - [`grab_text.sh`](#grab_textsh)
-- [🔒 Security & Administrative Notes](#-security--administrative-notes)
+- [Security & Administrative Notes](#-security--administrative-notes)
 
 ---
 
@@ -100,7 +100,7 @@ All sensitive environment variables, passwords, network addresses, and private c
 
 ---
 
-## 🛠️ Script Catalog
+## 🛠 Script Catalog
 
 ### 1. SSL & HAProxy Management
 

@@ -6,10 +6,10 @@ Global configuration and environment files for [Composer](https://getcomposer.or
 
 ## 📑 Index
 
-- [📦 Required Packages](#-required-packages)
-- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
-- [📂 Structure](#-structure)
-- [🚀 Usage with GNU Stow](#-usage-with-gnu-stow)
+- [Required Packages](#-required-packages)
+- [Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [Structure](#-structure)
+- [Usage with GNU Stow](#-usage-with-gnu-stow)
 
 ---
 

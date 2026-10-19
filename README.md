@@ -10,19 +10,19 @@ A modular, organized collection of personal dotfiles, development environment se
 
 ## 📑 Index
 
-- [📂 Repository Overview](#-repository-overview)
-- [📦 Prerequisites & System Packages](#-prerequisites--system-packages)
-- [🚀 Getting Started](#-getting-started)
-  - [📥 1. Clone Repository](#-1-clone-repository)
-  - [📁 2. Create the Shared Directories](#-2-create-the-shared-directories)
-  - [🔤 3. Install Fonts](#-3-install-fonts)
-- [🛠️ Managing Configurations with GNU Stow](#️-managing-configurations-with-gnu-stow)
-  - [🔗 Symlink Specific Modules](#-symlink-specific-modules)
-  - [📦 Symlink All Modules](#-symlink-all-modules)
-  - [🗑️ Unstow / Remove Symlinks](#️-unstow--remove-symlinks)
-  - [🔄 Restow / Refresh Symlinks](#-restow--refresh-symlinks)
-- [⚖️ License](#️-license)
-- [📖 Component Documentation](#-component-documentation)
+- [Repository Overview](#-repository-overview)
+- [Prerequisites & System Packages](#-prerequisites--system-packages)
+- [Getting Started](#-getting-started)
+  - [1. Clone Repository](#-1-clone-repository)
+  - [2. Create the Shared Directories](#-2-create-the-shared-directories)
+  - [3. Install Fonts](#-3-install-fonts)
+- [Managing Configurations with GNU Stow](#-managing-configurations-with-gnu-stow)
+  - [Symlink Specific Modules](#-symlink-specific-modules)
+  - [Symlink All Modules](#-symlink-all-modules)
+  - [Unstow / Remove Symlinks](#-unstow--remove-symlinks)
+  - [Restow / Refresh Symlinks](#-restow--refresh-symlinks)
+- [License](#-license)
+- [Component Documentation](#-component-documentation)
 
 ---
 
@@ -120,7 +120,7 @@ options.
 
 ---
 
-## 🛠️ Managing Configurations with GNU Stow
+## 🛠 Managing Configurations with GNU Stow
 
 [GNU Stow](https://www.gnu.org/software/stow/) manages symlinks from each module directory in the repository to your `$HOME` directory.
 
@@ -158,7 +158,7 @@ mkdir -p ~/.local/bin ~/Documents ~/Projects
 bash -c 'shopt -u dotglob; stow */'
 ```
 
-### 🗑️ Unstow / Remove Symlinks
+### 🗑 Unstow / Remove Symlinks
 
 To remove symbolic links created for a specific package without deleting source files:
 
@@ -181,7 +181,7 @@ stow -R <package-name>
 
 ---
 
-## ⚖️ License
+## ⚖ License
 
 Original work in this repository is released under the [MIT License](./LICENSE).
 

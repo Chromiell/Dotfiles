@@ -6,10 +6,10 @@ Configuration for [PHP-CS-Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer), 
 
 ## 📑 Index
 
-- [📦 Required Packages](#-required-packages)
-- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
-- [📂 Structure](#-structure)
-- [🚀 Usage with GNU Stow](#-usage-with-gnu-stow)
+- [Required Packages](#-required-packages)
+- [Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [Structure](#-structure)
+- [Usage with GNU Stow](#-usage-with-gnu-stow)
 
 ---
 

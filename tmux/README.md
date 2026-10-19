@@ -6,17 +6,17 @@ A clean, modern Tmux setup featuring the **Catppuccin Mocha** theme, transparent
 
 ## 📑 Index
 
-- [🚀 Features](#-features)
-- [📦 Required Packages](#-required-packages)
-- [🧩 Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
-- [🛠️ Installation](#️-installation)
+- [Features](#-features)
+- [Required Packages](#-required-packages)
+- [Dotfiles Module Dependencies](#-dotfiles-module-dependencies)
+- [Installation](#-installation)
   - [1. Install the configuration with Stow](#1-install-the-configuration-with-stow)
   - [2. Initialize Plugins](#2-initialize-plugins)
-- [⌨️ Complete Keybindings Reference](#️-complete-keybindings-reference)
-  - [🪟 Pane Management](#-pane-management)
-  - [🗔 Window & Session Control](#-window--session-control)
-- [📊 Status Line Dependencies](#-status-line-dependencies)
-- [🪝 Custom Autostart Hook](#-custom-autostart-hook)
+- [Complete Keybindings Reference](#-complete-keybindings-reference)
+  - [Pane Management](#-pane-management)
+  - [Window & Session Control](#-window--session-control)
+- [Status Line Dependencies](#-status-line-dependencies)
+- [Custom Autostart Hook](#-custom-autostart-hook)
 
 ---
 
@@ -51,7 +51,7 @@ sudo apt install tmux
 
 ---
 
-## 🛠️ Installation
+## 🛠 Installation
 
 This configuration is designed to be managed with **GNU Stow** inside a `~/.dotfiles` directory.
 
@@ -70,7 +70,7 @@ Once stowed, launch a new Tmux session and fetch/initialize the bundled plugins:
 
 - Tmux should initialize automatically but, if it doesn't, you can press Prefix + I (default prefix is typically Ctrl+b unless overridden) to trigger TPM and load Catppuccin cleanly.
 
-## ⌨️ Complete Keybindings Reference
+## ⌨ Complete Keybindings Reference
 
 Every major navigation, structural layout change, or operational shortcut has been mapped to direct key sequences.
 

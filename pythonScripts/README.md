@@ -6,10 +6,10 @@ Standalone Python utilities deployed to `~/Projects/PythonScripts`.
 
 ## 📑 Index
 
-- [📦 Required Packages](#-required-packages)
-- [📂 Structure](#-structure)
-- [🚀 Setup & Execution](#-setup--execution)
-- [🔑 Permissions](#-permissions)
+- [Required Packages](#-required-packages)
+- [Structure](#-structure)
+- [Setup & Execution](#-setup--execution)
+- [Permissions](#-permissions)
 
 ---
 
