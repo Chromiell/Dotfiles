@@ -447,4 +447,152 @@ do
     end
 end
 
+--------------------------------------------------------------------------------
+-- 7. LARAVEL NAVIGATION (gd)
+--------------------------------------------------------------------------------
+
+-- Query the LSP for the definition of the symbol under the cursor and return
+-- the first location found WITHOUT jumping to it, so the caller can decide
+-- whether it is worth opening. Returns nil when no definition was found.
+-- @return { item: table, encoding: string, filename: string, lnum: integer }|nil
+local function first_definition_location()
+    local clients = vim.lsp.get_clients({ bufnr = 0 })
+    local client = clients[1]
+    local offset_encoding = client and client.offset_encoding or "utf-16"
+
+    local params = vim.lsp.util.make_position_params(0, offset_encoding)
+    local results = vim.lsp.buf_request_sync(0, "textDocument/definition", params, 1000)
+    if not results or vim.tbl_isempty(results) then
+        return nil
+    end
+
+    for client_id, response in pairs(results) do
+        local result = response.result
+        if result and not vim.tbl_isempty(result) then
+            local resp_client = vim.lsp.get_client_by_id(client_id)
+            if resp_client then
+                local item = (type(result) == "table" and result[1]) and result[1] or result
+                local uri = item.uri or item.targetUri
+                local range = item.range or item.targetSelectionRange or item.targetRange
+                if uri then
+                    return {
+                        item = item,
+                        encoding = resp_client.offset_encoding or "utf-16",
+                        filename = vim.uri_to_fname(uri),
+                        lnum = range and range.start.line or 0,
+                    }
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- Given a definition the LSP resolved inside a generated `_ide_helper` file,
+-- open the real model and place the cursor on the accessor implementing `word`.
+-- The ide-helper file is read from disk with `readfile`, so it is never loaded
+-- into a buffer (it must not pollute the buffer list just to be inspected).
+-- This is the old `<leader>cj` behaviour.
+local function open_laravel_accessor(word, ide_helper_file, ide_helper_line)
+    local lines = vim.fn.readfile(ide_helper_file)
+    if not lines or #lines == 0 then
+        vim.notify("Could not read ide-helper file", vim.log.levels.WARN)
+        return
+    end
+
+    -- `ide_helper_line` is 0-based (from the LSP range). Scan forward for the
+    -- enclosing class first, then backward: generated model files list the
+    -- class after its `@property` docblock, facades declare it before the
+    -- method they annotate.
+    local class_name = nil
+    local start = ide_helper_line + 1
+    for i = start + 1, #lines do
+        local name = lines[i]:match("class%s+ide_helper_([%w_]+)") or lines[i]:match("class%s+([%w_]+)")
+        if name then
+            class_name = name
+            break
+        end
+    end
+
+    if not class_name then
+        for i = start, 1, -1 do
+            local name = lines[i]:match("class%s+ide_helper_([%w_]+)") or lines[i]:match("class%s+([%w_]+)")
+            if name then
+                class_name = name
+                break
+            end
+        end
+    end
+
+    if not class_name then
+        vim.notify("Could not determine Model class from ide-helper", vim.log.levels.WARN)
+        return
+    end
+
+    local matches = vim.fn.glob("app/**/" .. class_name .. ".php", false, true)
+    if #matches == 0 then
+        matches = vim.fn.glob("**/" .. class_name .. ".php", false, true)
+    end
+
+    if #matches == 0 then
+        vim.notify("Model file " .. class_name .. ".php not found", vim.log.levels.WARN)
+        return
+    end
+
+    vim.cmd("edit " .. vim.fn.fnameescape(matches[1]))
+
+    local pascal = word:gsub("_(%l)", function(c)
+        return c:upper()
+    end):gsub("^%l", function(c)
+        return c:upper()
+    end)
+
+    local camel = pascal:sub(1, 1):lower() .. pascal:sub(2)
+    local pattern = "\\(get" .. pascal .. "Attribute\\|function\\s\\+" .. camel .. "\\)"
+    local line = vim.fn.search(pattern, "wn")
+
+    if line > 0 then
+        vim.api.nvim_win_set_cursor(0, { line, 0 })
+        vim.cmd("normal! zz")
+    else
+        vim.notify("No accessor method found for: " .. word .. " in " .. vim.fn.expand("%:t"), vim.log.levels.WARN)
+    end
+end
+
+--- The old `<leader>cj` Laravel accessor jump, folded into `gd`.
+---
+--- Outside PHP this is LazyVim's stock definition jump. In a PHP buffer it first
+--- performs the same LSP definition lookup, and only when that yields nothing (or
+--- only a generated `_ide_helper` stub) does it fall back to resolving the
+--- property/method to the real Laravel model implementation, exactly as the
+--- removed `<leader>cj` shortcut used to do. The ide-helper stub itself is never
+--- opened: the definition location is inspected before jumping, and the stub is
+--- only read from disk when it needs to be parsed.
+function M.goto_definition()
+    if vim.bo.filetype ~= "php" then
+        return vim.lsp.buf.definition()
+    end
+
+    -- Capture the symbol before resolving: the definition points elsewhere.
+    local word = vim.fn.expand("<cword>"):gsub("^%$", "")
+
+    local def = first_definition_location()
+    if not def then
+        if word ~= "" then
+            vim.notify("LSP definition not found for: " .. word, vim.log.levels.WARN)
+        end
+        return
+    end
+
+    if not def.filename:match("_ide_helper") then
+        -- A real definition: jump to it exactly like the stock `gd`.
+        vim.lsp.util.jump_to_location(def.item, def.encoding)
+        return
+    end
+
+    -- The LSP only resolved a generated stub. Open the real model/accessor
+    -- instead, without ever loading the ide-helper file into a buffer.
+    open_laravel_accessor(word, def.filename, def.lnum)
+end
+
 return M

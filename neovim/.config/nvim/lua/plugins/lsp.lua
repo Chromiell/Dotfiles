@@ -1,8 +1,21 @@
+local fn = require("config.functions")
+
 return {
     {
         "neovim/nvim-lspconfig",
         opts = {
             servers = {
+                -- Fold the removed `<leader>cj` Laravel accessor jump into `gd`.
+                -- `gd` still performs the normal LSP definition first; only when
+                -- that finds nothing (or just a generated ide-helper stub) does
+                -- it fall back to the real Laravel model implementation.
+                -- See config.functions.goto_definition.
+                ["*"] = {
+                    keys = {
+                        { "gd", fn.goto_definition, desc = "Goto Definition", has = "definition" },
+                    },
+                },
+
                 intelephense = {
                     enabled = true,
                     filetypes = { "php" },
