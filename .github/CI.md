@@ -56,8 +56,6 @@ run steps at pinned versions (see **Supply-chain & Version Pinning** below).
 - `workflows/ci.yml`: the CI workflow. Jobs: `shellcheck`, `shfmt`, `actionlint`,
   `zsh`, `secrets`, `spelling`, `links`, `markdown`, `lua`, `python`, `yaml`,
   `stow`, and `notify` (run-status alerts).
-- `workflows/dependabot-notify.yml`: announces when CI starts and finishes on a
-  Dependabot pull request, with an `@here` alert when a human decision is needed.
 - `dependabot.yml`: weekly Dependabot updates for the GitHub Actions used by
   `ci.yml` (each pinned by commit SHA).
 - `linters/`: tool configuration consumed by the workflow — `linters/typos.toml`
@@ -115,37 +113,6 @@ marks for other states — and links to the run.
 
 The webhook is optional: with no secret set (for example, on pull requests from forks,
 which never receive secrets) the step is skipped, so CI still runs untouched.
-
-### Dependabot update notifications
-
-A separate workflow,
-[`workflows/dependabot-notify.yml`](./workflows/dependabot-notify.yml), announces
-the outcome of every CI run that Dependabot triggers on one of its pull requests.
-It reuses the same **`CI_WEBHOOK_URL`** secret, so no extra setup is needed.
-
-| Severity | When | Message |
-| :--- | :--- | :--- |
-| 🤖 Routine | CI starts on the update | A Dependabot pull request was opened or updated. |
-| 🚨 Important (`@here`) | The update passed CI | Ready to review/merge. |
-| 🚨 Important (`@here`) | The update failed CI | Needs a fix. |
-| 🤖 Routine | The run was cancelled or timed out | Informational status. |
-
-The message names the repository and pull request, includes the PR title, and
-links to the pull request (or to the workflow run if the number is unavailable).
-
-The workflow listens for the start and completion of the **CI** workflow with
-`workflow_run` rather than subscribing to `pull_request` directly.
-Dependabot-triggered runs are treated like fork runs and receive no Actions
-secrets; `workflow_run` executes in the base repository context and can therefore
-read the webhook. The job never
-checks out or executes pull-request code, and only matches runs whose actor is
-`dependabot[bot]`, so a fork cannot spoof the `dependabot/` branch prefix to make
-the workflow ping the channel.
-
-> [!NOTE]
-> GitHub does not expose an event for a Dependabot update run itself. Only runs
-> that produce or update a pull request are observable, so a weekly run that
-> finds nothing to update sends no notification.
 
 ### Testing a failure
 
