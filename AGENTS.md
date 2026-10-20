@@ -87,7 +87,7 @@ directories; likewise `pythonScripts` folds into `~/Projects/PythonScripts`.
 | `opencode/` | AI / Development | Token-optimized OpenCode CLI config plus the `oh-my-opencode-slim` orchestrator and `opencode-tps-meter` plugins. |
 | `images/` | Assets | Shared wallpapers and media assets. |
 | `mouseCursorDefault/` | Desktop | Default XDG cursor theme definitions. |
-| `.github/` | CI | GitHub Actions workflows — ShellCheck, shfmt, actionlint, zsh syntax, gitleaks secret scan, typos, lychee, markdownlint, StyLua, Ruff, yamllint, a Stow-layout check, and a run-status notification webhook — plus Dependabot config. Not a Stow package; never stowed. Its docs live in `.github/CI.md` (deliberately **not** `README.md`, which GitHub would surface on the repository home page instead of the root `README.md`). |
+| `.github/` | CI | GitHub Actions workflows — ShellCheck, shfmt, actionlint, zsh syntax, gitleaks secret scan, typos, lychee, markdownlint, StyLua, Ruff, yamllint, a Stow-layout check, a run-status notification webhook, and Dependabot pull-request notifications — plus Dependabot config. Not a Stow package; never stowed. Its docs live in `.github/CI.md` (deliberately **not** `README.md`, which GitHub would surface on the repository home page instead of the root `README.md`). |
 
 Each module also has its own `README.md` with package requirements, module dependencies, structure, and setup steps. Read the relevant module README before changing that module.
 
