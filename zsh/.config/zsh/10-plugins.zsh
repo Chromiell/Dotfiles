@@ -94,6 +94,23 @@ if [[ -x "$deja_bin" ]]; then
         "$deja_bin" import >/dev/null 2>&1
         "$deja_bin" init zsh >/dev/null 2>&1
     fi
+    # Deja's integration script spawns the daemon with `&!` but leaves stdin
+    # attached to the terminal. The daemon outlives every shell, so it keeps the
+    # pty of whichever shell started it open for the rest of the login session,
+    # and Kitty (close_on_child_death defaults to "no") then refuses to close
+    # that window once the shell exits. Start the daemon here, detached from the
+    # tty, so the generated script finds it already listening and never spawns
+    # its own terminal-bound copy.
+    if ! "$deja_bin" ping >/dev/null 2>&1; then
+        { "$deja_bin" daemon </dev/null >/dev/null 2>&1 &! } 2>/dev/null
+        # Wait briefly so the script's own liveness check sees the new daemon.
+        typeset -i deja_wait
+        for (( deja_wait = 0; deja_wait < 50; deja_wait++ )); do
+            "$deja_bin" ping >/dev/null 2>&1 && break
+            sleep 0.01 2>/dev/null || break
+        done
+        unset deja_wait
+    fi
     [[ -r "$deja_init" ]] && source "$deja_init"
 fi
 

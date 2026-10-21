@@ -41,6 +41,14 @@ sudo apt install zsh git curl
 > rebinding is disabled in favor of the config's completion bindings; suggestion cycling
 > lives on **Ctrl+N**. Running `znap pull` also reports whether a newer Deja release is
 > available (delete `~/.local/bin/deja` and restart zsh to apply it).
+>
+> `10-plugins.zsh` starts the Deja daemon itself with stdin detached from the
+> terminal before sourcing the generated integration script. Deja's own spawn
+> (`deja daemon >/dev/null 2>&1 &!`) inherits the shell's pty, and because the
+> daemon outlives every shell that first login's terminal can never be released —
+> Kitty then keeps that window open after `exit` (its `close_on_child_death`
+> defaults to `no`). If an older terminal-bound daemon is still running, restart
+> it once with `pkill -x deja; exec zsh`.
 
 ### Recommended CLI Tools & Enhancements
 
