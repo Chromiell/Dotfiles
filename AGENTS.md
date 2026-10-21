@@ -81,7 +81,7 @@ directories; likewise `pythonScripts` folds into `~/Projects/PythonScripts`.
 | `fastfetch/` | CLI Tool | System information display config. |
 | `fzf/` | CLI Tool | Fuzzy finder config and preview helper scripts. |
 | `dockerFiles/` | Containers | Docker Compose stacks: Bugsink, Docmost, Gitea, Mailpit, Watchtower. |
-| `pythonScripts/` | Input / Gaming | Python controller button-swap and macro scripts, stowed into `~/Projects/PythonScripts`. |
+| `pythonScripts/` | Input / Gaming | Python controller button-swap and macro scripts, plus a PDF-to-CSV table extractor, stowed into `~/Projects/PythonScripts`. |
 | `composer/` | Development | Global PHP Composer settings. |
 | `php-cs-fixer/` | Development | PHP coding-standards / PSR fixer config. |
 | `opencode/` | AI / Development | Token-optimized OpenCode CLI config plus the `oh-my-opencode-slim` orchestrator and `opencode-tps-meter` plugins. |

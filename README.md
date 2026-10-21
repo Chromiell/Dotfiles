@@ -46,7 +46,7 @@ This repository is structured into modular configuration packages designed to be
 | [`fastfetch`](./fastfetch) | CLI Tool | System information display formatting and layout config |
 | [`fzf`](./fzf) | CLI Tool | Fuzzy finder configuration and rich file preview scripts |
 | [`dockerFiles`](./dockerFiles) | Containers | Docker Compose stacks for Bugsink, Docmost, Gitea, Mailpit, and Watchtower |
-| [`pythonScripts`](./pythonScripts) | Input / Gaming | Python controller button-swap and macro scripts |
+| [`pythonScripts`](./pythonScripts) | Input / Gaming | Python controller button-swap and macro scripts, plus a PDF-to-CSV table extractor |
 | [`composer`](./composer) | Development | Global PHP Composer settings and configurations |
 | [`php-cs-fixer`](./php-cs-fixer) | Development | PHP coding standards and PSR fixer configurations |
 | [`opencode`](./opencode) | AI / Development | Token-optimized global OpenCode CLI config with free-model titles, indexing ignores, and env-based MCP secrets |

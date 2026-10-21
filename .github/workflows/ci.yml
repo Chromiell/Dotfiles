@@ -126,7 +126,7 @@ jobs:
         run: |
           fake_home="${RUNNER_TEMP}/fakehome"
           missing=0
-          for entry in .zshrc .config/nvim/init.lua .local/bin/install-adwaita-nerd-font Documents/Scripts Projects/PythonScripts/DS1WeaponSwap/swapDS1.py; do
+          for entry in .zshrc .config/nvim/init.lua .local/bin/install-adwaita-nerd-font Documents/Scripts Projects/PythonScripts/DS1WeaponSwap/swapDS1.py Projects/PythonScripts/pdf-to-csv/convert.py; do
             resolved="$(readlink -f "$fake_home/$entry" 2>/dev/null || true)"
             case "$resolved" in
               "$GITHUB_WORKSPACE"/*) echo "OK   $entry -> $resolved" ;;

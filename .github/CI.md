@@ -31,7 +31,7 @@ run steps at pinned versions (see **Supply-chain & Version Pinning** below).
 | [lychee](https://github.com/lycheeverse/lychee) | `links` | Validate relative Markdown links and anchors (offline). |
 | [markdownlint](https://github.com/DavidAnson/markdownlint-cli2) | `markdown` | Check Markdown style (config: `linters/.markdownlint-cli2.yaml`). |
 | [StyLua](https://github.com/JohnnyMorganz/StyLua) | `lua` | Check Lua formatting (config: `neovim/.config/nvim/stylua.toml`). |
-| [Ruff](https://docs.astral.sh/ruff/) | `python` | Lint the Python controller macro (config: `linters/ruff.toml`). |
+| [Ruff](https://docs.astral.sh/ruff/) | `python` | Lint the Python scripts in `pythonScripts` (config: `linters/ruff.toml`). |
 | [yamllint](https://github.com/adrienverge/yamllint) | `yaml` | Check YAML style (config: `linters/yamllint.yml`). |
 | [GNU Stow](https://www.gnu.org/software/stow/) | `stow` | Stow every package into a throwaway `$HOME` and verify the layout. |
 

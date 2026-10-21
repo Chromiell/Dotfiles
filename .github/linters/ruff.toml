@@ -3,10 +3,10 @@
 # does not clutter the top level.
 # Run locally with: ruff check --config .github/linters/ruff.toml .
 #
-# The repository ships a single small utility script, so only Ruff's
+# The repository ships a few small utility scripts, so only Ruff's
 # correctness-oriented default rules are enabled. This keeps the check
 # meaningful (syntax errors, undefined names, unused imports) without
-# reformatting or linting style choices in the script.
+# reformatting or linting style choices in the scripts.
 
 [lint]
 select = ["E4", "E7", "E9", "F"]
