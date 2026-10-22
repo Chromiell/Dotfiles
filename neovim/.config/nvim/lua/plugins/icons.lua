@@ -85,6 +85,94 @@ local function check_for_update()
     )
 end
 
+-- Locate a tmux binary. Neovim runs inside the Arch Distrobox container, which
+-- has no tmux of its own, but the host binary is executable there (distrobox
+-- mounts the host filesystem under /run/host).
+local function tmux_executable()
+    if vim.fn.executable("tmux") == 1 then
+        return "tmux"
+    end
+    for _, candidate in ipairs({ "/run/host/usr/bin/tmux", "/run/host/bin/tmux" }) do
+        if vim.fn.executable(candidate) == 1 then
+            return candidate
+        end
+    end
+end
+
+-- real-icons can only query the tmux client term when a tmux binary is on
+-- PATH. Inside the container there is none, so it falls back to environment
+-- variables inherited from whichever terminal started the tmux server. That
+-- makes a session started in Kitty keep claiming image support after the user
+-- attaches from a terminal that cannot draw Kitty graphics (e.g. Windows
+-- Terminal), leaving empty placeholder cells instead of glyph icons. Query the
+-- attached client with the host binary and force the backend to match it.
+local function tmux_opts(opts)
+    if not vim.env.TMUX or vim.env.TMUX == "" then
+        return opts
+    end
+
+    local tmux = tmux_executable()
+    if not tmux then
+        return opts
+    end
+
+    local ok, output = pcall(vim.fn.system, { tmux, "display-message", "-p", "#{client_termname}" })
+    if not ok or vim.v.shell_error ~= 0 then
+        return opts -- detached session or query failed: leave detection alone
+    end
+
+    local term = vim.trim(output):lower()
+    if term == "" then
+        return opts
+    end
+
+    local supported = term:find("kitty", 1, true) ~= nil or term:find("ghostty", 1, true) ~= nil
+    return vim.tbl_deep_extend("force", opts, { backend = supported and "kitty" or false })
+end
+
+-- Kitty graphics belong to the alternate screen, so detaching a tmux client
+-- makes the terminal drop the uploaded images, and tmux cannot replay Kitty
+-- passthrough graphics on attach. real-icons.nvim caches uploaded image ids,
+-- so it never notices. The tmux config signals `real-icons-reattach` from its
+-- client-attached hook; wait on that channel, then re-run setup to clear the
+-- upload cache, re-detect the attached client and retransmit the icons.
+local function watch_tmux_reattach(opts)
+    if not vim.env.TMUX or vim.env.TMUX == "" then
+        return
+    end
+
+    local tmux = tmux_executable()
+    if not tmux then
+        return
+    end
+
+    local waiter
+    local function arm()
+        waiter = vim.system({ tmux, "wait-for", "real-icons-reattach" }, {}, function(result)
+            if result.code ~= 0 then
+                return -- tmux server gone: stop watching
+            end
+            vim.schedule(function()
+                -- Let tmux finish painting the reattached client first.
+                vim.defer_fn(function()
+                    require("real-icons").setup(tmux_opts(opts))
+                    arm()
+                end, 100)
+            end)
+        end)
+    end
+    arm()
+
+    vim.api.nvim_create_autocmd("VimLeavePre", {
+        group = vim.api.nvim_create_augroup("RealIconsTmuxReattach", { clear = true }),
+        callback = function()
+            if waiter then
+                pcall(waiter.kill, waiter)
+            end
+        end,
+    })
+end
+
 return {
     {
         "Mirsmog/real-icons.nvim",
@@ -134,7 +222,8 @@ return {
             },
         },
         config = function(_, opts)
-            require("real-icons").setup(opts)
+            require("real-icons").setup(tmux_opts(opts))
+            watch_tmux_reattach(opts)
 
             -- Only check once per session, and only once the UI is up.
             vim.api.nvim_create_autocmd("UIEnter", {

@@ -47,7 +47,7 @@ sudo apt install tmux
 | :--- | :--- | :--- |
 | [`scripts`](../scripts) | Assets / Rendering | Custom Catppuccin status bar icons and rounded separators require the **Adwaita Mono Nerd Font** installed by `install-adwaita-nerd-font`. |
 | [`zsh`](../zsh) | Complementary Shell | Provides custom Zsh functions (`t`, `taa`, `tbg`, `tsp`, `tlast`, `tnl`, `tp`) and shortcuts for managing tmux sessions. |
-| [`neovim`](../neovim) | Terminal Pass-through | `set -g allow-passthrough on` in this tmux config lets `real-icons.nvim` render graphical file icons in Neovim sessions running inside tmux. |
+| [`neovim`](../neovim) | Terminal Pass-through | `set -g allow-passthrough on` in this tmux config lets `real-icons.nvim` render graphical file icons in Neovim sessions running inside tmux. A `client-attached` hook signals the `real-icons-reattach` channel so running Neovim instances retransmit their icons after a detach/reattach (Kitty drops them when the client leaves the alternate screen). |
 
 ---
 
