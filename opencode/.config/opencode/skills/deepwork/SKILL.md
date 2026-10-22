@@ -54,7 +54,7 @@ work. The file only needs to remain useful as persistent session state and shoul
 capture, as applicable:
 
 - current goal and understanding;
-- researched, factual context from `@librarian` to avoid oracle doing its own
+- researched, factual context from `@explorer` to avoid oracle doing its own
   research;
 - plan drafts, Oracle review budget/gates, and review notes;
 - implementation phases and status;

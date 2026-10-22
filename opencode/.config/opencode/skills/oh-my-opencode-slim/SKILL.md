@@ -63,12 +63,15 @@ Built-in agent prompt file names are exact agent names:
 
 - `orchestrator.md` / `orchestrator_append.md`
 - `oracle.md` / `oracle_append.md`
-- `librarian.md` / `librarian_append.md`
 - `explorer.md` / `explorer_append.md`
 - `designer.md` / `designer_append.md`
 - `fixer.md` / `fixer_append.md`
 - `observer.md` / `observer_append.md`
 - `council.md` / `council_append.md`
+
+`librarian.md` and `librarian_append.md` are legacy aliases applied to `explorer`
+since the librarian role was merged into explorer. Prefer the canonical `explorer`
+files; they win when both exist.
 
 Prefer `{agent}_append.md` for small behavior tuning. Use `{agent}.md` only when
 the user intentionally wants to replace the bundled prompt entirely.
@@ -86,7 +89,7 @@ Common customizations:
 
 - **Switch presets**: choose which generated or custom preset is active.
 - **Tune models**: assign different models/variants per agent.
-- **Limit costs**: use cheaper models for `explorer`, `librarian`, and `fixer`.
+- **Limit costs**: use cheaper models for `explorer` and `fixer`.
 - **Improve quality**: use stronger models for `orchestrator`, `oracle`, or
   design-heavy `designer` work.
 - **Control skills**: set `skills` per agent with `['*']`, explicit names, or
@@ -102,7 +105,7 @@ Common customizations:
 
 Important schema boundary:
 
-- Built-in agents (`orchestrator`, `oracle`, `librarian`, `explorer`,
+- Built-in agents (`orchestrator`, `oracle`, `explorer`,
   `designer`, `fixer`, `observer`, `council`) can set models, variants, skills,
   MCPs, options, and display names in config.
 - Built-in agent `prompt` and `orchestratorPrompt` fields are **not** supported
@@ -127,7 +130,7 @@ Edit the active preset under `presets.<preset>.<agent>`:
         "skills": ["*"],
         "mcps": ["*", "!context7"]
       },
-      "librarian": {
+      "explorer": {
         "model": "openai/gpt-5.6-luna",
         "variant": "low",
         "skills": [],
@@ -254,8 +257,7 @@ Good custom agents have:
 
 Avoid custom agents that duplicate existing specialists:
 
-- codebase scouting → `explorer`
-- external docs/research → `librarian`
+- codebase scouting and external docs/research → `explorer`
 - architecture/debugging/review → `oracle`
 - UI/UX polish → `designer`
 - scoped mechanical implementation → `fixer`

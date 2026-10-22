@@ -164,8 +164,7 @@ subscription (prices are USD per million tokens, in/out):
 | :--- | :--- | :--- | :--- |
 | orchestrator (primary) | `opencode-go/deepseek-v4-pro` | `max` | Strong reasoning + instruction-following (needed for reliable delegation) at $0.66/$1.98; 1M ctx, cheap cache reads. Runs with `"permission": { "edit": "deny" }`. |
 | oracle | `opencode-go/deepseek-v4-pro` | `max` | Strongest high-reasoning on Go at $0.66/$1.98 — ~4× cheaper than `qwen3.7-max`. |
-| explorer | `opencode-go/deepseek-v4.1-flash` | `low` | Fast, cheap reconnaissance; 1M ctx, vision, $0.15/$0.60. |
-| librarian | `opencode-go/deepseek-v4.1-flash` | `high` | Same cheap model, more reasoning for documentation synthesis. |
+| explorer | `opencode-go/deepseek-v4.1-flash` | `high` | Fast model with higher reasoning for codebase recon plus external docs and web research (`context7`, `gh_grep`, `websearch`); 1M ctx, vision, $0.15/$0.60. |
 | designer | `opencode-go/kimi-k2.7-code` | *(none)* | Code/vision-specialised for UI/UX and frontend polish. |
 | fixer | `opencode-go/deepseek-v4.1-flash` | `high` | Reliable scoped coding at the lowest cost tier. |
 | observer | `opencode/mimo-v2.6-flash-free` | *(none)* | Same vision/audio/video capabilities as the Go model but **free**; its 200k context is ample for screenshot analysis. |
@@ -173,6 +172,17 @@ subscription (prices are USD per million tokens, in/out):
 | councillor-alpha | `opencode-go/deepseek-v4-pro` | `max` | DeepSeek perspective. |
 | councillor-beta | `opencode-go/qwen3.8-max` | `xhigh` | Qwen perspective (different model family). |
 | councillor-gamma | `opencode-go/glm-5.3` | `high` | GLM perspective (different model family). |
+
+> [!NOTE]
+> **`librarian` was merged into `explorer`** in oh-my-opencode-slim 3.0.5
+> ([PR #1581](https://github.com/alvinunreal/oh-my-opencode-slim/pull/1581)), so there is
+> no separate `@librarian` subagent. `explorer` now owns both codebase recon and
+> external docs/library research (`context7`, `gh_grep`). Legacy `librarian` config
+> keys and `librarian_append.md` files still alias to explorer, but canonical
+> `explorer` fields win per-field. This config uses `explorer` directly and lists its
+> MCPs explicitly (`context7`, `gh_grep`, `websearch`): the plugin's explorer default is
+> only `context7` + `gh_grep`, so `websearch` must be named to give explorer Exa web
+> search in addition to fetching known URLs.
 
 The **council** exists only because a top-level `council` block is present in
 `oh-my-opencode-slim.json`; delete that block to remove `@council` entirely. It is
@@ -197,8 +207,7 @@ This is enforced in two complementary places:
 
   | Need | Owner |
   | :--- | :--- |
-  | Codebase/file/db/log/API/browser reconnaissance | `@explorer` |
-  | External docs & library behavior | `@librarian` |
+  | Codebase/file/db/log/API/browser reconnaissance, external docs & library behavior | `@explorer` |
   | Architecture / approach / hard-bug decisions / debugging sessions | `@oracle` |
   | UI/UX implementation & visual polish | `@designer` |
   | Scoped implementation, test suites, builds | `@fixer` |
@@ -263,8 +272,8 @@ implementer with that plan — never with a vague "make it work".
   OpenCode. Switch to the team per session with `shift+tab` (cycles
   `build` → `plan` → `orchestrator`).
 - The **orchestrator** delegates automatically once selected.
-- Delegate explicitly with `@explorer`, `@fixer`, `@oracle`, `@librarian`,
-  `@designer`, `@council`, or `@observer`.
+- Delegate explicitly with `@explorer`, `@fixer`, `@oracle`, `@designer`,
+  `@council`, or `@observer`.
 - Skills: `/deepwork <task>`, `run codemap`, `/reflect`, `work in a worktree`,
   `clone dependencies`, `playwright-cli` (browser automation), and `desktop-use`
   (local GUI automation).

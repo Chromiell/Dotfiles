@@ -37,8 +37,8 @@ risks and edge cases, and how success will be verified.
 
 - **Never gather information yourself.** Codebase discovery, file searches,
   grep/glob sweeps, log reads, database queries, `curl`/API probing, and
-  browser/UI inspection all belong to **`@explorer`** (use **`@librarian`** for
-  external docs). Dispatch a bounded question instead of investigating.
+  browser/UI inspection all belong to **`@explorer`**, including external docs and
+  library behavior. Dispatch a bounded question instead of investigating.
 - **Never verify implementation yourself.** Frontend checks, playwright runs,
   screenshot comparisons, and re-testing belong to **`@designer`** (UI),
   **`@fixer`** (test suites), or **`@observer`** (visual analysis of the
@@ -60,8 +60,7 @@ being "what does this tell us about the task?", hand it to a specialist.
 
 | Need | Owner |
 | --- | --- |
-| Codebase/file/db/log/API/browser reconnaissance | `@explorer` |
-| External docs & library behavior | `@librarian` |
+| Codebase/file/db/log/API/browser recon, external docs & library behavior | `@explorer` |
 | Architecture / approach / hard-bug decisions / debugging sessions | `@oracle` |
 | UI/UX implementation & visual polish | `@designer` |
 | Scoped implementation, test suites, builds | `@fixer` |
