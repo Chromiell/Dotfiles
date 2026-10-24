@@ -139,6 +139,41 @@
                     "x-api-key": "{env:EXA_API_KEY}",
                 },
             },
+
+            // GridCraft spreadsheets (ai.storyteller.gridcraft AppImage).
+            // The MCP server is tracked in this config directory and needs no
+            // helper scripts in ~/.local/bin. If GridCraft is listening on its
+            // control channel (127.0.0.1:7979, started with
+            // `gridcraft.appimage --control 7979`) it talks to the live GUI
+            // workbook over TCP; otherwise it extracts the bundled
+            // gridcraft-cli from the AppImage on first use and runs the
+            // headless engine. Override the port with GRIDCRAFT_PORT and the
+            // AppImage path with GRIDCRAFT_APPIMAGE. `{env:HOME}` is expanded
+            // by OpenCode's config loader.
+            "gridcraft": {
+                "type": "local",
+                "command": [
+                    "node",
+                    "{env:HOME}/.config/opencode/gridcraft-mcp/server.mjs",
+                ],
+            },
+
+            // WordCraft documents (ai.storyteller.wordcraft AppImage).
+            // Same self-contained pattern: no helper scripts. If WordCraft is
+            // listening on its control channel (127.0.0.1:7979, started with
+            // `wordcraft.appimage --control 7979`) the bundled CLI operates on
+            // the live GUI document; otherwise it extracts the CLI from the
+            // AppImage on first use and runs a headless session. Override the
+            // port with WORDCRAFT_PORT, the AppImage with WORDCRAFT_APPIMAGE,
+            // and the headless file roots with WORDCRAFT_READ_ROOT /
+            // WORDCRAFT_WRITE_ROOT (both default to $HOME).
+            "wordcraft": {
+                "type": "local",
+                "command": [
+                    "node",
+                    "{env:HOME}/.config/opencode/wordcraft-mcp/server.mjs",
+                ],
+            },
         },
     },
     // ── Plugins ────────────────────────────────────────────────────────────────

@@ -100,6 +100,11 @@ recreated automatically.
 ├── opencode.jsonc            # Tracked (stowed): global config, MCP servers, plugins
 ├── cli.json                  # Tracked: TUI-only settings (paste, theme, keybinds, tabs)
 ├── oh-my-opencode-slim.json  # Tracked: multi-agent presets (opencode-go active)
+├── gridcraft-mcp/            # Tracked: self-contained GridCraft MCP server
+│   ├── server.mjs            #   live control channel / headless fallback
+│   └── tools.json            #   tool schemas mirrored from GridCraft
+├── wordcraft-mcp/            # Tracked: self-contained WordCraft MCP launcher
+│   └── server.mjs            #   live control channel / headless fallback
 ├── skills/                   # Tracked: plugin skills + custom skills (playwright-cli, browser-use, desktop-use)
 ├── .oh-my-opencode-slim/     # Runtime state (git-ignored): skill reconciliation manifest
 └── service.json              # Local service password (git-ignored)
@@ -455,6 +460,64 @@ opencode service restart
 | `context7` | Remote | Up-to-date library / framework documentation | None |
 | `grep-app` | Remote | GitHub code search | None |
 | `websearch` | Remote (Exa) | Real-time web search | `EXA_API_KEY` |
+| `gridcraft` | Local (Node) | GridCraft spreadsheets — live GUI workbook or bundled headless engine | None |
+| `wordcraft` | Local (Node) | WordCraft documents — live GUI document or bundled headless engine | None |
+
+### GridCraft
+
+The GridCraft MCP server is tracked in `gridcraft-mcp/` and is fully
+self-contained: there are no helper scripts in `~/.local/bin`. It requires the
+GridCraft AppImage (default `~/AppImages/gridcraft.appimage`).
+
+- If GridCraft is running with its control channel (`gridcraft.appimage --control 7979`),
+  the server talks directly to the live GUI workbook over TCP.
+- Otherwise, it extracts the `gridcraft-cli` bundled inside the AppImage to
+  `~/.cache/gridcraft-mcp/` on first use and runs the headless engine. The cache is
+  refreshed automatically when the AppImage changes.
+
+| Variable | Default | Purpose |
+| :--- | :--- | :--- |
+| `GRIDCRAFT_PORT` | `7979` | Control-channel port |
+| `GRIDCRAFT_APPIMAGE` | `~/AppImages/gridcraft.appimage` | AppImage location |
+| `GRIDCRAFT_MODE` | auto | Force `direct` or `headless` |
+| `GRIDCRAFT_TIMEOUT` | `120000` | Control-request timeout (ms) |
+
+After changing the config, run `opencode reload` (or restart the service) so the
+new command is picked up.
+
+### WordCraft
+
+The WordCraft MCP server is tracked in `wordcraft-mcp/` and follows the same
+self-contained pattern. It requires the WordCraft AppImage (default
+`~/AppImages/wordcraft.appimage`) and no helper scripts.
+
+- If WordCraft is running with its control channel
+  (`wordcraft.appimage --control 7979`), the launcher starts the bundled
+  `wordcraft-cli` in bridge mode and operates on the live GUI document.
+- Otherwise it extracts `wordcraft-cli` from the AppImage to
+  `~/.cache/wordcraft-mcp/` on first use and runs a headless session. The cache
+  is refreshed automatically when the AppImage changes.
+
+The bundled CLI owns the MCP surface (16 tools plus the `wordcraft://document`
+and `wordcraft://commands` resources), so tool names and result shapes match
+WordCraft 0.10.0. The launcher additionally applies the `list_commands` `query`
+filter, which 0.10.0 accepts but ignores.
+
+| Variable | Default | Purpose |
+| :--- | :--- | :--- |
+| `WORDCRAFT_PORT` | `7979` | Control-channel port |
+| `WORDCRAFT_APPIMAGE` | `~/AppImages/wordcraft.appimage` | AppImage location |
+| `WORDCRAFT_MODE` | auto | Force `direct` or `headless` |
+| `WORDCRAFT_CLI` | extracted cache | Use an explicit `wordcraft-cli` binary |
+| `WORDCRAFT_READ_ROOT` | `$HOME` | Headless read confinement |
+| `WORDCRAFT_WRITE_ROOT` | `$HOME` | Headless write confinement |
+| `WORDCRAFT_AUTHOR` | unset | Optional headless author name |
+
+WordCraft and GridCraft both default to port `7979`. Both MCP servers probe the
+listener and fall back to their headless engine when the port belongs to the
+other app, so both tool sets stay usable; only the app that owns `7979` is
+controlled live. To control both live, start WordCraft with `--control 7978` and
+set `WORDCRAFT_PORT=7978` in the OpenCode service environment.
 
 ---
 
