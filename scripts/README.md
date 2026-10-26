@@ -171,6 +171,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   3. Saves compressed output to `$PROD_DUMP_DIR/dump-YYYYMMDD.sql.gz`.
   4. Decompresses and imports the dump into the local database (`PROD_DUMP_LOCAL_DB_NAME`).
   5. Executes `postImportDBAlter.sh` to apply post-import schema/data alterations.
+  6. Writes a timestamped line for every step to stderr, plus an `ERROR` line (with the failing source line) and a final status line, so a cron redirect always produces a readable log.
 
 #### `moveDBDump.sh`
 
@@ -187,12 +188,14 @@ All sensitive environment variables, passwords, network addresses, and private c
 #### `postImportDBAlter.sh`
 
 - **Location:** `Documents/Scripts/postImportDBAlter.sh`
-- **Description:** Iterates over PHP database migration or setup scripts inside the configured directory and triggers them via silent HTTP requests.
-- **Data Dependencies:** Reads `POST_IMPORT_BASE_DIR` and `POST_IMPORT_URL_BASE` from `Documents/ScriptsData/config.env`.
+- **Description:** Iterates over PHP database migration or setup scripts inside the configured directory and triggers them via HTTP requests, logging the outcome of each one.
+- **Data Dependencies:** Reads `POST_IMPORT_BASE_DIR` and `POST_IMPORT_URL_BASE` from `Documents/ScriptsData/config.env`; optionally `POST_IMPORT_CURL_MAX_TIME` (default `300`) and `POST_IMPORT_CURL_CONNECT_TIMEOUT` (default `10`), both in seconds.
 - **Key Operations:**
-  1. Scans `$POST_IMPORT_BASE_DIR/*.php`.
-  2. Skips `index.php`.
-  3. Executes `curl` silently against `${POST_IMPORT_URL_BASE}/<filename>` with a 1-second timeout per script.
+  1. Strips stray CR characters and surrounding whitespace from the configured values.
+  2. Scans `$POST_IMPORT_BASE_DIR/*.php`.
+  3. Skips `index.php`.
+  4. Triggers each script against `${POST_IMPORT_URL_BASE}/<filename>` with `curl`, following redirects, and logs the HTTP status or curl exit code per script.
+  5. Continues after an individual failure but exits non-zero when any request fails, so scheduled runs surface the problem.
 
 #### `sftpGrab.sh`
 
