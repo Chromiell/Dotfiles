@@ -38,11 +38,14 @@ until the AppImage's modification time changes.
 | `WORDCRAFT_WRITE_ROOT` | `$HOME` | Headless write confinement |
 | `WORDCRAFT_AUTHOR` | unset | Optional headless author name |
 
-OpenCode launches it from `opencode.jsonc`:
+OpenCode launches it from `opencode.jsonc`. It is registered with
+`"disabled": true`, so it stays unconnected until you remove that line (or
+enable it in the client) and restart the service:
 
 ```jsonc
 "wordcraft": {
     "type": "local",
+    "disabled": true,
     "command": [
         "node",
         "{env:HOME}/.config/opencode/wordcraft-mcp/server.mjs",

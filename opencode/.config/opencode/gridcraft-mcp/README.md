@@ -32,11 +32,14 @@ until the AppImage's modification time changes.
 | `GRIDCRAFT_MODE` | auto | Force `direct` or `headless` |
 | `GRIDCRAFT_TIMEOUT` | `120000` | Control-request timeout (ms) |
 
-OpenCode launches it from `opencode.jsonc`:
+OpenCode launches it from `opencode.jsonc`. It is registered with
+`"disabled": true`, so it stays unconnected until you remove that line (or
+enable it in the client) and restart the service:
 
 ```jsonc
 "gridcraft": {
     "type": "local",
+    "disabled": true,
     "command": [
         "node",
         "{env:HOME}/.config/opencode/gridcraft-mcp/server.mjs",

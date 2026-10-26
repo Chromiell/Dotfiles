@@ -463,6 +463,11 @@ opencode service restart
 | `gridcraft` | Local (Node) | GridCraft spreadsheets — live GUI workbook or bundled headless engine | None |
 | `wordcraft` | Local (Node) | WordCraft documents — live GUI document or bundled headless engine | None |
 
+> `gridcraft` and `wordcraft` are configured with `"disabled": true`, so they
+> stay unconnected by default and cost nothing until you need them. Enable one
+> by hand — remove its `"disabled"` line in `opencode.jsonc` (or toggle it in
+> the client) and restart the service.
+
 ### GridCraft
 
 The GridCraft MCP server is tracked in `gridcraft-mcp/` and is fully
