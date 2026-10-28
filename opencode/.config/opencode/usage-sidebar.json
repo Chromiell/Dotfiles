@@ -1,0 +1,13 @@
+{
+  "refreshMs": 120000,
+  "position": "top",
+  "title": "Usage",
+  "showEstimate": true,
+  "showMeters": true,
+  "showBars": true,
+  "barWidth": 22,
+  "showReset": true,
+  "warnAt": 70,
+  "criticalAt": 90,
+  "compact": false
+}

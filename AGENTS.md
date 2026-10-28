@@ -84,7 +84,7 @@ directories; likewise `pythonScripts` folds into `~/Projects/PythonScripts`.
 | `pythonScripts/` | Input / Gaming | Python controller button-swap and macro scripts, plus a PDF-to-CSV table extractor, stowed into `~/Projects/PythonScripts`. |
 | `composer/` | Development | Global PHP Composer settings. |
 | `php-cs-fixer/` | Development | PHP coding-standards / PSR fixer config. |
-| `opencode/` | AI / Development | Token-optimized OpenCode CLI config plus the `oh-my-opencode-slim` orchestrator, `opencode-tps-meter` plugin, and self-contained GridCraft and WordCraft MCP servers (`gridcraft-mcp/`, `wordcraft-mcp/`). |
+| `opencode/` | AI / Development | Token-optimized OpenCode CLI config plus the `oh-my-opencode-slim` orchestrator, `opencode-tps-meter` plugin, and self-contained GridCraft and WordCraft MCP servers (`gridcraft-mcp/`, `wordcraft-mcp/`). `cli.json` also installs the published `opencode-session-usage` TUI plugin from npm (source checkout at `~/Projects/opencode-session-usage`); its options live in `usage-sidebar.json`. |
 | `images/` | Assets | Shared wallpapers and media assets. |
 | `mouseCursorDefault/` | Desktop | Default XDG cursor theme definitions. |
 | `.github/` | CI | GitHub Actions workflows — ShellCheck, shfmt, actionlint, zsh syntax, gitleaks secret scan, typos, lychee, markdownlint, StyLua, Ruff, yamllint, a Stow-layout check, and a run-status notification webhook — plus Dependabot config. Not a Stow package; never stowed. Its docs live in `.github/CI.md` (deliberately **not** `README.md`, which GitHub would surface on the repository home page instead of the root `README.md`). |

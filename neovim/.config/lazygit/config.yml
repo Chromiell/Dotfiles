@@ -1,3 +1,19 @@
+keybinding:
+    universal:
+        # PgUp/PgDn and J/K keep scrolling the main (diff) pane; Ctrl+u/Ctrl+d
+        # page the focused list instead, which is what makes them usable in the
+        # commits, files and branches panels.
+        scrollUpMain: [<pgup>, K]
+        scrollDownMain: [<pgdown>, J]
+        prevPage: [',', <ctrl+u>]
+        nextPage: ['.', <ctrl+d>]
+        # Lazygit still merges these deprecated slots into the scroll bindings
+        # above, so clear them or Ctrl+u/Ctrl+d would stay bound to the main pane.
+        scrollUpMain-alt1: []
+        scrollDownMain-alt1: []
+        scrollUpMain-alt2: []
+        scrollDownMain-alt2: []
+
 customCommands:
     - key: "<c-x>"
       description: "Open conflicts in host Diffview"

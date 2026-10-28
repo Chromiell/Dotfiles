@@ -9,7 +9,9 @@ It also ships the [oh-my-opencode-slim](https://github.com/alvinunreal/oh-my-ope
 plugin, which turns OpenCode into an **orchestrator plus a team of specialist
 subagents** running on the OpenCode Go subscription, and the
 [opencode-tps-meter](https://github.com/ChiR24/opencode-tps-meter) plugin, which adds a
-live tokens-per-second meter to the TUI ([section 6](#-6-live-throughput-meter-opencode-tps-meter)).
+live tokens-per-second meter to the TUI ([section 6](#-6-live-throughput-meter-opencode-tps-meter)),
+and the standalone [opencode-session-usage](https://github.com/Chromiell/opencode-session-usage)
+sidebar plugin ([section 10](#-10-usage-sidebar)).
 
 ---
 
@@ -35,6 +37,7 @@ live tokens-per-second meter to the TUI ([section 6](#-6-live-throughput-meter-o
 - [8. MCP Servers](#-8-mcp-servers)
 - [Related Modules](#-related-modules)
 - [9. Editor Schema Warnings (Neovim)](#-9-editor-schema-warnings-neovim)
+- [10. Usage Sidebar](#-10-usage-sidebar)
 
 ---
 
@@ -85,7 +88,9 @@ Config files travel through Git, but a few things are per-machine:
    `~/.local/share/opencode/opencode.db`, not in this repository.
 3. Ensure the OpenCode env vars are present (they are in the tracked `zsh/.zshenv`
    once stowed — see [section 5](#-5-multi-agent-setup-oh-my-opencode-slim)).
-4. `opencode service restart`, then confirm the plugin loaded with `opencode plugin list`.
+4. The usage panel is installed from npm as `opencode-session-usage`,
+   as described in [section 10](#-10-usage-sidebar).
+5. `opencode service restart`, then confirm the plugin loaded with `opencode plugin list`.
 
 The `service.json`, plugin packages (`~/.cache/opencode/npm`), the
 `.oh-my-opencode-slim/` runtime manifest, and session/credential data are all
@@ -98,7 +103,8 @@ recreated automatically.
 ```text
 ~/.config/opencode/            → symlink to ~/.dotfiles/opencode/.config/opencode/
 ├── opencode.jsonc            # Tracked (stowed): global config, MCP servers, plugins
-├── cli.json                  # Tracked: TUI-only settings (paste, theme, keybinds, tabs)
+├── cli.json                  # Tracked: TUI-only settings + external usage-sidebar plugin
+├── usage-sidebar.json        # Tracked: usage panel options (refresh, position, display)
 ├── oh-my-opencode-slim.json  # Tracked: multi-agent presets (opencode-go active)
 ├── gridcraft-mcp/            # Tracked: self-contained GridCraft MCP server
 │   ├── server.mjs            #   live control channel / headless fallback
@@ -546,3 +552,55 @@ Some editors report that V2 fields such as `agents`, `media`, `compaction`,
 
 Leaving `$schema` in place keeps completion and validation for the fields that *are*
 described, so this is only cosmetic noise in the editor.
+
+---
+
+## 📈 10. Usage Sidebar
+
+The usage panel is a **standalone TUI-only plugin**, published on npm as
+[`opencode-session-usage`](https://www.npmjs.com/package/opencode-session-usage);
+its source and release process live in the
+[GitHub repository](https://github.com/Chromiell/opencode-session-usage).
+`cli.json` installs the published package:
+
+```json
+{
+  "plugins": ["opencode-session-usage"]
+}
+```
+
+`cli.json` is the correct place for a TUI-only plugin: OpenCode's `opencode.jsonc`
+plugin list is for server plugins or packages that ship both parts. OpenCode
+resolves and installs the package from npm on first load.
+
+The panel shows a catalog-price session estimate plus the OpenCode Go/Console
+rolling, weekly and monthly meters. Its options live in the tracked
+`usage-sidebar.json` next to `cli.json`:
+
+```json
+{
+  "refreshMs": 120000,
+  "position": "top",
+  "compact": false,
+  "title": "Usage",
+  "showEstimate": true,
+  "showMeters": true,
+  "showBars": true,
+  "barWidth": 22,
+  "showReset": true,
+  "warnAt": 70,
+  "criticalAt": 90
+}
+```
+
+The file is watched and display changes apply immediately; `position` is read at
+plugin load and needs `/reload`. `position: "top"` places the panel between the
+built-in Context and MCP sections by claiming the built-in Limit slot (empty on
+Go-only setups, replaced if Console budgets are in use). `position: "bottom"` uses
+the footer, which only has room for one row before the prompt area, so it pairs
+with `"compact": true`.
+
+Go meters require an **OpenCode Console account connected through OAuth** (not just a
+service-account API key), because the usage endpoint resolves the workspace from the
+OAuth credential's `metadata.orgID`. See the project README for the full setup,
+troubleshooting, cost/ToS notes, CI and Discord notification details.
