@@ -11,6 +11,7 @@ This repository contains operational, deployment, backup, and utility scripts us
 - [Installation with GNU Stow](#-installation-with-gnu-stow)
 - [Directory Structure & Data Organization](#-directory-structure--data-organization)
   - [Sensitive Data & Configuration Files (`Documents/ScriptsData/`)](#sensitive-data--configuration-files-documentsscriptsdata)
+  - [Cron Log Files](#cron-log-files)
 - [Script Catalog](#-script-catalog)
   - [1. SSL & HAProxy Management](#1-ssl--haproxy-management)
     - [`certbotAddDomain.sh`](#certbotadddomainsh)
@@ -98,6 +99,37 @@ All sensitive environment variables, passwords, network addresses, and private c
 | `config.env` | Central configuration file defining sensitive variables (server hosts, IP addresses, database users, database names, dumped table lists, network shares). Ignored by Git. |
 | `config.env.example` | Template file documenting all available configuration variables with sanitized placeholders. Tracked in Git. |
 
+### Cron Log Files
+
+The database scripts write timestamped progress lines to **stderr**, so each
+cron entry redirects both standard streams to a dedicated log file (example
+schedules; adjust the times to your setup):
+
+```cron
+# Runs as admin00
+0 1 * * * /home/admin00/Documents/Scripts/nightlyProdDump.sh > /var/log/logNightly.log 2>&1
+
+# Run as root
+0 2 * * * /home/admin00/Documents/Scripts/dumpMantisDB.sh > /var/log/logMantis.log 2>&1
+0 3 * * * /home/admin00/Documents/Scripts/moveDBDump.sh > /var/log/logMoveDump.log 2>&1
+```
+
+`/var/log` is owned by root, so a cron job running as a regular user cannot
+create its log file there. Initialize `logNightly.log` once with the cron user
+as owner (replace `admin00` with the user that owns the crontab):
+
+```bash
+sudo install -o admin00 -g admin00 -m 0644 /dev/null /var/log/logNightly.log
+```
+
+This also empties an existing file, reverting it to a clean state. The two root
+jobs create `logMantis.log` and `logMoveDump.log` automatically.
+
+If a log file is deleted or rotated away, re-run the `install` command for the
+non-root job; otherwise `cron` cannot open the redirect and the job runs with no
+output. `>` truncates the file on every run, so it always contains the latest
+run only; use `>>` to keep history and add a `logrotate` rule to bound its size.
+
 ---
 
 ## 🛠 Script Catalog
@@ -156,6 +188,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   3. Scans existing backups on the share matching `database-YYYYMMDD.sql.gz` and prunes older entries, maintaining only the 2 most recent backups.
   4. Executes `mysqldump` with `--single-transaction` on the configured database (`MANTIS_DB_NAME`), compresses output with `gzip`, and writes to `$TARGET_DIR/database-YYYYMMDD.sql.gz`.
   5. Automatically unmounts the network share and removes the mount folder on exit via `trap`.
+  6. Writes a timestamped line for every step to stderr, plus an `ERROR` line (with the failing source line) and a final status line, so a cron redirect always produces a readable log.
 
 #### `nightlyProdDump.sh`
 
@@ -171,7 +204,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   3. Saves compressed output to `$PROD_DUMP_DIR/dump-YYYYMMDD.sql.gz`.
   4. Decompresses and imports the dump into the local database (`PROD_DUMP_LOCAL_DB_NAME`).
   5. Executes `postImportDBAlter.sh` to apply post-import schema/data alterations.
-  6. Writes a timestamped line for every step to stderr, plus an `ERROR` line (with the failing source line) and a final status line, so a cron redirect always produces a readable log.
+  6. Writes a timestamped line for every step to stderr, plus an `ERROR` line (with the failing source line) and a final status line, so a cron redirect always produces a readable log. See [Cron Log Files](#cron-log-files) for the one-time log file setup.
 
 #### `moveDBDump.sh`
 
@@ -184,6 +217,7 @@ All sensitive environment variables, passwords, network addresses, and private c
   3. Cleans up older dumps on the share matching `dump-YYYYMMDD.sql.gz`, keeping only the 2 newest files.
   4. Copies today's dump file while preserving file modes and timestamps.
   5. Safely unmounts and cleans up the mount point on script exit.
+  6. Writes a timestamped line for every step to stderr, plus an `ERROR` line (with the failing source line) and a final status line, so a cron redirect always produces a readable log.
 
 #### `postImportDBAlter.sh`
 
