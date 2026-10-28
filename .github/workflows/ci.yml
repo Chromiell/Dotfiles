@@ -235,6 +235,9 @@ jobs:
           REF: ${{ github.ref_name }}
           ACTOR: ${{ github.actor }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          # Subject of the triggering commit; pull requests carry the title
+          # instead, and manual runs may carry neither.
+          COMMIT_MSG: ${{ github.event.head_commit.message || github.event.pull_request.title || '' }}
         run: |
           failures="$(jq -r '[to_entries[] | select(.value.result != "success")] | length' <<< "$NEEDS_JSON")"
           if [[ "$failures" == "0" ]]; then
@@ -253,8 +256,35 @@ jobs:
             | map("\(.value.result | icon) \(.key): \(.value.result)")
             | join("\n")
           ' <<< "$NEEDS_JSON")"
-          message="$(printf '%s CI %s on %s (%s) — triggered by %s\n%s\n%s' \
-            "$mood" "$verdict" "$REPO" "$REF" "$ACTOR" "$details" "$RUN_URL")"
+          # Notification layout, blocks separated by blank lines:
+          #   **title**
+          #   *commit subject*
+          #   per-job status
+          #   run link
+          title="${mood} CI ${verdict} on ${REPO} (${REF}) — triggered by ${ACTOR}"
+          commit_subject="${COMMIT_MSG%%$'\n'*}"
+          commit_subject="${commit_subject#"${commit_subject%%[![:space:]]*}"}"
+          commit_subject="${commit_subject%"${commit_subject##*[![:space:]]}"}"
+          commit_subject="${commit_subject:0:200}"
+          if [[ "$WEBHOOK_URL" == *"hooks.slack.com"* ]]; then
+            # Slack markup: *bold*, _italic_.
+            title="*${title}*"
+            [[ -n "$commit_subject" ]] && commit_subject="_${commit_subject}_"
+          else
+            # Discord markup: **bold**, *italic*. Escape its control characters
+            # so the subject cannot break the italic wrapper.
+            commit_subject="${commit_subject//\\/\\\\}"
+            commit_subject="${commit_subject//\*/\\*}"
+            commit_subject="${commit_subject//_/\\_}"
+            commit_subject="${commit_subject//\`/\\\`}"
+            title="**${title}**"
+            [[ -n "$commit_subject" ]] && commit_subject="*${commit_subject}*"
+          fi
+          if [[ -n "$commit_subject" ]]; then
+            message="${title}"$'\n\n'"${commit_subject}"$'\n\n'"${details}"$'\n\n'"${RUN_URL}"
+          else
+            message="${title}"$'\n\n'"${details}"$'\n\n'"${RUN_URL}"
+          fi
           # Discord expects {"content": ...}; Slack expects {"text": ...}.
           if [[ "$WEBHOOK_URL" == *"hooks.slack.com"* ]]; then
             body="$(jq -n --arg text "$message" '{text: $text}')"

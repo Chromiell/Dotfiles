@@ -98,8 +98,10 @@ the action itself. The run-step tools (`shfmt`, `actionlint`, `yamllint`,
 A `notify` job reports the outcome of **every completed run** — pass or fail — to a
 Discord or Slack incoming webhook. It gates on `if: !cancelled()`, so runs superseded
 by a newer push stay silent, but otherwise both successful and failed runs are
-announced. The message lists every job with a status icon — ✅ pass, ❌ fail, plus
-marks for other states — and links to the run.
+announced. The message is laid out in blocks separated by blank lines: a bold
+title, the triggering commit subject in italics (the pull-request title for
+PRs; omitted for manual runs without one), every job with a status icon —
+✅ pass, ❌ fail, plus marks for other states — and finally a link to the run.
 
 ### Setup
 
