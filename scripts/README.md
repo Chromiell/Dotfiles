@@ -106,20 +106,20 @@ cron entry redirects both standard streams to a dedicated log file (example
 schedules; adjust the times to your setup):
 
 ```cron
-# Runs as admin00
-0 1 * * * /home/admin00/Documents/Scripts/nightlyProdDump.sh > /var/log/logNightly.log 2>&1
+# Runs as admin
+0 1 * * * /home/admin/Documents/Scripts/nightlyProdDump.sh > /var/log/logNightly.log 2>&1
 
 # Run as root
-0 2 * * * /home/admin00/Documents/Scripts/dumpMantisDB.sh > /var/log/logMantis.log 2>&1
-0 3 * * * /home/admin00/Documents/Scripts/moveDBDump.sh > /var/log/logMoveDump.log 2>&1
+0 2 * * * /home/admin/Documents/Scripts/dumpMantisDB.sh > /var/log/logMantis.log 2>&1
+0 3 * * * /home/admin/Documents/Scripts/moveDBDump.sh > /var/log/logMoveDump.log 2>&1
 ```
 
 `/var/log` is owned by root, so a cron job running as a regular user cannot
 create its log file there. Initialize `logNightly.log` once with the cron user
-as owner (replace `admin00` with the user that owns the crontab):
+as owner (replace `admin` with the user that owns the crontab):
 
 ```bash
-sudo install -o admin00 -g admin00 -m 0644 /dev/null /var/log/logNightly.log
+sudo install -o admin -g admin -m 0644 /dev/null /var/log/logNightly.log
 ```
 
 This also empties an existing file, reverting it to a clean state. The two root

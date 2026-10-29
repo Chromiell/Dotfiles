@@ -15,7 +15,7 @@ services:
     networks:
       - gitea
     volumes:
-      - /home/admin00/gitea:/data
+      - /home/admin/gitea:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
@@ -32,7 +32,7 @@ services:
       - gitea
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /home/admin00/gitea-runner:/data
+      - /home/admin/gitea-runner:/data
       - ./config.yaml:/config.yaml  # Mounts the configuration file we edited
     environment:
       - CONFIG_FILE=/config.yaml  # Tells the runner to read our custom network setting
