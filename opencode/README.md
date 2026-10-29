@@ -573,7 +573,8 @@ its source and release process live in the
 plugin list is for server plugins or packages that ship both parts. OpenCode
 resolves and installs the package from npm on first load.
 
-The panel shows a catalog-price session estimate plus the OpenCode Go/Console
+The panel shows a whole-session total (reported cost when available, catalog-price
+fallback for subscriptions) plus the OpenCode Go/Console
 rolling, weekly and monthly meters. Its options live in the tracked
 `usage-sidebar.json` next to `cli.json`:
 
@@ -603,4 +604,4 @@ with `"compact": true`.
 Go meters require an **OpenCode Console account connected through OAuth** (not just a
 service-account API key), because the usage endpoint resolves the workspace from the
 OAuth credential's `metadata.orgID`. See the project README for the full setup,
-troubleshooting, cost/ToS notes, CI and Discord notification details.
+troubleshooting, cost and ToS notes.
