@@ -159,25 +159,60 @@ extract() {
 
 # Compress one or more files/directories into a specified archive format.
 compress() {
+    local use_sudo=0
+
+    # Leading options only: --sudo reads the sources as root, -- ends options.
+    while [[ "$1" == -* ]]; do
+        case "$1" in
+            --sudo)
+                use_sudo=1
+                shift
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -h | --help) break ;;
+            *)
+                echo "Unknown option: $1" >&2
+                return 1
+                ;;
+        esac
+    done
+
     if [[ "$1" == "-h" || "$1" == "--help" || $# -lt 2 ]]; then
-        echo "Usage: compress <archive_name> <file_or_dir> [file_or_dir ...]"
+        echo "Usage: compress [--sudo] <archive_name> <file_or_dir> [file_or_dir ...]"
         echo "       compress --help"
         echo ""
         echo "Compress target file(s) or directory(ies) into an archive."
         echo "Supports: .tar.gz, .tgz, .tar.bz2, .tbz2, .tar.xz, .tar, .zip, .7z, .rar, .gz, .bz2"
         echo "With pv installed, streamable formats (.tar*, .gz, .bz2) show a progress bar."
+        echo ""
+        echo "Options:"
+        echo "  --sudo  Read the sources as root, for files the current user cannot read."
         return 0
     fi
 
     # A failing tar/pv/compressor inside a pipeline must fail the whole call.
     setopt localoptions pipefail
 
+    # Only the reading side runs as root, so the archive is still created by
+    # the current user and stays owned/writable by them.
+    local -a run_as
+    if ((use_sudo)); then
+        if ! command -v sudo >/dev/null 2>&1; then
+            echo "Error: --sudo requires sudo, which is not installed." >&2
+            return 1
+        fi
+        run_as=(sudo)
+    fi
+
     local archive="$1"
     shift # Remove the archive name from the argument list
 
     # Check that all remaining source files/directories exist
     for source in "$@"; do
-        if [[ ! -e "$source" ]]; then
+        if ! "${run_as[@]}" test -e "$source"; then
             echo "'$source' does not exist!"
             return 1
         fi
@@ -186,77 +221,83 @@ compress() {
     # Progress bars are piped through pv when it is installed. zip, 7z and rar
     # need random access to the output archive, so they keep their native
     # behaviour instead of being streamed.
-    local use_pv=0
+    local pv_bin=""
     if command -v pv >/dev/null 2>&1; then
+        pv_bin=$(command -v pv)
+    fi
+    local use_pv=0
+    if [[ -n "$pv_bin" ]]; then
         use_pv=1
     fi
 
     # Apparent size of the sources, so pv can show a percentage and an ETA.
     # tar adds headers and padding, so pv may stay at 100% for the last bytes.
-    local total=0 size
-    local -a pv_opts
+    local total=0
+    local -a pv_opts stream_cmd
     if ((use_pv)); then
-        for source in "$@"; do
-            size=$(du -sb -- "$source" 2>/dev/null | cut -f1)
-            total=$((total + ${size:-0}))
-        done
+        total=$("${run_as[@]}" du -scb -- "$@" 2>/dev/null | tail -n1 | cut -f1)
+        total=${total:-0}
         if ((total > 0)); then
             pv_opts=(-s "$total")
         fi
+        stream_cmd=("$pv_bin" "${pv_opts[@]}")
+    else
+        # Pass-through stage so --sudo without pv keeps the same pipeline shape.
+        stream_cmd=(cat)
     fi
 
     case "$archive" in
         *.tar.gz | *.tgz)
-            if ((use_pv)); then
-                tar cf - "$@" | pv "${pv_opts[@]}" | gzip >"$archive"
+            if ((use_sudo || use_pv)); then
+                "${run_as[@]}" tar cf - "$@" | "${stream_cmd[@]}" | gzip >"$archive"
             else
                 tar czvf "$archive" "$@" # tar -v names each file
             fi
             ;;
         *.tar.bz2 | *.tbz2)
-            if ((use_pv)); then
-                tar cf - "$@" | pv "${pv_opts[@]}" | bzip2 >"$archive"
+            if ((use_sudo || use_pv)); then
+                "${run_as[@]}" tar cf - "$@" | "${stream_cmd[@]}" | bzip2 >"$archive"
             else
                 tar cjvf "$archive" "$@"
             fi
             ;;
         *.tar.xz)
-            if ((use_pv)); then
-                tar cf - "$@" | pv "${pv_opts[@]}" | xz >"$archive"
+            if ((use_sudo || use_pv)); then
+                "${run_as[@]}" tar cf - "$@" | "${stream_cmd[@]}" | xz >"$archive"
             else
                 tar cJvf "$archive" "$@"
             fi
             ;;
         *.tar)
-            if ((use_pv)); then
-                tar cf - "$@" | pv "${pv_opts[@]}" >"$archive"
+            if ((use_sudo || use_pv)); then
+                "${run_as[@]}" tar cf - "$@" | "${stream_cmd[@]}" >"$archive"
             else
                 tar cvf "$archive" "$@"
             fi
             ;;
-        *.zip) zip -r "$archive" "$@" ;;
-        *.7z) 7z a "$archive" "$@" ;;
-        *.rar) rar a "$archive" "$@" ;;
+        *.zip) "${run_as[@]}" zip -r "$archive" "$@" ;;
+        *.7z) "${run_as[@]}" 7z a "$archive" "$@" ;;
+        *.rar) "${run_as[@]}" rar a "$archive" "$@" ;;
         *.gz)
-            if [[ $# -gt 1 || -d "$1" ]]; then
+            if [[ $# -gt 1 ]] || "${run_as[@]}" test -d "$1"; then
                 echo "Error: .gz can only compress a single file directly. Use .tar.gz for multiple files or directories."
                 return 1
             fi
-            if ((use_pv)); then
-                # gzip/bzip2 keep the source file when fed through a pipe, so
-                # the original stays in place just like with -k.
-                pv "${pv_opts[@]}" -- "$1" | gzip >"$1.gz"
+            if ((use_sudo || use_pv)); then
+                # Streaming keeps the source file (like -k) and lets the
+                # current user write the archive even when --sudo reads it.
+                "${run_as[@]}" cat -- "$1" | "${stream_cmd[@]}" | gzip >"$1.gz"
             else
                 gzip -k "$1" # -k keeps original file
             fi
             ;;
         *.bz2)
-            if [[ $# -gt 1 || -d "$1" ]]; then
+            if [[ $# -gt 1 ]] || "${run_as[@]}" test -d "$1"; then
                 echo "Error: .bz2 can only compress a single file directly. Use .tar.bz2 for multiple files or directories."
                 return 1
             fi
-            if ((use_pv)); then
-                pv "${pv_opts[@]}" -- "$1" | bzip2 >"$1.bz2"
+            if ((use_sudo || use_pv)); then
+                "${run_as[@]}" cat -- "$1" | "${stream_cmd[@]}" | bzip2 >"$1.bz2"
             else
                 bzip2 -k "$1" # -k keeps original file
             fi
