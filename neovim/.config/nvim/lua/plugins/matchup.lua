@@ -4,6 +4,10 @@ return {
         "andymass/vim-matchup",
         event = "BufReadPost",
         init = function()
+            -- Disable off-screen match display. By default matchup replaces the
+            -- window statusline (lualine) with the off-screen match, which
+            -- briefly overrides the bottom bar and draws over the last row.
+            vim.g.matchup_matchparen_offscreen = {}
             -- Defers highlighting updates until cursor stops, preventing insert-mode event collisions
             vim.g.matchup_matchparen_deferred = 1
             vim.g.matchup_matchparen_deferred_show_delay = 50
