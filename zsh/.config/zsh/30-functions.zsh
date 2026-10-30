@@ -165,8 +165,12 @@ compress() {
         echo ""
         echo "Compress target file(s) or directory(ies) into an archive."
         echo "Supports: .tar.gz, .tgz, .tar.bz2, .tbz2, .tar.xz, .tar, .zip, .7z, .rar, .gz, .bz2"
+        echo "With pv installed, streamable formats (.tar*, .gz, .bz2) show a progress bar."
         return 0
     fi
+
+    # A failing tar/pv/compressor inside a pipeline must fail the whole call.
+    setopt localoptions pipefail
 
     local archive="$1"
     shift # Remove the archive name from the argument list
@@ -179,11 +183,57 @@ compress() {
         fi
     done
 
+    # Progress bars are piped through pv when it is installed. zip, 7z and rar
+    # need random access to the output archive, so they keep their native
+    # behaviour instead of being streamed.
+    local use_pv=0
+    if command -v pv >/dev/null 2>&1; then
+        use_pv=1
+    fi
+
+    # Apparent size of the sources, so pv can show a percentage and an ETA.
+    # tar adds headers and padding, so pv may stay at 100% for the last bytes.
+    local total=0 size
+    local -a pv_opts
+    if ((use_pv)); then
+        for source in "$@"; do
+            size=$(du -sb -- "$source" 2>/dev/null | cut -f1)
+            total=$((total + ${size:-0}))
+        done
+        if ((total > 0)); then
+            pv_opts=(-s "$total")
+        fi
+    fi
+
     case "$archive" in
-        *.tar.gz | *.tgz) tar czvf "$archive" "$@" ;;
-        *.tar.bz2 | *.tbz2) tar cjvf "$archive" "$@" ;;
-        *.tar.xz) tar cJvf "$archive" "$@" ;;
-        *.tar) tar cvf "$archive" "$@" ;;
+        *.tar.gz | *.tgz)
+            if ((use_pv)); then
+                tar cf - "$@" | pv "${pv_opts[@]}" | gzip >"$archive"
+            else
+                tar czvf "$archive" "$@" # tar -v names each file
+            fi
+            ;;
+        *.tar.bz2 | *.tbz2)
+            if ((use_pv)); then
+                tar cf - "$@" | pv "${pv_opts[@]}" | bzip2 >"$archive"
+            else
+                tar cjvf "$archive" "$@"
+            fi
+            ;;
+        *.tar.xz)
+            if ((use_pv)); then
+                tar cf - "$@" | pv "${pv_opts[@]}" | xz >"$archive"
+            else
+                tar cJvf "$archive" "$@"
+            fi
+            ;;
+        *.tar)
+            if ((use_pv)); then
+                tar cf - "$@" | pv "${pv_opts[@]}" >"$archive"
+            else
+                tar cvf "$archive" "$@"
+            fi
+            ;;
         *.zip) zip -r "$archive" "$@" ;;
         *.7z) 7z a "$archive" "$@" ;;
         *.rar) rar a "$archive" "$@" ;;
@@ -192,14 +242,24 @@ compress() {
                 echo "Error: .gz can only compress a single file directly. Use .tar.gz for multiple files or directories."
                 return 1
             fi
-            gzip -k "$1" # -k keeps original file
+            if ((use_pv)); then
+                # gzip/bzip2 keep the source file when fed through a pipe, so
+                # the original stays in place just like with -k.
+                pv "${pv_opts[@]}" -- "$1" | gzip >"$1.gz"
+            else
+                gzip -k "$1" # -k keeps original file
+            fi
             ;;
         *.bz2)
             if [[ $# -gt 1 || -d "$1" ]]; then
                 echo "Error: .bz2 can only compress a single file directly. Use .tar.bz2 for multiple files or directories."
                 return 1
             fi
-            bzip2 -k "$1" # -k keeps original file
+            if ((use_pv)); then
+                pv "${pv_opts[@]}" -- "$1" | bzip2 >"$1.bz2"
+            else
+                bzip2 -k "$1" # -k keeps original file
+            fi
             ;;
         *)
             echo "Unsupported archive format for '$archive'!"
