@@ -189,7 +189,7 @@ subscription (prices are USD per million tokens, in/out):
 | explorer | `opencode-go/deepseek-v4.1-flash` | `high` | Fast model with higher reasoning for codebase recon plus external docs and web research (`context7`, `gh_grep`, `websearch`); 1M ctx, vision, $0.15/$0.60. |
 | designer | `opencode-go/kimi-k2.7-code` | *(none)* | Code/vision-specialised for UI/UX and frontend polish. |
 | fixer | `opencode-go/deepseek-v4.1-flash` | `high` | Reliable scoped coding at the lowest cost tier. |
-| observer | `opencode/mimo-v2.6-flash-free` | *(none)* | Same vision/audio/video capabilities as the Go model but **free**; its 200k context is ample for screenshot analysis. |
+| observer | `opencode-go/mimo-v2.6-flash` | *(none)* | Paid Go variant of the same MiMo flash model; vision-capable at $0.14/$0.28, so visual analysis stays within the Go subscription. |
 | council (synthesiser) | `opencode-go/deepseek-v4-pro` | `max` | Strong synthesiser; council is manual/high-cost. |
 | councillor-alpha | `opencode-go/deepseek-v4-pro` | `max` | DeepSeek perspective. |
 | councillor-beta | `opencode-go/qwen3.8-max` | `xhigh` | Qwen perspective (different model family). |

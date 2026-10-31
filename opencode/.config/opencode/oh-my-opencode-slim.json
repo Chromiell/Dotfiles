@@ -90,7 +90,7 @@
         "mcps": []
       },
       "observer": {
-        "model": "opencode/mimo-v2.6-flash-free",
+        "model": "opencode-go/mimo-v2.6-flash",
         "skills": [],
         "mcps": []
       },
