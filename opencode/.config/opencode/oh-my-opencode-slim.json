@@ -49,9 +49,6 @@
       "orchestrator": {
         "model": "opencode-go/deepseek-v4-pro",
         "variant": "max",
-        "permission": {
-          "edit": "deny"
-        },
         "skills": [
           "*"
         ],

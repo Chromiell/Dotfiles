@@ -55,6 +55,18 @@
         // "summary": { "model": "opencode/mimo-v2.6-flash-free" }
     },
 
+    // ── Nested subagents (observer hop) ────────────────────────────────────────
+    // oh-my-opencode-slim gives the advisory subagents (explorer, oracle and
+    // designer) a `task` permission that allows only `observer`, and appends an
+    // instruction telling them to dispatch @observer whenever they cannot view
+    // an image themselves. OpenCode's host default is depth 1, which rejects
+    // that call, so the instruction was previously unusable. Depth 2 permits
+    // exactly one extra hop. Fixer, observer itself and the council synthesiser
+    // keep deny-all `task` maps, so the chain cannot recurse any further.
+    "experimental": {
+        "subagent_depth": 2,
+    },
+
     // ── Cap tool output that enters the context ────────────────────────────────
     // Tool results are a major token sink: every turn resends them. When output
     // exceeds these limits the full text is still saved under

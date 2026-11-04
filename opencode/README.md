@@ -187,13 +187,23 @@ subscription (prices are USD per million tokens, in/out):
 | orchestrator (primary) | `opencode-go/deepseek-v4-pro` | `max` | Strong reasoning + instruction-following (needed for reliable delegation) at $0.66/$1.98; 1M ctx, cheap cache reads. Runs with `"permission": { "edit": "deny" }`. |
 | oracle | `opencode-go/deepseek-v4-pro` | `max` | Strongest high-reasoning on Go at $0.66/$1.98 — ~4× cheaper than `qwen3.7-max`. |
 | explorer | `opencode-go/deepseek-v4.1-flash` | `high` | Fast model with higher reasoning for codebase recon plus external docs and web research (`context7`, `gh_grep`, `websearch`); 1M ctx, vision, $0.15/$0.60. |
-| designer | `opencode-go/kimi-k2.7-code` | *(none)* | Code/vision-specialised for UI/UX and frontend polish. |
+| designer | `opencode-go/deepseek-v4.1-flash` | `max` | Same fast, vision-capable model as explorer but at max reasoning for UI/UX and frontend polish; $0.15/$0.60. |
 | fixer | `opencode-go/deepseek-v4.1-flash` | `high` | Reliable scoped coding at the lowest cost tier. |
 | observer | `opencode-go/mimo-v2.6-flash` | *(none)* | Paid Go variant of the same MiMo flash model; vision-capable at $0.14/$0.28, so visual analysis stays within the Go subscription. |
 | council (synthesiser) | `opencode-go/deepseek-v4-pro` | `max` | Strong synthesiser; council is manual/high-cost. |
 | councillor-alpha | `opencode-go/deepseek-v4-pro` | `max` | DeepSeek perspective. |
 | councillor-beta | `opencode-go/qwen3.8-max` | `xhigh` | Qwen perspective (different model family). |
 | councillor-gamma | `opencode-go/glm-5.3` | `high` | GLM perspective (different model family). |
+
+> [!TIP]
+> **Subagents can reach `@observer` too.** `explorer`, `oracle` and `designer`
+> carry a `task` permission of `{"*": "deny", "observer": "allow"}`, so a
+> screenshot or diagram found mid-reconnaissance can be described by the vision
+> model without routing back through the orchestrator. OpenCode rejects nested
+> subagents at its default depth of 1, so `opencode.jsonc` sets
+> `"experimental": { "subagent_depth": 2 }` — exactly one extra hop. `fixer`,
+> `observer` itself and the council synthesiser keep deny-all `task` maps and
+> stay non-spawning.
 
 > [!NOTE]
 > **`librarian` was merged into `explorer`** in oh-my-opencode-slim 3.0.5
