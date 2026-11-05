@@ -29,20 +29,6 @@ Apache-2.0.
 
 ---
 
-## Addy Osmani `agent-skills` (simplify skill)
-
-- **Path:** `opencode/.config/opencode/skills/simplify/**`
-- **License:** MIT License
-- **Copyright:** Copyright (c) 2025 Addy Osmani
-- **Upstream:** <https://github.com/addyosmani/agent-skills> (`skills/code-simplification`)
-
-The `simplify` skill is adapted from Addy Osmani's `code-simplification` skill.
-The MIT License requires that the original copyright notice and permission
-notice be retained with copies or substantial portions of the software. The
-upstream MIT LICENSE is available in the upstream repository at the link above.
-
----
-
 ## Runtime-installed dependencies (not distributed)
 
 The following are **not tracked** in this repository and are installed at

@@ -115,7 +115,6 @@ Each module also has its own `README.md` with package requirements, module depen
 - Original work in this repository is under the **MIT License** (`LICENSE`).
 - Bundled third-party components are **excluded** from that license and keep their own terms. Always preserve their notices and license files:
   - `neovim/.config/nvim/**` → Apache-2.0 (`neovim/.config/nvim/LICENSE`, LazyVim)
-  - `opencode/.config/opencode/skills/simplify/**` → MIT, © Addy Osmani
 - Full attribution lives in `THIRD-PARTY-NOTICES.md`. Update it (and the README License table) when you add or remove third-party/adapted content.
 - Upstream dependencies installed at runtime (Zsh/Tmux plugins, Composer `vendor/`, the downloaded font binaries) are gitignored and not distributed, so their licenses do not apply to this repository.
 

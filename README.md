@@ -190,7 +190,6 @@ Bundled third-party components keep their own upstream licenses:
 | Component | Path | License |
 | :--- | :--- | :--- |
 | LazyVim-based Neovim config | `neovim/.config/nvim/` | Apache-2.0 |
-| Adapted `simplify` skill | `opencode/.config/opencode/skills/simplify/` | MIT (© Addy Osmani) |
 
 See [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) for full attribution and
 the retained `LICENSE` files.
