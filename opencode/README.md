@@ -305,7 +305,17 @@ its runtime name (`paladin`, `documenter`):
 | Agent | Model | Variant | Role |
 | :--- | :--- | :--- | :--- |
 | `paladin` | `opencode-go/deepseek-v4-pro` | `max` | Read-only security review |
-| `documenter` | `opencode-go/deepseek-v4.1-flash` | `low` | Documentation-only edits |
+| `documenter` | `opencode-go/deepseek-v4.1-flash` | `high` | Documentation-only edits |
+
+Both pins are deliberate: `paladin` shares the orchestrator's strong reasoning
+model because security review is infrequent and read-only, while `documenter` is
+pinned to the cheap flash tier so documentation work never inherits the
+orchestrator's `deepseek-v4-pro` price. Documenter runs at `high` rather than
+`low` because coherence and cross-document reconciliation depend on reasoning
+effort, and the extra thinking tokens cost ~$0.002 per run at $0.15/$0.60.
+`deepseek-v4.1-flash` cache reads ($0.003/M) also suit its read-heavy source
+trawling far better than Claude/GPT-tier models, whose cache writes cost ~40×
+more.
 
 Their versions follow what the marketplace serves; the versions above are the ones
 installed when they were enabled. Update them with `marketplace update <id>` and
