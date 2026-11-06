@@ -95,7 +95,23 @@
       "council": {
         "model": "opencode-go/deepseek-v4-pro",
         "variant": "max"
+      },
+      "marketplace": {
+        "agents_add": [
+          "alvin/paladin",
+          "alvin/documenter"
+        ]
       }
+    }
+  },
+  "agents": {
+    "paladin": {
+      "model": "opencode-go/deepseek-v4-pro",
+      "variant": "max"
+    },
+    "documenter": {
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "variant": "low"
     }
   },
   "council": {

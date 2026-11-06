@@ -26,6 +26,7 @@ sidebar plugin ([section 10](#-10-usage-sidebar)).
   - [Active preset (`opencode-go`)](#active-preset-opencode-go)
     - [Orchestrator: decide and delegate](#orchestrator-decide-and-delegate)
     - [Oracle: planner and advisor](#oracle-planner-and-advisor)
+  - [Marketplace agents](#marketplace-agents)
   - [Usage](#usage)
   - [Browser testing with `playwright-cli`](#browser-testing-with-playwright-cli)
   - [Desktop control with `desktop-use`](#desktop-control-with-desktop-use)
@@ -88,13 +89,25 @@ Config files travel through Git, but a few things are per-machine:
    `~/.local/share/opencode/opencode.db`, not in this repository.
 3. Ensure the OpenCode env vars are present (they are in the tracked `zsh/.zshenv`
    once stowed — see [section 5](#-5-multi-agent-setup-oh-my-opencode-slim)).
-4. The usage panel is installed from npm as `opencode-session-usage`,
-   as described in [section 10](#-10-usage-sidebar).
-5. `opencode service restart`, then confirm the plugin loaded with `opencode plugin list`.
+4. Install the two marketplace agents. They are **not** vendored here and are not
+   downloaded automatically by `stow` or by the plugin on first start:
 
-The `service.json`, plugin packages (`~/.cache/opencode/npm`), the
-`.oh-my-opencode-slim/` runtime manifest, and session/credential data are all
-recreated automatically.
+   ```bash
+   npx -y oh-my-opencode-slim@latest marketplace install alvin/paladin
+   npx -y oh-my-opencode-slim@latest marketplace install alvin/documenter
+   ```
+
+   The tracked preset already selects both under `marketplace.agents_add`, so no
+   `marketplace enable` step is needed.
+5. The usage panel is installed from npm as `opencode-session-usage`,
+   as described in [section 10](#-10-usage-sidebar).
+6. `opencode service restart`, then confirm the plugin loaded with `opencode plugin list`.
+
+`service.json`, the npm plugin cache (`~/.cache/opencode/npm`), plugin runtime
+state, and session/credential data are recreated automatically. Marketplace agent
+packages are the exception: they live in the shared store at
+`~/.local/share/opencode/storage/oh-my-opencode-slim/marketplace/` and must be
+installed once per machine as described above.
 
 ---
 
@@ -112,7 +125,6 @@ recreated automatically.
 ├── wordcraft-mcp/            # Tracked: self-contained WordCraft MCP launcher
 │   └── server.mjs            #   live control channel / headless fallback
 ├── skills/                   # Tracked: plugin skills + custom skills (playwright-cli, browser-use, desktop-use)
-├── .oh-my-opencode-slim/     # Runtime state (git-ignored): skill reconciliation manifest
 └── service.json              # Local service password (git-ignored)
 ```
 
@@ -124,11 +136,11 @@ which are separate from the server/project config in `opencode.jsonc`. For examp
 `"compact"` to restore the placeholder). Valid edits reload while the TUI is running.
 
 > [!NOTE]
-> `.oh-my-opencode-slim/` holds the plugin's **runtime state** (`skills-manifest.json`
-> and `skills.lock`). It is regenerated automatically and is therefore **git-ignored** —
-> see `opencode/.gitignore`. The plugin recreates the directory and manifest on the
-> first **new top-level session** after it loads, re-adopting the tracked skills in
-> `skills/`. It is safe to delete; there is nothing to restore by hand.
+> Older plugin releases wrote a `.oh-my-opencode-slim/` skills manifest in this
+> directory. Current releases register bundled skills in-process and remove that
+> legacy directory; runtime state (TUI state and the marketplace package store)
+> lives under `~/.local/share/opencode/storage/oh-my-opencode-slim/`. Nothing
+> under `~/.config/opencode` needs restoring by hand.
 
 ---
 
@@ -171,9 +183,11 @@ The plugin is loaded by both the server and the TUI from the `plugins` array in
 ]
 ```
 
-OpenCode resolves plugins from npm on first start, so no install step is
-needed on a new machine. `oh-my-opencode-slim`'s behavior is configured in
-`oh-my-opencode-slim.json`,
+OpenCode resolves the plugin from npm on first start, so no install step is
+needed for the plugin itself. Marketplace agent packages are separate: they are
+not downloaded automatically and must be installed once per machine (see
+[Marketplace agents](#marketplace-agents)). `oh-my-opencode-slim`'s behavior is
+configured in `oh-my-opencode-slim.json`,
 which defines two model presets — **`opencode-go` is active**, and `openai` is kept
 for quick switching with the `/preset` command.
 
@@ -184,7 +198,7 @@ subscription (prices are USD per million tokens, in/out):
 
 | Agent | Model | Variant | Rationale |
 | :--- | :--- | :--- | :--- |
-| orchestrator (primary) | `opencode-go/deepseek-v4-pro` | `max` | Strong reasoning + instruction-following (needed for reliable delegation) at $0.66/$1.98; 1M ctx, cheap cache reads. Runs with `"permission": { "edit": "deny" }`. |
+| orchestrator (primary) | `opencode-go/deepseek-v4-pro` | `max` | Strong reasoning + instruction-following (needed for reliable delegation) at $0.66/$1.98; 1M ctx, cheap cache reads. No custom role append or edit-deny permission is applied; heavy multi-phase work goes through the `/deepwork` skill. |
 | oracle | `opencode-go/deepseek-v4-pro` | `max` | Strongest high-reasoning on Go at $0.66/$1.98 — ~4× cheaper than `qwen3.7-max`. |
 | explorer | `opencode-go/deepseek-v4.1-flash` | `high` | Fast model with higher reasoning for codebase recon plus external docs and web research (`context7`, `gh_grep`, `websearch`); 1M ctx, vision, $0.15/$0.60. |
 | designer | `opencode-go/deepseek-v4.1-flash` | `max` | Same fast, vision-capable model as explorer but at max reasoning for UI/UX and frontend polish; $0.15/$0.60. |
@@ -223,49 +237,18 @@ so treat it as a deliberate, higher-cost escalation.
 
 #### Orchestrator: decide and delegate
 
-The orchestrator is a **coordinator, not a worker**. Its entire job is to turn a
-request into a plan and dispatch it to specialists; it must never gather
-information, verify implementation, or edit files itself. The sole exception is a
-**tool-availability smoke test** — confirming a tool or agent is reachable, not
-using it to do the task.
+The orchestrator is the plugin's built-in primary agent: it plans, delegates,
+monitors, reconciles, and verifies specialist work. Upstream also lets it act
+directly when it already holds the needed context, the change is small and clear,
+or the work is mostly context (docs, changelogs, summaries) — a fresh delegate
+would have to rediscover that context.
 
-This is enforced in two complementary places:
-
-- **`oh-my-opencode-slim/orchestrator_append.md`** appends a mandatory
-  `# Role: decide and delegate` block to the built-in orchestrator prompt. It states
-  the two allowed actions (decide the plan, invoke the `subagent` tool), the things
-  the orchestrator must never do itself (recon, verification, edits, substantive
-  work), and a default routing table:
-
-  | Need | Owner |
-  | :--- | :--- |
-  | Codebase/file/db/log/API/browser reconnaissance, external docs & library behavior | `@explorer` |
-  | Architecture / approach / hard-bug decisions / debugging sessions | `@oracle` |
-  | UI/UX implementation & visual polish | `@designer` |
-  | Scoped implementation, test suites, builds | `@fixer` |
-  | Visual analysis of screenshots/images | `@observer` |
-  | Multi-model consensus review | `@council` |
-
-- **`"permission": { "edit": "deny" }`** on the orchestrator, so it cannot modify
-  files and must route every edit through `@fixer`/`@designer`. (A broader
-  `bash`/`shell` deny was trialled but removed — it left the orchestrator too little
-  room to manoeuvre; the prompt now carries the delegation discipline instead.)
-
-Append prompts are the supported tuning mechanism: `{agent}_append.md` files live in
+Append prompts remain the supported tuning mechanism if a local override is
+needed later: `{agent}_append.md` files live in
 `~/.config/opencode/oh-my-opencode-slim/` (or a `{preset}/` subdirectory for
 preset-specific tuning) and are added *after* the built-in prompt, unlike
-`agents.<name>.prompt` in config which *replaces* it.
-
-> [!NOTE]
-> The role block lives in the **system prompt**, which OpenCode rebuilds on every
-> request. Compaction summarizes the conversation *history*, not the system prompt,
-> so the role and routing rules are re-applied automatically after every compaction —
-> no extra configuration is needed.
-
-> [!WARNING]
-> Earlier iterations relied on model choice alone. `minimax-m3` once performed an
-> entire UI redesign itself without invoking a single subagent; the orchestrator is
-> now `deepseek-v4-pro` *and* carries the explicit role block above.
+`agents.<name>.prompt` in config which *replaces* it. No such override files are
+shipped in this repository.
 
 > [!WARNING]
 > Upstream presets are generated by the installer and are often **outdated**. The
@@ -280,20 +263,53 @@ preset-specific tuning) and are added *after* the built-in prompt, unlike
 
 #### Oracle: planner and advisor
 
-`@oracle` is the team's decisive technical authority: the orchestrator consults it
-for architecture, approach, hard-bug and debugging decisions, and — before
-implementation — for the plan. Its role is hardened in
-**`oh-my-opencode-slim/oracle_append.md`**, which requires every consultation to
-return a concrete, self-contained answer: a single recommended approach, the
-reasoning, the ordered implementation steps, the risks/edge cases, the exact
-verification, and an explicit scope. It ends with **READY TO IMPLEMENT** or
-**NEEDS INFO**, so the orchestrator knows whether it may dispatch `@fixer`.
+`@oracle` is the plugin's built-in high-reasoning advisor, configured here as
+`opencode-go/deepseek-v4-pro` at `max` with the `simplify` skill. Consult it for
+architecture, approach, hard-bug, and debugging decisions.
 
-The **plan gate** ties the two together: before dispatching `@fixer`/`@designer`
-for anything beyond a trivial single-step edit, the orchestrator must already hold
-a proper plan (goal, files, steps, risks, verification). If the request or its own
-decomposition does not constitute one, it asks `@oracle` first and briefs the
-implementer with that plan — never with a vague "make it work".
+### Marketplace agents
+
+Two marketplace agents are **selected** by the active `opencode-go` preset in the
+user-level plugin config (`~/.config/opencode/oh-my-opencode-slim.json`, not a
+project-local `.opencode/` override):
+
+- **`alvin/paladin`** v1.0.1 — standalone, read-only security reviewer.
+- **`alvin/documenter`** v1.0.0 — documentation architect with documentation-only
+  write authority.
+
+`marketplace.agents_add` only activates a package; it does **not** download one.
+There is no auto-install hook: GNU Stow only creates symlinks, and the plugin
+resolves the configured package IDs at startup but never downloads missing
+packages. The packages are not vendored in this repository, and `stow opencode`
+only links the config. On a new machine, install them once **before** opening
+OpenCode:
+
+```bash
+npx -y oh-my-opencode-slim@latest marketplace install alvin/paladin
+npx -y oh-my-opencode-slim@latest marketplace install alvin/documenter
+```
+
+Then restart OpenCode (`opencode service restart`). No `marketplace enable` step is
+needed because the tracked preset already lists both packages. If OpenCode is
+started first, the agents are absent; `marketplace status` reports
+`alvin/... is not installed` until they are installed.
+
+Alternatively, ask the orchestrator to install them; it exposes the
+`marketplace_manage` tool. Marketplace packages live in the shared store at
+`~/.local/share/opencode/storage/oh-my-opencode-slim/marketplace/`, outside Stow
+and Git.
+
+A top-level `agents` block in the same file pins each one's model and variant under
+its runtime name (`paladin`, `documenter`):
+
+| Agent | Model | Variant | Role |
+| :--- | :--- | :--- | :--- |
+| `paladin` | `opencode-go/deepseek-v4-pro` | `max` | Read-only security review |
+| `documenter` | `opencode-go/deepseek-v4.1-flash` | `low` | Documentation-only edits |
+
+Their versions follow what the marketplace serves; the versions above are the ones
+installed when they were enabled. Update them with `marketplace update <id>` and
+restart OpenCode.
 
 ### Usage
 
@@ -305,7 +321,7 @@ implementer with that plan — never with a vague "make it work".
   `build` → `plan` → `orchestrator`).
 - The **orchestrator** delegates automatically once selected.
 - Delegate explicitly with `@explorer`, `@fixer`, `@oracle`, `@designer`,
-  `@council`, or `@observer`.
+  `@council`, `@observer`, `@paladin`, or `@documenter`.
 - Skills: `/deepwork <task>`, `run codemap`, `/reflect`, `work in a worktree`,
   `clone dependencies`, `playwright-cli` (browser automation), and `desktop-use`
   (local GUI automation).
@@ -316,7 +332,7 @@ implementer with that plan — never with a vague "make it work".
 
 A custom `playwright-cli` skill (tracked at `skills/playwright-cli/SKILL.md`) wraps
 the globally installed `@playwright/cli`, letting agents drive a real browser from the
-shell. Ownership follows the routing table above: **`@designer`** drives it for
+shell. Ownership follows the normal role split: **`@designer`** drives it for
 UI/visual verification, **`@fixer`** for automated test suites, **`@explorer`** for
 read-only page reconnaissance, and **`@observer`** analyses the resulting screenshots.
 The skill documents the session model (`-s=<session>`), the open → snapshot →
@@ -373,7 +389,8 @@ tasks.
 | :--- | :--- |
 | OpenCode | `opencode upgrade` |
 | Plugin | Auto-updates by default (`autoUpdate: true`); manual: `opencode plugin check` then `opencode plugin update`. |
-| Bundled skills | Reconciled on the first new top-level session after the plugin loads; force-refresh with `npx -y oh-my-opencode-slim@latest install --skills=force`. |
+| Bundled skills | Registered in-process when the plugin loads; restart OpenCode after a plugin update. |
+| Marketplace agents | `npx -y oh-my-opencode-slim@latest marketplace update <id>` for each installed package, then restart OpenCode. |
 
 Apply config changes with `opencode reload`; apply plugin code changes with
 `opencode service restart`.
