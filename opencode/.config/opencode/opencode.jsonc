@@ -199,7 +199,6 @@
     // Loaded by both the server and the TUI in V2 (the TUI badge/`/preset` entry
     // is resolved from this same `plugins` list).
     "plugins": [
-        "@tarquinen/opencode-dcp@latest",
         "oh-my-opencode-slim",
 
         // ── Live tokens/sec meter (opencode-tps-meter) ────────────────────────
