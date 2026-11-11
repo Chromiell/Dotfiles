@@ -1,3 +1,7 @@
 {
-  "plugins": ["opencode-session-usage"]
+  "plugins": ["opencode-session-usage"],
+  "keybinds": {
+    "input.buffer.home": "ctrl+home",
+    "input.buffer.end": "ctrl+end"
+  }
 }

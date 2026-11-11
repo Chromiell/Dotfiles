@@ -136,6 +136,9 @@ which are separate from the server/project config in `opencode.jsonc`. For examp
 `"prompt": { "paste": "full" }` shows pasted text in full instead of a
 `[Pasted ~N lines]` placeholder so it can be edited in the prompt input (set it to
 `"compact"` to restore the placeholder). Valid edits reload while the TUI is running.
+`keybinds` in the same file binds `ctrl+home` / `ctrl+end` to
+`input.buffer.home` / `input.buffer.end`, which jump to the first character of the
+first line and the last character of the last line in the prompt editor.
 
 > [!NOTE]
 > Older plugin releases wrote a `.oh-my-opencode-slim/` skills manifest in this
