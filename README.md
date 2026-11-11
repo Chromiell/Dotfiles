@@ -51,7 +51,6 @@ This repository is structured into modular configuration packages designed to be
 | [`php-cs-fixer`](./php-cs-fixer) | Development | PHP coding standards and PSR fixer configurations |
 | [`opencode`](./opencode) | AI / Development | Token-optimized global OpenCode CLI config with free-model titles, indexing ignores, and env-based MCP secrets |
 | [`images`](./images) | Assets | Shared desktop wallpapers and media assets |
-| [`mouseCursorDefault`](./mouseCursorDefault) | Desktop | Default XDG cursor theme definitions |
 
 ---
 
@@ -219,4 +218,3 @@ For dedicated setup guides, keybindings, and configuration walkthroughs, refer t
 - [PHP-CS-Fixer Settings](./php-cs-fixer/README.md)
 - [OpenCode Configuration](./opencode/README.md)
 - [Wallpapers & Images](./images/README.md)
-- [Mouse Cursor Settings](./mouseCursorDefault/README.md)
