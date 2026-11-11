@@ -595,6 +595,9 @@ set `WORDCRAFT_PORT=7978` in the OpenCode service environment.
 
 - [`zsh`](../zsh) — provides `~/.zshenv` (OpenCode background-subagent variables) and
   `~/.zshadditions` (the untracked shell environment used to export `EXA_API_KEY`).
+- [`.github`](../.github) — CI syntax-checks both MCP `server.mjs` files with
+  `node --check` (see [CI.md](../.github/CI.md)); code scanning is not enabled for
+  JavaScript/TypeScript because CodeQL skips the hidden `.config` directory.
 
 ---
 

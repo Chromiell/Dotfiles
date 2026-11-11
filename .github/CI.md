@@ -17,8 +17,9 @@ Nothing needs to be installed on the runner beyond the stock `ubuntu-latest`
 image. Most linters run through their official marketplace action, pinned to a
 full commit SHA, and Dependabot keeps those pins current (see
 [`dependabot.yml`](./dependabot.yml)). GNU Stow, ShellCheck and zsh come from
-`apt`; `shfmt`, `actionlint`, `yamllint` and `markdownlint-cli2` are installed in
-run steps at pinned versions (see **Supply-chain & Version Pinning** below).
+`apt`, Node.js comes from the runner image, and `shfmt`, `actionlint`, `yamllint`
+and `markdownlint-cli2` are installed in run steps at pinned versions (see
+**Supply-chain & Version Pinning** below).
 
 | Tool | Job | Purpose |
 | :--- | :--- | :--- |
@@ -26,6 +27,7 @@ run steps at pinned versions (see **Supply-chain & Version Pinning** below).
 | [shfmt](https://github.com/mvdan/sh) | `shfmt` | Enforce 4-space formatting of every tracked shell script. |
 | [actionlint](https://github.com/rhysd/actionlint) | `actionlint` | Statically check the workflow files (syntax, expressions, inline shell). |
 | [zsh](https://www.zsh.org/) | `zsh` | Parse every zsh config with `zsh -n` (syntax only). |
+| [Node.js](https://nodejs.org/) | `javascript` | Parse every tracked JS file with `node --check` (syntax only). |
 | [gitleaks](https://github.com/gitleaks/gitleaks) | `secrets` | Fail if a secret is committed. |
 | [typos](https://github.com/crate-ci/typos) | `spelling` | Spell-check documentation and comments (config: `linters/typos.toml`). |
 | [lychee](https://github.com/lycheeverse/lychee) | `links` | Validate relative Markdown links and anchors (offline). |
@@ -45,6 +47,7 @@ run steps at pinned versions (see **Supply-chain & Version Pinning** below).
 | [`zsh`](../zsh) | Linting target | Every zsh file is parsed by `zsh -n`. |
 | [`neovim`](../neovim) | Linting target | Lua files are checked by StyLua. |
 | [`pythonScripts`](../pythonScripts) | Linting target | Python files are checked by Ruff. |
+| [`opencode`](../opencode) | Linting target | The GridCraft and WordCraft `server.mjs` files are syntax-checked by `node --check`. |
 | [`.github`](./workflows) | Linting target | Workflow files are validated by actionlint. |
 | all modules | Linting target | Tracked YAML is checked by yamllint and tracked Markdown by markdownlint. |
 | all modules | Layout check | The `stow` job stows every package into a temporary `$HOME` and asserts the resulting symlinks resolve back into the checkout. |
@@ -55,7 +58,7 @@ run steps at pinned versions (see **Supply-chain & Version Pinning** below).
 
 - `workflows/ci.yml`: the CI workflow. Jobs: `shellcheck`, `shfmt`, `actionlint`,
   `zsh`, `secrets`, `spelling`, `links`, `markdown`, `lua`, `python`, `yaml`,
-  `stow`, and `notify` (run-status alerts).
+  `javascript`, `stow`, and `notify` (run-status alerts).
 - `dependabot.yml`: weekly Dependabot updates for the GitHub Actions used by
   `ci.yml` (each pinned by commit SHA).
 - `linters/`: tool configuration consumed by the workflow — `linters/typos.toml`
@@ -75,8 +78,8 @@ run steps at pinned versions (see **Supply-chain & Version Pinning** below).
   moved or deleted tag cannot change what runs.
 - Tools installed in run steps are pinned to an exact version rather than a
   floating range or `latest`: `shfmt` 3.14.1, `actionlint` 1.7.12, `yamllint`
-  1.38.0 and `markdownlint-cli2` 0.23.3. ShellCheck and zsh come from `apt` and
-  therefore track the runner image.
+  1.38.0 and `markdownlint-cli2` 0.23.3. ShellCheck and zsh come from `apt`, and
+  Node.js is preinstalled on the runner, so all three track the runner image.
 - [Dependabot](./dependabot.yml) opens a weekly PR whenever one of those pinned
   SHAs moves — that is how the tools are kept up to date.
 - The workflow only requests `contents: read`. The `secrets` job additionally
@@ -89,7 +92,28 @@ Merge the corresponding Dependabot PR. The tool version follows the action:
 with `version: latest` so StyLua tracks its latest release while Dependabot tracks
 the action itself. The run-step tools (`shfmt`, `actionlint`, `yamllint`,
 `markdownlint-cli2`) are bumped by editing their pinned version in
-`workflows/ci.yml`; ShellCheck and zsh track the runner image through `apt`.
+`workflows/ci.yml`; ShellCheck and zsh track the runner image through `apt`, and
+Node.js comes from the runner image.
+
+---
+
+## 🛡️ Code Scanning (CodeQL)
+
+Code scanning runs through **default setup**, not a workflow in this repository,
+so it is configured in *Settings → Security and quality → Advanced Security* and
+does not appear in `ci.yml`. It analyzes **Python** and **GitHub Actions** only.
+
+JavaScript/TypeScript is intentionally **not** enabled. GitHub's language
+detection added it when the MCP servers landed, but CodeQL's JavaScript extractor
+skips dot-directories and the repository's only JavaScript lives under
+`opencode/.config/opencode/` — a path Stow requires. The language therefore
+produced `No JavaScript/TypeScript code found` and a permanently failing
+configuration with zero alerts. The `javascript` CI job covers those files with
+`node --check` instead, which needs no source-tree changes.
+
+Re-enabling it would require advanced setup with an explicit `paths` entry for
+the hidden directory; keep it disabled unless the JavaScript moves out of a
+dot-directory.
 
 ---
 
@@ -142,6 +166,9 @@ actionlint
 
 # zsh syntax
 git ls-files '*.zsh' '*.zshenv' '*.zshrc' '*.zprofile' | xargs -r zsh -n
+
+# JavaScript syntax (node --check accepts one file per invocation)
+git ls-files '*.js' '*.mjs' '*.cjs' | xargs -r -n1 node --check
 
 # Spelling, links, Markdown, YAML, Lua formatting, Python
 typos --config .github/linters/typos.toml
