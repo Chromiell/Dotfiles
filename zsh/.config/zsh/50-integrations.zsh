@@ -3,6 +3,14 @@
 # Load fzf keybindings and completion only when fzf is installed.
 if (( $+commands[fzf] )); then
     source <(fzf --zsh)
+    # fzf binds Tab to its own completion widget. On a plain Tab it forwards to
+    # `zle menu-select`; invoked that way, zsh-autocomplete keeps the previous
+    # completion list, so after accepting a directory the menu lists its parent
+    # again instead of its contents. Bind Tab straight to menu-select again so
+    # each completion starts fresh. This supersedes fzf's `**` Tab trigger; bind
+    # `fzf-completion` to another key if you still want it.
+    bindkey '^I' menu-select
+    bindkey "$terminfo[kcbt]" menu-select
 fi
 
 # Initialize zoxide and replace the default cd completion when available.
