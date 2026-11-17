@@ -2,6 +2,14 @@
 -- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
 -- Add any additional options here
 
+-- File encodings to try when reading a file, in order.
+-- Legacy Windows-1252 files (very common in the PHP projects) would otherwise
+-- fall back to latin1, where bytes such as 0x97 (em dash) and 0x80 (euro sign)
+-- are shown as <97> / <80> instead of "—" / "€".
+-- Files are written back in the encoding they were opened with, so no
+-- conversion happens on save.
+vim.opt.fileencodings = "ucs-bom,utf-8,cp1252,latin1"
+
 -- Enable word wrap by default
 vim.opt.wrap = true
 -- Ensure lines wrap at a word boundary instead of mid-word
