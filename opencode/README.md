@@ -207,10 +207,10 @@ subscription (prices are USD per million tokens, in/out):
 | designer | `opencode-go/deepseek-v4.1-flash` | `max` | Same fast, vision-capable model as explorer but at max reasoning for UI/UX and frontend polish; $0.15/$0.60. |
 | fixer | `opencode-go/deepseek-v4.1-flash` | `high` | Reliable scoped coding at the lowest cost tier. |
 | observer | `opencode-go/mimo-v2.6-flash` | *(none)* | Paid Go variant of the same MiMo flash model; vision-capable at $0.14/$0.28, so visual analysis stays within the Go subscription. |
-| council (synthesiser) | `opencode-go/deepseek-v4-pro` | `max` | Strong synthesiser; council is manual/high-cost. |
+| council (synthesiser) | `opencode-go/glm-5.3` | `max` | Strong synthesiser from the GLM family; council is manual/high-cost. |
 | councillor-alpha | `opencode-go/deepseek-v4-pro` | `max` | DeepSeek perspective. |
 | councillor-beta | `opencode-go/qwen3.8-max` | `xhigh` | Qwen perspective (different model family). |
-| councillor-gamma | `opencode-go/glm-5.3` | `high` | GLM perspective (different model family). |
+| councillor-gamma | `opencode-go/glm-5.3` | `max` | GLM perspective (different model family). |
 
 > [!TIP]
 > **Subagents can reach `@observer` too.** `explorer`, `oracle` and `designer`
@@ -325,10 +325,10 @@ its runtime name (`paladin`, `documenter`):
 
 | Agent | Model | Variant | Role |
 | :--- | :--- | :--- | :--- |
-| `paladin` | `opencode-go/deepseek-v4-pro` | `max` | Read-only security review |
+| `paladin` | `opencode-go/glm-5.3` | `max` | Read-only security review |
 | `documenter` | `opencode-go/deepseek-v4.1-flash` | `high` | Documentation-only edits |
 
-Both pins are deliberate: `paladin` stays on `deepseek-v4-pro` for strong
+Both pins are deliberate: `paladin` stays on `glm-5.3` at `max` for strong
 reasoning because security review is infrequent and read-only, while `documenter` is
 pinned to the cheap flash tier so documentation work never inherits a frontier
 per-token price. Documenter runs at `high` rather than

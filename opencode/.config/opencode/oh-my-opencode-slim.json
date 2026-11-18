@@ -93,7 +93,7 @@
         "mcps": []
       },
       "council": {
-        "model": "opencode-go/deepseek-v4-pro",
+        "model": "opencode-go/glm-5.3",
         "variant": "max"
       },
       "marketplace": {
@@ -106,7 +106,7 @@
   },
   "agents": {
     "paladin": {
-      "model": "opencode-go/deepseek-v4-pro",
+      "model": "opencode-go/glm-5.3",
       "variant": "max"
     },
     "documenter": {
@@ -128,7 +128,7 @@
         },
         "gamma": {
           "model": "opencode-go/glm-5.3",
-          "variant": "high"
+          "variant": "max"
         }
       }
     }
