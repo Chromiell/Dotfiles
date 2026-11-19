@@ -488,55 +488,175 @@ local function first_definition_location()
     return nil
 end
 
--- Given a definition the LSP resolved inside a generated `_ide_helper` file,
--- open the real model and place the cursor on the accessor implementing `word`.
--- The ide-helper file is read from disk with `readfile`, so it is never loaded
--- into a buffer (it must not pollute the buffer list just to be inspected).
--- This is the old `<leader>cj` behaviour.
-local function open_laravel_accessor(word, ide_helper_file, ide_helper_line)
-    local lines = vim.fn.readfile(ide_helper_file)
-    if not lines or #lines == 0 then
-        vim.notify("Could not read ide-helper file", vim.log.levels.WARN)
-        return
+-- Resolve a fully qualified PHP class name to its file through the PSR-4 maps
+-- of the project (composer.json) and of the installed packages
+-- (vendor/composer/autoload_psr4.php). This is what lets `gd` follow the
+-- `@see` hints ide-helper writes, without booting PHP or searching the tree.
+-- @return string|nil absolute path
+local function php_class_file(fqcn)
+    local root = vim.fs.root(0, { "composer.json", ".git" })
+    if not root then
+        return nil
     end
 
-    -- `ide_helper_line` is 0-based (from the LSP range). Scan forward for the
-    -- enclosing class first, then backward: generated model files list the
-    -- class after its `@property` docblock, facades declare it before the
-    -- method they annotate.
-    local class_name = nil
-    local start = ide_helper_line + 1
-    for i = start + 1, #lines do
-        local name = lines[i]:match("class%s+ide_helper_([%w_]+)") or lines[i]:match("class%s+([%w_]+)")
-        if name then
-            class_name = name
-            break
-        end
+    ---@type { prefix: string, dir: string }[]
+    local psr4 = {}
+    local function add(prefix, dir)
+        psr4[#psr4 + 1] = { prefix = prefix, dir = dir }
     end
 
-    if not class_name then
-        for i = start, 1, -1 do
-            local name = lines[i]:match("class%s+ide_helper_([%w_]+)") or lines[i]:match("class%s+([%w_]+)")
-            if name then
-                class_name = name
-                break
+    local ok, composer = pcall(function()
+        return vim.json.decode(table.concat(vim.fn.readfile(root .. "/composer.json"), "\n"))
+    end)
+    if ok and type(composer) == "table" then
+        for _, section in ipairs({ "autoload", "autoload-dev" }) do
+            local map = composer[section] and composer[section]["psr-4"]
+            if type(map) == "table" then
+                for prefix, dirs in pairs(map) do
+                    if type(dirs) == "string" then
+                        dirs = { dirs }
+                    end
+                    for _, dir in ipairs(dirs) do
+                        add(prefix, root .. "/" .. dir)
+                    end
+                end
             end
         end
     end
 
-    if not class_name then
-        vim.notify("Could not determine Model class from ide-helper", vim.log.levels.WARN)
-        return
+    -- Composer's generated map covers vendor packages too; every entry reads
+    -- `'Prefix\' => array($vendorDir . '/some/package/src')` (only the first
+    -- directory is used: it is the only one Composer itself prefers).
+    local vendor_ok, vendor_lines = pcall(vim.fn.readfile, root .. "/vendor/composer/autoload_psr4.php")
+    if vendor_ok then
+        for _, text in ipairs(vendor_lines) do
+            local prefix, base, dir = text:match("^%s*'([%w_\\]+)'%s*=>%s*array%(%$(%a+)%s*%.%s*'([^']+)'")
+            if prefix then
+                add(prefix, (base == "baseDir" and root or root .. "/vendor") .. dir)
+            end
+        end
     end
 
-    local matches = vim.fn.glob("app/**/" .. class_name .. ".php", false, true)
+    -- Longest namespace prefix wins: `Database\Factories\` beats `Database\`.
+    table.sort(psr4, function(a, b)
+        return #a.prefix > #b.prefix
+    end)
+
+    for _, entry in ipairs(psr4) do
+        if vim.startswith(fqcn, entry.prefix) then
+            local relative = fqcn:sub(#entry.prefix + 1):gsub("\\", "/")
+            local path = entry.dir .. "/" .. relative .. ".php"
+            if vim.uv.fs_stat(path) then
+                return path
+            end
+        end
+    end
+    return nil
+end
+
+-- Read the `@see \Fully\Qualified\Class::method()` target from the docblock
+-- directly above a generated stub. ide-helper adds that hint to the stubs it
+-- generates for runtime macros (`Http::macro(...)`) and for methods it proxies,
+-- pointing at the provider that registered them.
+-- @return string|nil fqcn, string|nil method
+local function stub_see_target(lines, stub_line)
+    -- Stub locations point either at the method name (LocationLink) or at the
+    -- start of the declaration (Location): normalise to the `function` line.
+    local anchor = stub_line
+    for i = stub_line, math.min(#lines, stub_line + 40) do
+        if lines[i]:find("function%s+") then
+            anchor = i
+            break
+        end
+    end
+
+    for i = anchor - 1, math.max(1, anchor - 60), -1 do
+        if not lines[i]:find("^%s*%*") then
+            return nil -- start of the docblock (or no docblock at all)
+        end
+        local class, method = lines[i]:match("@see%s+\\?([%w_\\]+)::(%w+)%(")
+        if class then
+            return class, method
+        end
+    end
+    return nil
+end
+
+-- Follow the `@see` hint of a generated stub to the code that really defines
+-- the symbol: the `macro('word', ...)` registration when the stub stands for a
+-- runtime macro, otherwise the referenced method. Returns true when the cursor
+-- was moved to a real file.
+local function open_stub_reference(word, lines, stub_line)
+    local class, method = stub_see_target(lines, stub_line)
+    if not class or not method then
+        return false
+    end
+
+    local path = php_class_file(class)
+    if not path then
+        return false
+    end
+
+    local ok, target_lines = pcall(vim.fn.readfile, path)
+    if not ok or #target_lines == 0 then
+        return false
+    end
+
+    local macro_pattern = word ~= "" and ("macro%s*%(%s*['\"]" .. vim.pesc(word) .. "['\"]") or nil
+    local method_pattern = "function%s+" .. vim.pesc(method) .. "%s*%("
+    local target = nil
+    for i, text in ipairs(target_lines) do
+        if macro_pattern and text:find(macro_pattern) then
+            target = i
+            break
+        end
+        if not target and text:find(method_pattern) then
+            target = i
+        end
+    end
+    if not target then
+        return false
+    end
+
+    vim.cmd("edit " .. vim.fn.fnameescape(path))
+    vim.api.nvim_win_set_cursor(0, { target, 0 })
+    vim.cmd("normal! zz")
+    return true
+end
+
+-- Nearest `class <Name>` after `stub_line`: model stubs are a `@property`
+-- docblock immediately followed by the class declaration they document.
+local function class_after(lines, stub_line)
+    for i = stub_line, #lines do
+        local name = lines[i]:match("class%s+ide_helper_([%w_]+)") or lines[i]:match("class%s+([%w_]+)")
+        if name then
+            return name
+        end
+    end
+    return nil
+end
+
+-- Open the real model and place the cursor on the accessor implementing
+-- `word`. This is the old `<leader>cj` behaviour. The ide-helper file is read
+-- from disk with `readfile`, so it is never loaded into a buffer.
+local function open_model_accessor(word, lines, stub_line)
+    local class_name = class_after(lines, stub_line)
+    if not class_name then
+        vim.notify("Could not determine Model class from ide-helper", vim.log.levels.WARN)
+        return false
+    end
+
+    -- Anchored at the project root so the lookup does not depend on the
+    -- directory Neovim was started from.
+    local root = vim.fs.root(0, { "composer.json", ".git" }) or vim.fn.getcwd()
+    local matches = vim.fn.glob(root .. "/app/**/" .. class_name .. ".php", false, true)
     if #matches == 0 then
-        matches = vim.fn.glob("**/" .. class_name .. ".php", false, true)
+        matches = vim.fn.glob(root .. "/**/" .. class_name .. ".php", false, true)
     end
 
     if #matches == 0 then
         vim.notify("Model file " .. class_name .. ".php not found", vim.log.levels.WARN)
-        return
+        return false
     end
 
     vim.cmd("edit " .. vim.fn.fnameescape(matches[1]))
@@ -554,20 +674,47 @@ local function open_laravel_accessor(word, ide_helper_file, ide_helper_line)
     if line > 0 then
         vim.api.nvim_win_set_cursor(0, { line, 0 })
         vim.cmd("normal! zz")
-    else
-        vim.notify("No accessor method found for: " .. word .. " in " .. vim.fn.expand("%:t"), vim.log.levels.WARN)
+        return true
     end
+
+    vim.notify("No accessor method found for: " .. word .. " in " .. vim.fn.expand("%:t"), vim.log.levels.WARN)
+    return false
+end
+
+-- Given a definition the LSP resolved inside a generated `_ide_helper` file,
+-- open the code that really defines the symbol. Macro/facade stubs are resolved
+-- through ide-helper's own `@see` hint; model stubs (`_ide_helper_models.php`)
+-- fall back to locating the accessor in the real model. Returns true when the
+-- cursor was moved.
+local function open_stub_definition(word, ide_helper_file, ide_helper_line)
+    local lines = vim.fn.readfile(ide_helper_file)
+    if not lines or #lines == 0 then
+        vim.notify("Could not read ide-helper file", vim.log.levels.WARN)
+        return false
+    end
+
+    -- `ide_helper_line` is 0-based (from the LSP range).
+    local stub_line = ide_helper_line + 1
+
+    if open_stub_reference(word, lines, stub_line) then
+        return true
+    end
+
+    if not ide_helper_file:find("_ide_helper_models%.php$") then
+        return false
+    end
+
+    return open_model_accessor(word, lines, stub_line)
 end
 
 --- The old `<leader>cj` Laravel accessor jump, folded into `gd`.
 ---
 --- Outside PHP this is LazyVim's stock definition jump. In a PHP buffer it first
 --- performs the same LSP definition lookup, and only when that yields nothing (or
---- only a generated `_ide_helper` stub) does it fall back to resolving the
---- property/method to the real Laravel model implementation, exactly as the
---- removed `<leader>cj` shortcut used to do. The ide-helper stub itself is never
---- opened: the definition location is inspected before jumping, and the stub is
---- only read from disk when it needs to be parsed.
+--- only a generated `_ide_helper` stub) does it resolve the real implementation:
+--- the `@see` hint ide-helper writes for runtime macros, or the model accessor,
+--- exactly as the removed `<leader>cj` shortcut used to do. The ide-helper file
+--- is only read from disk when it needs to be parsed, never loaded as a buffer.
 function M.goto_definition()
     if vim.bo.filetype ~= "php" then
         return vim.lsp.buf.definition()
@@ -586,13 +733,16 @@ function M.goto_definition()
 
     if not def.filename:match("_ide_helper") then
         -- A real definition: jump to it exactly like the stock `gd`.
-        vim.lsp.util.jump_to_location(def.item, def.encoding)
+        vim.lsp.util.show_document(def.item, def.encoding)
         return
     end
 
-    -- The LSP only resolved a generated stub. Open the real model/accessor
-    -- instead, without ever loading the ide-helper file into a buffer.
-    open_laravel_accessor(word, def.filename, def.lnum)
+    -- The LSP only resolved a generated stub: prefer the real implementation,
+    -- and only fall back to the stub itself (what stock `gd` would open) when
+    -- the symbol cannot be resolved locally.
+    if not open_stub_definition(word, def.filename, def.lnum) then
+        vim.lsp.util.show_document(def.item, def.encoding)
+    end
 end
 
 return M

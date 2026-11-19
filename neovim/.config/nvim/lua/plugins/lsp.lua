@@ -5,11 +5,9 @@ return {
         "neovim/nvim-lspconfig",
         opts = {
             servers = {
-                -- Fold the removed `<leader>cj` Laravel accessor jump into `gd`.
-                -- `gd` still performs the normal LSP definition first; only when
-                -- that finds nothing (or just a generated ide-helper stub) does
-                -- it fall back to the real Laravel model implementation.
-                -- See config.functions.goto_definition.
+                -- Fold the removed `<leader>cj` Laravel accessor jump into `gd`,
+                -- and resolve ide-helper stubs for runtime macros through their
+                -- `@see` hint. See config.functions.goto_definition.
                 ["*"] = {
                     keys = {
                         { "gd", fn.goto_definition, desc = "Goto Definition", has = "definition" },
