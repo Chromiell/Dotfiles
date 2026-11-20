@@ -3,5 +3,8 @@
   "keybinds": {
     "input.buffer.home": "ctrl+home",
     "input.buffer.end": "ctrl+end"
+  },
+  "session": {
+    "permissions": "autoaccept"
   }
 }

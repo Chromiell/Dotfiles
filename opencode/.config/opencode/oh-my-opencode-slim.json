@@ -133,5 +133,7 @@
       }
     }
   },
-  "disabled_agents": []
+  "disabled_agents": [
+    "council"
+  ]
 }
