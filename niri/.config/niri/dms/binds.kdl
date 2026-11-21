@@ -223,7 +223,7 @@ binds {
 
     // === User Defined ===
     Mod+B { spawn "brave-browser"; }
-    Mod+E { spawn "nautilus"; }
+    Mod+E { spawn "dfiles"; }
     Mod+S { spawn "subl"; }
     Mod+Shift+S { spawn "flameshot" "gui"; }
     Mod+Space { switch-layout "next"; }
