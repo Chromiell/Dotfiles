@@ -1,0 +1,19 @@
+# Gitleaks configuration.
+#
+# Tracked templates (`*.env.example`) intentionally contain placeholder values
+# such as "replace-with-a-long-random-password". The default `generic-api-key`
+# rule flags some of them because their entropy crosses its threshold, which
+# is a false positive: by repository policy the templates only ever hold
+# sanitized placeholders, never real credentials.
+#
+# The allowlist matches the placeholder convention itself and does not exclude
+# any file from scanning, so a real credential pasted into a template is still
+# reported.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholder values from the tracked *.env.example templates"
+regexTarget = "secret"
+regexes = ['''(?i)^(replace|change|your|example|sample|dummy|placeholder|generate)[-_.]''']

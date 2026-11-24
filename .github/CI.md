@@ -28,7 +28,7 @@ and `markdownlint-cli2` are installed in run steps at pinned versions (see
 | [actionlint](https://github.com/rhysd/actionlint) | `actionlint` | Statically check the workflow files (syntax, expressions, inline shell). |
 | [zsh](https://www.zsh.org/) | `zsh` | Parse every zsh config with `zsh -n` (syntax only). |
 | [Node.js](https://nodejs.org/) | `javascript` | Parse every tracked JS file with `node --check` (syntax only). |
-| [gitleaks](https://github.com/gitleaks/gitleaks) | `secrets` | Fail if a secret is committed. |
+| [gitleaks](https://github.com/gitleaks/gitleaks) | `secrets` | Fail if a secret is committed (config: `.gitleaks.toml` at the repository root). |
 | [typos](https://github.com/crate-ci/typos) | `spelling` | Spell-check documentation and comments (config: `linters/typos.toml`). |
 | [lychee](https://github.com/lycheeverse/lychee) | `links` | Validate relative Markdown links and anchors (offline). |
 | [markdownlint](https://github.com/DavidAnson/markdownlint-cli2) | `markdown` | Check Markdown style (config: `linters/.markdownlint-cli2.yaml`). |
