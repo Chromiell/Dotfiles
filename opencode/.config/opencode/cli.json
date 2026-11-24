@@ -6,5 +6,8 @@
   },
   "session": {
     "permissions": "autoaccept"
+  },
+  "theme": {
+    "name": "opencode"
   }
 }
