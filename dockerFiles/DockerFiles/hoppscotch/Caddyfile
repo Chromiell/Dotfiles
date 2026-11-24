@@ -1,0 +1,41 @@
+# SPA routing for the Hoppscotch 2026.11.0 AIO image (multiport mode).
+#
+# This mirrors the upstream /etc/caddy/aio-multiport-setup.Caddyfile, with one
+# change: the SPA fallback is `/index.html` instead of `/`. With `/`, Caddy
+# answers every client-side route with a bare 404, which breaks magic-link
+# login (`/enter?token=...`) and any deep link such as `/settings` or `/users`.
+#
+# Re-check this file when bumping the image tag; upstream may fix it and add
+# routes that need copying here.
+
+{
+	admin off
+	persist_config off
+}
+
+:3000 {
+	try_files {path} /index.html
+	root * /site/selfhost-web
+	file_server
+}
+
+:3100 {
+	try_files {path} /index.html
+	root * /site/sh-admin-multiport-setup
+	file_server
+}
+
+:3170 {
+	@mock {
+		header_regexp host Host ^[^.]+\.mock\..*$
+	}
+
+	handle @mock {
+		rewrite * /mock{uri}
+		reverse_proxy localhost:8080
+	}
+
+	handle {
+		reverse_proxy localhost:8080
+	}
+}

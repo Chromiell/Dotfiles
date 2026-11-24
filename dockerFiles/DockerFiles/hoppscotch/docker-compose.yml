@@ -33,6 +33,10 @@ services:
       - "50020:3000"    # web app
       - "50021:3100"    # admin dashboard (first login here becomes instance admin)
       - "50022:3170"    # backend API / GraphQL
+    volumes:
+      # Fixes client-side routing: the image's own fallback returns 404 for any
+      # path that is not a real file, which breaks magic-link login (/enter).
+      - ./Caddyfile:/etc/caddy/aio-multiport-setup.Caddyfile:ro
     restart: unless-stopped
 
   db:
