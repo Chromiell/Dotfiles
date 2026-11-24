@@ -554,6 +554,58 @@ local function php_class_file(fqcn)
     return nil
 end
 
+-- Namespace of a generated stub. `_ide_helper_models.php` groups its classes
+-- in `namespace App\Models{...}` blocks, so the closest preceding declaration
+-- gives the FQCN of the class a stub belongs to.
+-- @return string|nil
+local function php_namespace_at(lines, line)
+    for i = line, 1, -1 do
+        local namespace = lines[i]:match("^%s*namespace%s+([%w_\\]+)")
+        if namespace then
+            return namespace
+        end
+    end
+    return nil
+end
+
+-- Locate the real file of a model class: prefer the project's PSR-4 map and
+-- fall back to a path glob for models outside of it.
+-- @return string|nil absolute path
+local function model_file(class_name, fqcn)
+    if fqcn then
+        local path = php_class_file(fqcn)
+        if path then
+            return path
+        end
+    end
+
+    local root = vim.fs.root(0, { "composer.json", ".git" }) or vim.fn.getcwd()
+    local matches = vim.fn.glob(root .. "/app/**/" .. class_name .. ".php", false, true)
+    if #matches == 0 then
+        matches = vim.fn.glob(root .. "/**/" .. class_name .. ".php", false, true)
+    end
+    return matches[1]
+end
+
+-- Open the class declaration of a real PHP class and place the cursor on it.
+-- This is where `gd` lands for a model stub that only declares the class.
+local function open_class_definition(class_name, fqcn)
+    local path = model_file(class_name, fqcn)
+    if not path then
+        vim.notify("Class file " .. class_name .. ".php not found", vim.log.levels.WARN)
+        return false
+    end
+
+    vim.cmd("edit " .. vim.fn.fnameescape(path))
+
+    local line = vim.fn.search("\\<class\\s\\+" .. vim.pesc(class_name) .. "\\>", "wn")
+    if line > 0 then
+        vim.api.nvim_win_set_cursor(0, { line, 0 })
+        vim.cmd("normal! zz")
+    end
+    return true
+end
+
 -- Read the `@see \Fully\Qualified\Class::method()` target from the docblock
 -- directly above a generated stub. ide-helper adds that hint to the stubs it
 -- generates for runtime macros (`Http::macro(...)`) and for methods it proxies,
@@ -624,6 +676,20 @@ local function open_stub_reference(word, lines, stub_line)
     return true
 end
 
+-- Name of the stub's class when the definition points at the class declaration
+-- itself (`class Customer extends \Eloquent {}`) rather than at a property or
+-- method documented in the preceding docblock.
+-- @return string|nil
+local function stub_class_name(lines, stub_line, word)
+    for i = stub_line, math.min(#lines, stub_line + 40) do
+        local name = lines[i]:match("^%s*class%s+([%w_]+)")
+        if name then
+            return name == word and name or nil
+        end
+    end
+    return nil
+end
+
 -- Nearest `class <Name>` after `stub_line`: model stubs are a `@property`
 -- docblock immediately followed by the class declaration they document.
 local function class_after(lines, stub_line)
@@ -634,6 +700,41 @@ local function class_after(lines, stub_line)
         end
     end
     return nil
+end
+
+-- Convert a snake_case attribute name to the StudlyCase suffix of its accessor:
+-- `is_elearning` -> `IsElearning`.
+local function studly(word)
+    return (word:gsub("_(%l)", function(c)
+        return c:upper()
+    end):gsub("^%l", function(c)
+        return c:upper()
+    end))
+end
+
+-- True when `path` declares a method named `needle`.
+local function file_matches(path, needle)
+    local ok, lines = pcall(vim.fn.readfile, path)
+    if not ok then
+        return false
+    end
+    for _, text in ipairs(lines) do
+        if text:find("function", 1, true) and text:find(needle, 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+-- Open `path` on the declaration of the method named `needle`.
+local function open_at_match(path, needle)
+    vim.cmd("edit " .. vim.fn.fnameescape(path))
+    local line = vim.fn.search("function\\s\\+" .. needle, "wn")
+    if line > 0 then
+        vim.api.nvim_win_set_cursor(0, { line, 0 })
+        vim.cmd("normal! zz")
+    end
+    return true
 end
 
 -- Open the real model and place the cursor on the accessor implementing
@@ -648,25 +749,15 @@ local function open_model_accessor(word, lines, stub_line)
 
     -- Anchored at the project root so the lookup does not depend on the
     -- directory Neovim was started from.
-    local root = vim.fs.root(0, { "composer.json", ".git" }) or vim.fn.getcwd()
-    local matches = vim.fn.glob(root .. "/app/**/" .. class_name .. ".php", false, true)
-    if #matches == 0 then
-        matches = vim.fn.glob(root .. "/**/" .. class_name .. ".php", false, true)
-    end
-
-    if #matches == 0 then
+    local path = model_file(class_name)
+    if not path then
         vim.notify("Model file " .. class_name .. ".php not found", vim.log.levels.WARN)
         return false
     end
 
-    vim.cmd("edit " .. vim.fn.fnameescape(matches[1]))
+    vim.cmd("edit " .. vim.fn.fnameescape(path))
 
-    local pascal = word:gsub("_(%l)", function(c)
-        return c:upper()
-    end):gsub("^%l", function(c)
-        return c:upper()
-    end)
-
+    local pascal = studly(word)
     local camel = pascal:sub(1, 1):lower() .. pascal:sub(2)
     local pattern = "\\(get" .. pascal .. "Attribute\\|function\\s\\+" .. camel .. "\\)"
     local line = vim.fn.search(pattern, "wn")
@@ -677,15 +768,56 @@ local function open_model_accessor(word, lines, stub_line)
         return true
     end
 
-    vim.notify("No accessor method found for: " .. word .. " in " .. vim.fn.expand("%:t"), vim.log.levels.WARN)
-    return false
+    -- The symbol is a plain column/relation, not an accessor: land on the
+    -- model's class declaration instead of the generated stub.
+    line = vim.fn.search("\\<class\\s\\+" .. vim.pesc(class_name) .. "\\>", "wn")
+    if line > 0 then
+        vim.api.nvim_win_set_cursor(0, { line, 0 })
+        vim.cmd("normal! zz")
+    end
+    return true
 end
+
+-- Intelephense resolves magic Eloquent attributes through the ide-helper stubs
+-- only for typed receivers. For a chained call such as
+-- `Product::find($id)?->is_elearning` it returns no definition at all, so look
+-- up the `getIsElearningAttribute()` accessor directly. Returns true when the
+-- cursor was moved.
+local function open_magic_accessor(word)
+    if word == "" or word:find("^%u") or word:find("\\") then
+        return false
+    end
+
+    local needle = "get" .. studly(word) .. "Attribute"
+
+    -- Prefer the class named on the current line (`Product::find(...)?->word`).
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    local prefix = vim.api.nvim_get_current_line():sub(1, cursor[2])
+    local receiver = prefix:match(".*([%u][%w_]*)%s*::")
+    local preferred = receiver and model_file(receiver) or nil
+    if preferred and file_matches(preferred, needle) then
+        return open_at_match(preferred, needle)
+    end
+
+    local root = vim.fs.root(0, { "composer.json", ".git" }) or vim.fn.getcwd()
+    local candidates = {}
+    for _, path in ipairs(vim.fn.glob(root .. "/app/**/*.php", false, true)) do
+        if file_matches(path, needle) then
+            candidates[#candidates + 1] = path
+        end
+    end
+    if #candidates ~= 1 then
+        return false
+    end
+    return open_at_match(candidates[1], needle)
+end
+
 
 -- Given a definition the LSP resolved inside a generated `_ide_helper` file,
 -- open the code that really defines the symbol. Macro/facade stubs are resolved
 -- through ide-helper's own `@see` hint; model stubs (`_ide_helper_models.php`)
--- fall back to locating the accessor in the real model. Returns true when the
--- cursor was moved.
+-- resolve to the real model class declaration or accessor. Returns true when
+-- the cursor was moved.
 local function open_stub_definition(word, ide_helper_file, ide_helper_line)
     local lines = vim.fn.readfile(ide_helper_file)
     if not lines or #lines == 0 then
@@ -704,6 +836,15 @@ local function open_stub_definition(word, ide_helper_file, ide_helper_line)
         return false
     end
 
+    -- A class reference (`new Customer`) resolves to the stub that declares the
+    -- class: open the real model instead of the docblock-only stub.
+    local class_name = stub_class_name(lines, stub_line, word)
+    if class_name then
+        local namespace = php_namespace_at(lines, stub_line)
+        local fqcn = namespace and (namespace .. "\\" .. class_name) or nil
+        return open_class_definition(class_name, fqcn)
+    end
+
     return open_model_accessor(word, lines, stub_line)
 end
 
@@ -712,8 +853,8 @@ end
 --- Outside PHP this is LazyVim's stock definition jump. In a PHP buffer it first
 --- performs the same LSP definition lookup, and only when that yields nothing (or
 --- only a generated `_ide_helper` stub) does it resolve the real implementation:
---- the `@see` hint ide-helper writes for runtime macros, or the model accessor,
---- exactly as the removed `<leader>cj` shortcut used to do. The ide-helper file
+--- the `@see` hint ide-helper writes for runtime macros, or the model class /
+--- accessor, as the removed `<leader>cj` shortcut used to do. The ide-helper file
 --- is only read from disk when it needs to be parsed, never loaded as a buffer.
 function M.goto_definition()
     if vim.bo.filetype ~= "php" then
@@ -725,6 +866,11 @@ function M.goto_definition()
 
     local def = first_definition_location()
     if not def then
+        -- Fall back to the model accessor for magic attributes the LSP cannot
+        -- resolve through a chained receiver.
+        if open_magic_accessor(word) then
+            return
+        end
         if word ~= "" then
             vim.notify("LSP definition not found for: " .. word, vim.log.levels.WARN)
         end
@@ -737,10 +883,17 @@ function M.goto_definition()
         return
     end
 
-    -- The LSP only resolved a generated stub: prefer the real implementation,
-    -- and only fall back to the stub itself (what stock `gd` would open) when
-    -- the symbol cannot be resolved locally.
+    -- The LSP only resolved a generated stub: prefer the real implementation.
+    -- Model stubs are never opened, since they only repeat properties and
+    -- methods documented in the real model; other stubs remain a last resort.
     if not open_stub_definition(word, def.filename, def.lnum) then
+        if def.filename:find("_ide_helper_models%.php$") then
+            vim.notify(
+                "Definition only available in generated model stubs: " .. (word ~= "" and word or "symbol"),
+                vim.log.levels.WARN
+            )
+            return
+        end
         vim.lsp.util.show_document(def.item, def.encoding)
     end
 end
