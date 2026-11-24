@@ -1,0 +1,55 @@
+# Shared by the app and the one-shot migration container.
+x-hoppscotch-environment: &hoppscotch-environment
+  # Built from POSTGRES_PASSWORD so the password lives in one place.
+  # Keep that password URL-safe (letters and digits only) or this
+  # connection string will not parse.
+  DATABASE_URL: "postgresql://hoppscotch:${POSTGRES_PASSWORD}@db:5432/hoppscotch"
+
+services:
+  # Creates the schema on first boot and is a no-op once it is current.
+  # The app waits for this to exit 0, so `docker compose up -d` is enough.
+  migrate:
+    image: hoppscotch/hoppscotch:2026.11.0
+    env_file: .env
+    environment: *hoppscotch-environment
+    entrypoint: ["sh", "-c"]
+    command: ["pnpm exec prisma migrate deploy"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  hoppscotch:
+    image: hoppscotch/hoppscotch:2026.11.0
+    container_name: hoppscotch
+    env_file: .env
+    environment: *hoppscotch-environment
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "50020:3000"    # web app
+      - "50021:3100"    # admin dashboard (first login here becomes instance admin)
+      - "50022:3170"    # backend API / GraphQL
+    restart: unless-stopped
+
+  db:
+    image: postgres:18
+    container_name: hoppscotch-db
+    environment:
+      POSTGRES_DB: hoppscotch
+      POSTGRES_USER: hoppscotch
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hoppscotch -d hoppscotch"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    volumes:
+      - db_data:/var/lib/postgresql
+
+volumes:
+  db_data:

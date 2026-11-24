@@ -32,6 +32,7 @@ sudo apt install docker.io docker-compose
 | **Bugsink** | `DockerFiles/bugsink/` | Error tracking and exception monitoring platform. |
 | **Docmost** | `DockerFiles/docmost/` | Open-source collaborative wiki and documentation tool. |
 | **Gitea** | `DockerFiles/gitea/` | Lightweight, self-hosted Git service and configuration. |
+| **Hoppscotch** | `DockerFiles/hoppscotch/` | Self-hosted API client for sharing Postman-compatible collections with a team. |
 | **Mailpit** | `DockerFiles/mailpit/` | Email testing tool and mock SMTP server with a web UI. |
 | **Watchtower** | `DockerFiles/watchtower/` | Automated container updates and lifecycle management. |
 
@@ -57,6 +58,8 @@ $EDITOR .env
 docker compose up -d
 ```
 
-The local `.env` file is ignored by Git. Never commit it or share its contents. The current secret-bearing services are `bugsink`, `docmost`, and `gitea`.
+The local `.env` file is ignored by Git. Never commit it or share its contents. The current secret-bearing services are `bugsink`, `docmost`, `gitea`, and `hoppscotch`.
+
+The `hoppscotch` stack applies its database migrations automatically: a one-shot `migrate` service runs before the app and is a no-op once the schema is current, so `docker compose up -d` is the only command needed after creating `.env`. The first account created at `http://<host>:50021` becomes the instance administrator.
 
 The `gitea` stack also reads `GITEA_DATA_ROOT` from its `.env` to choose the host directory holding the bind-mounted `gitea` and `gitea-runner` data (`/home/admin` by default). Use an absolute path — `~` is not expanded by Docker Compose.

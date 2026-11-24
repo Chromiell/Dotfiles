@@ -80,7 +80,7 @@ directories; likewise `pythonScripts` folds into `~/Projects/PythonScripts`.
 | `eza/` | CLI Tool | Custom theme for the `ls` replacement. |
 | `fastfetch/` | CLI Tool | System information display config. |
 | `fzf/` | CLI Tool | Fuzzy finder config and preview helper scripts. |
-| `dockerFiles/` | Containers | Docker Compose stacks: Bugsink, Docmost, Gitea, Mailpit, Watchtower. |
+| `dockerFiles/` | Containers | Docker Compose stacks: Bugsink, Docmost, Gitea, Hoppscotch, Mailpit, Watchtower. |
 | `pythonScripts/` | Input / Gaming | Python controller button-swap and macro scripts, plus a PDF-to-CSV table extractor, stowed into `~/Projects/PythonScripts`. |
 | `composer/` | Development | Global PHP Composer settings. |
 | `php-cs-fixer/` | Development | PHP coding-standards / PSR fixer config. |
