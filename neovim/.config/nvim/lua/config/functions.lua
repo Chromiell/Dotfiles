@@ -705,11 +705,13 @@ end
 -- Convert a snake_case attribute name to the StudlyCase suffix of its accessor:
 -- `is_elearning` -> `IsElearning`.
 local function studly(word)
-    return (word:gsub("_(%l)", function(c)
-        return c:upper()
-    end):gsub("^%l", function(c)
-        return c:upper()
-    end))
+    return (
+        word:gsub("_(%l)", function(c)
+            return c:upper()
+        end):gsub("^%l", function(c)
+            return c:upper()
+        end)
+    )
 end
 
 -- True when `path` declares a method named `needle`.
@@ -811,7 +813,6 @@ local function open_magic_accessor(word)
     end
     return open_at_match(candidates[1], needle)
 end
-
 
 -- Given a definition the LSP resolved inside a generated `_ide_helper` file,
 -- open the code that really defines the symbol. Macro/facade stubs are resolved
