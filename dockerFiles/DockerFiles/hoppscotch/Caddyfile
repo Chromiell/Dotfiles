@@ -14,9 +14,19 @@
 }
 
 :3000 {
-	try_files {path} /index.html
-	root * /site/selfhost-web
-	file_server
+	# Bundle server used by the Hoppscotch desktop app. It runs inside the
+	# container on :3200 but the stock multiport config never routes it, so the
+	# desktop app cannot fetch its bundle manifest.
+	@desktop path /desktop-app-server/*
+	handle @desktop {
+		reverse_proxy localhost:3200
+	}
+
+	handle {
+		try_files {path} /index.html
+		root * /site/selfhost-web
+		file_server
+	}
 }
 
 :3100 {
