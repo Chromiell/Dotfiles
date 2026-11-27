@@ -377,10 +377,12 @@ session matters. Keep using `playwright-cli` (below) for isolated, scripted UI
 tests that should not touch the user's browser.
 
 Prerequisites: install the OpenCode Browse extension in Chrome (or a Chromium
-derivative), keep that browser running, and make sure the `browse` CLI is
-available (the tracked config pins the nvm-installed path). OpenCode starts the
-MCP server on demand; `OPENCODE_BROWSER_RUNTIME=auto-update` keeps its browser
-runtime current.
+derivative), keep that browser running, and make sure the `browse` CLI is on
+`PATH`. The config runs `browse mcp` with `cwd` set to `~` instead of an
+absolute path, so it works for any username on any machine and keeps working
+when nvm moves the binary to a new Node version. OpenCode starts the MCP server
+on demand; `OPENCODE_BROWSER_RUNTIME=auto-update` keeps its browser runtime
+current.
 
 ### Browser testing with `playwright-cli`
 

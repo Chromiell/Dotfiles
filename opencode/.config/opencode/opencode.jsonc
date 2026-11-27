@@ -193,17 +193,22 @@
                     "{env:HOME}/.config/opencode/wordcraft-mcp/server.mjs",
                 ],
             },
+            // Resolve `browse` from PATH instead of pinning an absolute path, so
+            // the same config works on every machine/user and survives Node
+            // upgrades under nvm (the binary lives in an nvm version dir).
+            // `~` is expanded by OpenCode and gives `pool` the fixed cwd it
+            // needs to share one connection across workspaces.
             "browse": {
-              "type": "local",
-              "command": [
-                "/home/zara/.config/nvm/versions/node/v26.13.1/bin/browse",
-                "mcp"
-              ],
-              "cwd": "/home/zara",
-              "pool": true,
-              "environment": {
-                "OPENCODE_BROWSER_RUNTIME": "auto-update"
-              }
+                "type": "local",
+                "command": [
+                    "browse",
+                    "mcp",
+                ],
+                "cwd": "~",
+                "pool": true,
+                "environment": {
+                    "OPENCODE_BROWSER_RUNTIME": "auto-update",
+                },
             },
         },
     },
