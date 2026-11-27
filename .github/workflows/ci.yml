@@ -40,7 +40,13 @@ jobs:
           echo "::error::Simulated failure requested via workflow_dispatch (simulate_failure=true)"
           exit 1
       - name: Install ShellCheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+        run: |
+          # Third-party APT repos baked into the runner image (e.g. Microsoft's)
+          # can be unreachable for the current Ubuntu release and make
+          # `apt-get update` exit non-zero. The Ubuntu index still refreshes, so
+          # the update is best-effort and the install is the real gate.
+          sudo apt-get update || true
+          sudo apt-get install -y shellcheck
       - name: Lint shell scripts
         run: |
           # Lint every tracked file whose shebang is a POSIX shell. This picks up
@@ -134,7 +140,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Install GNU Stow
-        run: sudo apt-get update && sudo apt-get install -y stow
+        run: |
+          # See the ShellCheck job: a failing third-party APT repo must not block
+          # installing the distro packages this job needs.
+          sudo apt-get update || true
+          sudo apt-get install -y stow
       - name: Stow every package into a clean HOME
         run: |
           fake_home="${RUNNER_TEMP}/fakehome"
@@ -179,7 +189,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Install zsh
-        run: sudo apt-get update && sudo apt-get install -y zsh
+        run: |
+          # See the ShellCheck job: a failing third-party APT repo must not block
+          # installing the distro packages this job needs.
+          sudo apt-get update || true
+          sudo apt-get install -y zsh
       - name: Check zsh syntax
         run: |
           # `zsh -n` parses without executing; the patterns match every zsh file,
