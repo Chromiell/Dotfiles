@@ -21,6 +21,55 @@ function M.copy_project_path()
     vim.notify("Copied: " .. path)
 end
 
+---Override the current buffer's filetype through a picker, mirroring
+---`:setfiletype {language}` (which also fires the |FileType| autocommand).
+---Suggestions come from `:setfiletype` argument completion, i.e. every
+---syntax/ftplugin language on 'runtimepath', plus the buffer's current one.
+function M.set_buffer_filetype()
+    local buf = vim.api.nvim_get_current_buf()
+    local current = vim.bo[buf].filetype
+
+    local seen = {}
+    local filetypes = {}
+    for _, ft in ipairs(vim.fn.getcompletion("", "filetype")) do
+        -- `syntax/nosyntax.vim` is not a real language.
+        if ft ~= "nosyntax" and not seen[ft] then
+            seen[ft] = true
+            filetypes[#filetypes + 1] = ft
+        end
+    end
+    table.sort(filetypes)
+
+    -- Keep the buffer's current filetype at the top and always selectable.
+    local current_idx = vim.fn.index(filetypes, current)
+    if current_idx >= 0 then
+        table.remove(filetypes, current_idx + 1)
+    end
+    if current ~= "" then
+        table.insert(filetypes, 1, current)
+    end
+
+    vim.ui.select(filetypes, {
+        prompt = current ~= "" and ("Filetype (current: " .. current .. ")") or "Filetype",
+        format_item = function(ft)
+            return ft == current and (ft .. "  (current)") or ft
+        end,
+    }, function(choice)
+        if not choice then
+            return
+        end
+        if not vim.api.nvim_buf_is_valid(buf) then
+            vim.notify("Cannot set filetype: buffer is no longer valid", vim.log.levels.WARN)
+            return
+        end
+
+        vim.api.nvim_buf_call(buf, function()
+            vim.cmd("setfiletype " .. choice)
+        end)
+        vim.notify(("Filetype set to '%s'"):format(choice), vim.log.levels.INFO)
+    end)
+end
+
 function M.trim_whitespace_file()
     local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
     for i, line in ipairs(lines) do

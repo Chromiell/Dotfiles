@@ -9,6 +9,7 @@ vim.api.nvim_create_user_command("ToggleHexHsl", fn.toggle_hex_hsl, {})
 
 vim.keymap.set("n", " ", "", { desc = "Ignore space", silent = true })
 vim.keymap.set("n", "<leader>fP", fn.copy_project_path, { desc = "Copy File Path" })
+vim.keymap.set("n", "<leader>fl", fn.set_buffer_filetype, { desc = "Filetype: Set Language" })
 
 -- Trailing Whitespace
 vim.keymap.set("n", "<leader>ct", fn.trim_whitespace_file, { desc = "Trim Trailing Whitespace (Whole File)" })
