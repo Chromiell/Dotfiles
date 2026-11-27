@@ -20,6 +20,12 @@ config:
   # line inside a blockquote.
   MD028: false
 
+  # The root README centers the Pipeline and CodeQL status badges under the
+  # title with a small, fixed set of HTML tags (Markdown cannot center images
+  # on GitHub). No other inline HTML is permitted.
+  MD033:
+    allowed_elements: ["div", "a", "img", "br"]
+
 ignores:
   - "neovim/.config/nvim/**"
   - "zsh/.config/**"

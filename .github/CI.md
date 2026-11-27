@@ -144,7 +144,7 @@ which never receive secrets) the step is skipped, so CI still runs untouched.
 
 ### Testing a failure
 
-The workflow also has a manual **Run workflow** trigger (Actions → *CI* →
+The workflow also has a manual **Run workflow** trigger (Actions → *Pipeline* →
 **Run workflow**) with a **simulate_failure** checkbox. Tick it to make the
 `shellcheck` job fail on purpose and confirm the failure notification arrives; run
 again unticked to see the pass message. The forced failure only applies to manual

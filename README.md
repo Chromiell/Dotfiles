@@ -2,7 +2,10 @@
 
 ![Preview screenshot](./Preview.png)
 
-[![CI](https://github.com/Chromiell/Dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/Chromiell/Dotfiles/actions/workflows/ci.yml)
+<div align="center">
+  <a href="https://github.com/Chromiell/Dotfiles/actions/workflows/ci.yml"><img src="https://github.com/Chromiell/Dotfiles/actions/workflows/ci.yml/badge.svg" alt="Pipeline status"></a>
+  <a href="https://github.com/Chromiell/Dotfiles/actions/workflows/github-code-scanning/codeql"><img src="https://github.com/Chromiell/Dotfiles/actions/workflows/github-code-scanning/codeql/badge.svg" alt="CodeQL status"></a>
+</div>
 
 A modular, organized collection of personal dotfiles, development environment setups, terminal tools, container stacks, and administrative automation scripts tailored for Debian-based systems.
 
