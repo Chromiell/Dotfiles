@@ -99,10 +99,7 @@ Every major navigation, structural layout change, or operational shortcut has be
 | :--------------------- | :-------------------- | :----------------------------------------------------------- |
 | `Ctrl` + `Shift` + `↑` | `bind -n C-S-Up` | Jump to the **Previous** window |
 | `Ctrl` + `Shift` + `↓` | `bind -n C-S-Down` | Jump to the **Next** window |
-| `Alt` + `1` | `bind -n M-1` | Jump directly to **Window 1** |
-| `Alt` + `2` | `bind -n M-2` | Jump directly to **Window 2** |
-| `Alt` + `3` | `bind -n M-3` | Jump directly to **Window 3** |
-| `Alt` + `4` | `bind -n M-4` | Jump directly to **Window 4** |
+| `Alt` + `1` … `Alt` + `9` | `bind -n M-1` … `bind -n M-9` | Jump directly to **Window 1–9** |
 | `Alt` + `d` | `bind -n M-d` | **Detach** instantly from the current session |
 
 ---
