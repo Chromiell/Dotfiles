@@ -14,7 +14,7 @@ metadata:
 # Desktop Use
 
 Drive the real desktop — the same screen a human sees — when the target is
-**neither** a web page (use `playwright-cli` / `browser-use` for browsers) nor a
+**neither** a web page (use the `browse` MCP extension for browsers) nor a
 CLI tool. Typical uses: launching and operating GUI apps, navigating a game
 launcher, clicking a native dialog, or verifying that a window rendered.
 

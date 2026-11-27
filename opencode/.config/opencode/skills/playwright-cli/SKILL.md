@@ -6,8 +6,14 @@ description: Drive a real browser from the terminal with the playwright-cli tool
 # Playwright CLI
 
 `playwright-cli` is an installed CLI (the `@playwright/cli` npm package) that exposes
-Playwright browser automation as simple terminal commands. Use it whenever a task
-requires interacting with or verifying a real rendered web page.
+Playwright browser automation as simple terminal commands. Use it for isolated,
+scripted browser work.
+
+For ordinary browser interaction — especially anything that needs the user's real
+browser, logged-in sessions, or installed extensions — prefer the `browse` MCP
+extension, which drives the browser the user already has open and lets them watch
+or take over. Reach for `playwright-cli` when a clean, disposable, reproducible
+browser is the point.
 
 ## When to use
 
@@ -15,6 +21,7 @@ requires interacting with or verifying a real rendered web page.
 - Reproduce and debug a UI bug on a live/dev URL.
 - Inspect the DOM, element refs, computed state, or take screenshots.
 - Exercise forms, filters, modals, navigation, and responsive layouts.
+- Run repeatable or headless-style checks that should not touch the user's session.
 
 ## Who uses it
 

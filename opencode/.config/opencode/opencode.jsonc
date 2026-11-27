@@ -193,6 +193,18 @@
                     "{env:HOME}/.config/opencode/wordcraft-mcp/server.mjs",
                 ],
             },
+            "browse": {
+              "type": "local",
+              "command": [
+                "/home/zara/.config/nvm/versions/node/v26.13.1/bin/browse",
+                "mcp"
+              ],
+              "cwd": "/home/zara",
+              "pool": true,
+              "environment": {
+                "OPENCODE_BROWSER_RUNTIME": "auto-update"
+              }
+            },
         },
     },
     // ── Plugins ────────────────────────────────────────────────────────────────

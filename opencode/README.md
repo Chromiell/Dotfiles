@@ -28,6 +28,7 @@ sidebar plugin ([section 10](#-10-usage-sidebar)).
     - [Oracle: planner and advisor](#oracle-planner-and-advisor)
   - [Marketplace agents](#marketplace-agents)
   - [Usage](#usage)
+  - [Browser control with the `browse` extension](#browser-control-with-the-browse-extension)
   - [Browser testing with `playwright-cli`](#browser-testing-with-playwright-cli)
   - [Desktop control with `desktop-use`](#desktop-control-with-desktop-use)
   - [Background subagents](#background-subagents)
@@ -356,17 +357,39 @@ restart OpenCode.
 - Deepwork: opt-in — run `/deepwork <task>` when a task warrants the full
   workflow; the orchestrator no longer enters it automatically.
 - Skills: `run codemap`, `/reflect`, `work in a worktree`, `clone dependencies`,
-  `playwright-cli` (browser automation), and `desktop-use` (local GUI automation).
+  `playwright-cli` (isolated browser automation), and `desktop-use` (local GUI
+  automation). Interactive browsing goes through the `browse` MCP extension.
 - Swap the whole team's models at runtime with `/preset` (reload to apply).
 - Verify delegation with `ping all agents`.
+
+### Browser control with the `browse` extension
+
+The preferred way to work with a browser is the `browse` MCP server, configured
+under `mcp.servers.browse` in `opencode.jsonc`. It drives the user's real
+Chrome-family browser through the OpenCode Browse extension, so existing logins,
+sessions, installed extensions, and open tabs are available, and the user can
+watch or take over the tab. It exposes navigation, accessibility snapshots,
+clicks, form fills, keyboard and pointer input, scrolling, waits, screenshots,
+tab management, and a human `handoff` for logins, 2FA, captchas, and payments.
+
+Use it for interactive browsing, authenticated sites, and anything where the real
+session matters. Keep using `playwright-cli` (below) for isolated, scripted UI
+tests that should not touch the user's browser.
+
+Prerequisites: install the OpenCode Browse extension in Chrome (or a Chromium
+derivative), keep that browser running, and make sure the `browse` CLI is
+available (the tracked config pins the nvm-installed path). OpenCode starts the
+MCP server on demand; `OPENCODE_BROWSER_RUNTIME=auto-update` keeps its browser
+runtime current.
 
 ### Browser testing with `playwright-cli`
 
 A custom `playwright-cli` skill (tracked at `skills/playwright-cli/SKILL.md`) wraps
-the globally installed `@playwright/cli`, letting agents drive a real browser from the
-shell. Ownership follows the normal role split: **`@designer`** drives it for
-UI/visual verification, **`@fixer`** for automated test suites, **`@explorer`** for
-read-only page reconnaissance, and **`@observer`** analyses the resulting screenshots.
+the globally installed `@playwright/cli`, letting agents drive a clean, disposable
+browser from the shell for reproducible checks. Ownership follows the normal role
+split: **`@designer`** drives it for UI/visual verification, **`@fixer`** for
+automated test suites, **`@explorer`** for read-only page reconnaissance, and
+**`@observer`** analyses the resulting screenshots.
 The skill documents the session model (`-s=<session>`), the open → snapshot →
 interact → verify workflow, and the full command reference.
 
@@ -374,7 +397,7 @@ interact → verify workflow, and the full command reference.
 
 A custom `desktop-use` skill (tracked at `skills/desktop-use/`) lets an agent
 drive the **local** desktop — the same Wayland/niri screen a human sees — for GUI
-apps, game launchers, and native dialogs (browsers still go through
+apps, game launchers, and native dialogs (browsers still go through `browse` or
 `playwright-cli`). It ships `SKILL.md` plus a helper at
 `skills/desktop-use/scripts/desktop-use` that wraps `grim` (screenshots),
 `ydotool` (pointer/keyboard), and `niri msg` (windows).
@@ -525,6 +548,7 @@ opencode service restart
 | `context7` | Remote | Up-to-date library / framework documentation | None |
 | `grep-app` | Remote | GitHub code search | None |
 | `websearch` | Remote (Exa) | Real-time web search | `EXA_API_KEY` |
+| `browse` | Local (Node) | Drive the user's real Chrome via the OpenCode Browse extension (see [Browser control](#browser-control-with-the-browse-extension)) | None |
 | `gridcraft` | Local (Node) | GridCraft spreadsheets — live GUI workbook or bundled headless engine | None |
 | `wordcraft` | Local (Node) | WordCraft documents — live GUI document or bundled headless engine | None |
 
